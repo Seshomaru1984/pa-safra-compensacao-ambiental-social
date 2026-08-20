@@ -23,3 +23,8 @@ Repositório previsto:
 `Seshomaru1984/pa-safra-compensacao-ambiental-social`
 
 O script inicial cria o repositório como privado por padrão e publica o primeiro commit usando GitHub CLI (`gh`).
+## Fluxo de desenvolvimento seguro
+
+O projeto utiliza `main` como estado consolidado e `develop` como base de integracao. Alteracoes relevantes sao implementadas em branches proprias, passam pelo gate local e sao publicadas por Pull Request para `develop`.
+
+A politica completa esta em [`docs/GIT-WORKFLOW.md`](docs/GIT-WORKFLOW.md).
