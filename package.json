@@ -1,0 +1,13 @@
+{
+  "name": "pa-safra-compensacao-ambiental-social",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 4173 --strictPort",
+    "build": "vite build",
+    "check": "node tools/check.mjs"
+  },
+  "devDependencies": {
+    "vite": "^7.0.0"
+  }
+}
