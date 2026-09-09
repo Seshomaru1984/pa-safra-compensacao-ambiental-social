@@ -33,7 +33,7 @@ $Timestamp = Get-Date -Format "yyyy-MM-dd-HHmmss"
 
 function Fail {
     param([string]$Message)
-    Write-Host "" 
+    Write-Host ""
     Write-Host "BUILD BLOQUEADO" -ForegroundColor Red
     Write-Host $Message -ForegroundColor Yellow
     exit 1
@@ -69,6 +69,14 @@ if (-not $nodeCmd) { Fail "Node.js nao encontrado." }
 $Git = $gitCmd.Source
 $Npm = $npmCmd.Source
 $Node = $nodeCmd.Source
+
+if (-not (Test-Path -LiteralPath $ProjectRoot -PathType Container)) {
+    Fail "Pasta do projeto nao encontrada: $ProjectRoot"
+}
+
+if (-not (Test-Path -LiteralPath $Downloads -PathType Container)) {
+    Fail "Pasta Downloads nao encontrada: $Downloads"
+}
 
 if (-not (Test-Path -LiteralPath (Join-Path $ProjectRoot ".git") -PathType Container)) {
     Fail "A pasta do script nao pertence a um repositorio Git: $ProjectRoot"
@@ -157,10 +165,7 @@ try {
     }
 
     Write-Host "==> Criar ZIP inicialmente em Downloads" -ForegroundColor Cyan
-    Compress-Archive \
-        -Path (Join-Path $dist "*") \
-        -DestinationPath $ZipInDownloads \
-        -CompressionLevel Optimal
+    Compress-Archive -Path (Join-Path $dist "*") -DestinationPath $ZipInDownloads -CompressionLevel Optimal
 
     if (-not (Test-Path -LiteralPath $ZipInDownloads -PathType Leaf)) {
         Fail "ZIP nao foi criado em Downloads."
