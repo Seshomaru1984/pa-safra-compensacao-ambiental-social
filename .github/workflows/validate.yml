@@ -38,6 +38,14 @@ jobs:
       - name: Gerar build
         run: npm run build
 
+      - name: Guardar build validado
+        uses: actions/upload-artifact@v4
+        with:
+          name: pa-safra-dist-${{ github.sha }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Registrar resultado
         if: success()
         run: |
@@ -48,5 +56,6 @@ jobs:
           echo "- npm run check: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- node --check app.js: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run build: OK" >> "$GITHUB_STEP_SUMMARY"
+          echo "- artefato dist: gerado por 14 dias" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "Esta rotina apenas valida. Ela nao faz merge nem publica em producao." >> "$GITHUB_STEP_SUMMARY"
