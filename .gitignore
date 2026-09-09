@@ -4,3 +4,6 @@ dist/
 .DS_Store
 Thumbs.db
 npm-debug.log*
+
+# Artefatos locais de build e pacotes para teste
+_PACOTES-LOCAL/
