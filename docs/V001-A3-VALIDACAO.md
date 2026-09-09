@@ -2,7 +2,7 @@
 
 Branch: `feat/pa-v001-a3-pages-cms-conteudo-editavel`
 
-Head validado antes deste registro: `0ab41911fd478f891584e01a741d9666ebc2440e`
+Head validado: `477372978a2b44e750465195a2cbddae59ad56f3`
 
 ## Escopo
 
@@ -22,7 +22,7 @@ As duas imagens enviadas pelo solicitante estão armazenadas como JPEGs válidos
 
 ## Gate automatizado
 
-GitHub Actions `validate`, execução #15: **SUCESSO**.
+GitHub Actions `validate`, execução #17: **SUCESSO**.
 
 Etapas aprovadas:
 
