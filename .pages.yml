@@ -12,6 +12,17 @@ media:
     extensions: [jpg, jpeg, png, webp]
     rename: safe
 
+actions:
+  - name: validate-content
+    label: Validar alteracoes
+    workflow: pages-cms-validate.yml
+    ref: current
+    cancelable: false
+    confirm:
+      title: Validar alteracoes?
+      message: Executa as verificacoes tecnicas do PA Safra na branch atual. Nao faz merge nem publica em producao.
+      button: Validar
+
 settings:
   content:
     merge: true
