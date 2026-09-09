@@ -35,6 +35,22 @@ jobs:
       - name: Validar JavaScript
         run: node --check app.js
 
+      - name: Validar sintaxe do empacotador PowerShell
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Join-Path $PWD 'tools/PA-SAFRA-BUILD-E-ARQUIVAR.ps1'),
+            [ref]$tokens,
+            [ref]$errors
+          ) | Out-Null
+          if (@($errors).Count -gt 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            exit 1
+          }
+          Write-Host 'PowerShell parser: OK'
+
       - name: Gerar build
         run: npm run build
 
@@ -55,6 +71,7 @@ jobs:
           echo "- Commit: \`$GITHUB_SHA\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run check: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- node --check app.js: OK" >> "$GITHUB_STEP_SUMMARY"
+          echo "- PowerShell parser do empacotador: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run build: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- artefato dist: gerado por 14 dias" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
