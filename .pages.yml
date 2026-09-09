@@ -15,7 +15,7 @@ media:
 actions:
   - name: validate-content
     label: Validar alteracoes
-    workflow: pages-cms-validate.yml
+    workflow: validate.yml
     ref: current
     cancelable: false
     confirm:
