@@ -6,40 +6,72 @@ const required = [
   'index.html',
   'styles.css',
   'app.js',
-  'assets/icons/pa-safra.svg',
-  'assets/img/rio-nova-xavantina.jpg',
-  'assets/img/registro-historico.jpg',
-  'assets/img/atrativos-nova-xavantina.jpg'
+  '.pages.yml',
+  'public/content/site.json',
+  'public/content/noticias.json',
+  'public/content/videos.json',
+  'public/content/paginas.json',
+  'public/content/destaques.json',
+  'public/content/galeria.json',
+  'public/assets/icons/pa-safra.svg',
+  'public/assets/img/rio-nova-xavantina.jpg',
+  'public/assets/img/registro-historico.jpg',
+  'public/assets/img/atrativos-nova-xavantina.jpg',
+  'public/assets/img/solicitante-rio-cristalino.jpg',
+  'public/assets/img/solicitante-cerrado.jpg',
 ];
 
 const errors = [];
 for (const rel of required) {
+  if (!fs.existsSync(path.join(root, rel))) errors.push(`Arquivo ausente: ${rel}`);
+}
+
+for (const rel of ['public/content/site.json', 'public/content/noticias.json', 'public/content/videos.json', 'public/content/paginas.json', 'public/content/destaques.json', 'public/content/galeria.json']) {
   const full = path.join(root, rel);
-  if (!fs.existsSync(full)) errors.push(`Arquivo ausente: ${rel}`);
+  if (!fs.existsSync(full)) continue;
+  try {
+    JSON.parse(fs.readFileSync(full, 'utf8'));
+  } catch (error) {
+    errors.push(`JSON invalido em ${rel}: ${error.message}`);
+  }
 }
 
 const htmlPath = path.join(root, 'index.html');
 if (fs.existsSync(htmlPath)) {
   const html = fs.readFileSync(htmlPath, 'utf8');
-  const mustContain = [
+  for (const token of [
     'Projeto de Compensação Ambiental e Social - PA Safra',
     'Sobre este site',
     'Memória e legado',
+    'Notícias',
+    'Galeria',
+    'Links Úteis',
     'Vila do Banco Safra',
     'https://www.sema.mt.gov.br/',
     'https://mpmt.mp.br/',
-    'https://www.gov.br/ibama/pt-br'
-  ];
-  for (const token of mustContain) {
-    if (!html.includes(token)) errors.push(`Conteúdo obrigatório ausente: ${token}`);
+    'https://www.gov.br/ibama/pt-br',
+    'id="cms-pages-root"',
+    'id="noticias-list"',
+    'id="videos-list"',
+    'id="destaques-list"',
+    'id="galeria-list"',
+    '<script type="module" src="app.js"></script>',
+  ]) {
+    if (!html.includes(token)) errors.push(`Conteudo obrigatorio ausente: ${token}`);
+  }
+}
+
+const appPath = path.join(root, 'app.js');
+if (fs.existsSync(appPath)) {
+  const app = fs.readFileSync(appPath, 'utf8');
+  for (const token of ['/content/site.json', '/content/noticias.json', '/content/videos.json', '/content/paginas.json', '/content/destaques.json', '/content/galeria.json']) {
+    if (!app.includes(token)) errors.push(`Integracao CMS ausente em app.js: ${token}`);
   }
 }
 
 if (errors.length) {
-  console.error('=== PA SAFRA / CHECK ===');
-  for (const error of errors) console.error(`ERRO: ${error}`);
+  console.error(errors.join('\n'));
   process.exit(1);
 }
 
-console.log('=== PA SAFRA / CHECK ===');
 console.log('RESULTADO: OK');
