@@ -8,6 +8,7 @@ const errors = [];
 const required = [
   'index.html',
   '_headers',
+  'content/publicacao.json',
   'content/site.json',
   'content/noticias.json',
   'content/videos.json',
@@ -38,6 +39,7 @@ if (!fs.existsSync(dist)) {
 }
 
 const jsonFiles = [
+  'content/publicacao.json',
   'content/site.json',
   'content/noticias.json',
   'content/videos.json',
@@ -108,6 +110,21 @@ if (fs.existsSync(headersPath)) {
     '/assets/*',
   ]) {
     if (!headers.includes(token)) errors.push(`Regra obrigatoria ausente em _headers: ${token}`);
+  }
+}
+
+const publicationPath = path.join(dist, 'content/publicacao.json');
+if (fs.existsSync(publicationPath)) {
+  try {
+    const publication = JSON.parse(fs.readFileSync(publicationPath, 'utf8'));
+    if (publication.production_branch !== 'main') {
+      errors.push('content/publicacao.json no build deve manter production_branch como main.');
+    }
+    if (!publication.checks || typeof publication.checks !== 'object') {
+      errors.push('content/publicacao.json no build deve conter o objeto checks.');
+    }
+  } catch {
+    // JSON ja e validado acima.
   }
 }
 
