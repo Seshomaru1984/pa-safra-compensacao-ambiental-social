@@ -32,6 +32,21 @@ jobs:
       - name: Validar estrutura editorial
         run: npm run check
 
+      - name: Confirmar trava editorial enquanto pendente
+        shell: bash
+        run: |
+          set +e
+          output="$(npm run prepublish:check 2>&1)"
+          code=$?
+          set -e
+          printf '%s\n' "$output"
+          if [ "$code" -eq 0 ]; then
+            echo "ERRO: prepublish:check deveria bloquear enquanto publicacao.json estiver pendente."
+            exit 1
+          fi
+          printf '%s\n' "$output" | grep -q "publicacao em producao bloqueada enquanto houver pendencias editoriais"
+          echo "Trava editorial: BLOQUEIO CONFIRMADO"
+
       - name: Validar JavaScript
         run: node --check app.js
 
@@ -51,7 +66,7 @@ jobs:
           }
           Write-Host 'PowerShell parser: OK'
 
-      - name: Gerar build
+      - name: Gerar build de desenvolvimento/preview
         run: npm run build
 
       - name: Smoke test do build
@@ -73,10 +88,11 @@ jobs:
           echo "- Branch: \`$GITHUB_REF_NAME\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- Commit: \`$GITHUB_SHA\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run check: OK" >> "$GITHUB_STEP_SUMMARY"
+          echo "- trava editorial pendente: bloqueio confirmado" >> "$GITHUB_STEP_SUMMARY"
           echo "- node --check app.js: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- PowerShell parser do empacotador: OK" >> "$GITHUB_STEP_SUMMARY"
-          echo "- npm run build: OK" >> "$GITHUB_STEP_SUMMARY"
+          echo "- npm run build (advisory/preview): OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run smoke: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- artefato dist: gerado por 14 dias" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Esta rotina apenas valida. Ela nao faz merge nem publica em producao." >> "$GITHUB_STEP_SUMMARY"
+          echo "Esta rotina valida que a producao continua bloqueada enquanto as pendencias editoriais existirem. Ela nao faz merge nem publica em producao." >> "$GITHUB_STEP_SUMMARY"
