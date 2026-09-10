@@ -35,6 +35,12 @@ jobs:
       - name: Validar contrato operacional do Pages CMS
         run: npm run cms:test
 
+      - name: Validar readiness Cloudflare
+        run: npm run cloudflare:test
+
+      - name: Simular ambiente Cloudflare Pages
+        run: npm run cloudflare:env-test
+
       - name: Confirmar trava editorial enquanto pendente
         shell: bash
         run: |
@@ -92,6 +98,8 @@ jobs:
           echo "- Commit: \`$GITHUB_SHA\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run check: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run cms:test: OK" >> "$GITHUB_STEP_SUMMARY"
+          echo "- npm run cloudflare:test: OK" >> "$GITHUB_STEP_SUMMARY"
+          echo "- npm run cloudflare:env-test: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- trava editorial pendente: bloqueio confirmado" >> "$GITHUB_STEP_SUMMARY"
           echo "- node --check app.js: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- PowerShell parser do empacotador: OK" >> "$GITHUB_STEP_SUMMARY"
@@ -99,4 +107,4 @@ jobs:
           echo "- npm run smoke: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- artefato dist: gerado por 14 dias" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Esta rotina valida o contrato tecnico do Pages CMS e confirma que a producao continua bloqueada enquanto as pendencias editoriais existirem. Ela nao faz merge nem publica em producao." >> "$GITHUB_STEP_SUMMARY"
+          echo "Esta rotina valida o contrato tecnico do Pages CMS, a preparacao Cloudflare, simula preview/producao e confirma que a producao continua bloqueada enquanto as pendencias editoriais existirem. Ela nao faz merge nem publica em producao." >> "$GITHUB_STEP_SUMMARY"

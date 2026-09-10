@@ -21,9 +21,9 @@ Usar:
 - Build output directory: `dist`;
 - Root directory: raiz do repositório.
 
-O Cloudflare Pages injeta automaticamente variáveis de build como `CF_PAGES`, `CF_PAGES_BRANCH`, `CF_PAGES_COMMIT_SHA` e `CF_PAGES_URL`. A V001-A7 usa `CF_PAGES=1` e `CF_PAGES_BRANCH=main` para ativar a trava bloqueante de publicação.
+O Cloudflare Pages injeta variáveis de build como `CF_PAGES`, `CF_PAGES_BRANCH`, `CF_PAGES_COMMIT_SHA` e `CF_PAGES_URL`. A trava de publicação usa `CF_PAGES=1` e `CF_PAGES_BRANCH=main` para ativar o modo bloqueante.
 
-## Trava de publicação da V001-A7
+## Trava de publicação
 
 O arquivo `public/content/publicacao.json` registra as validações editoriais obrigatórias. Enquanto qualquer item estiver `false`, o status permanece pendente.
 
@@ -37,6 +37,19 @@ Comportamento:
 - `npm run prepublish:check`: modo **bloqueante** em qualquer ambiente para conferência deliberada.
 
 Em produção, o build somente é liberado quando todas as validações estiverem `true` e `status` estiver definido como `aprovado`.
+
+## Readiness Cloudflare da V001-A9
+
+A V001-A9 adiciona `npm run cloudflare:test`, executado também pelo GitHub Actions. O teste confirma:
+
+- existência de `public/_headers`, `public/robots.txt` e `public/content/publicacao.json`;
+- branch de produção registrada como `main`;
+- presença dos cabeçalhos de segurança necessários;
+- política de conteúdo compatível com os vídeos YouTube carregados pelo site;
+- bloqueio de indexação enquanto a publicação estiver pendente;
+- obrigação de remover o bloqueio de indexação quando a publicação for formalmente aprovada.
+
+Enquanto `publicacao.json` estiver pendente, `robots.txt` permanece com `Disallow: /`. Isso impede que uma eventual URL temporária ou preview seja tratada como publicação definitiva pelos mecanismos de busca.
 
 ## Validações obrigatórias atuais
 
@@ -61,9 +74,20 @@ Não configurar a branch `develop` ou branches `feat/...` como produção.
 
 Com a integração Git do Cloudflare Pages, branches e Pull Requests podem receber deployments de preview separados da produção. Isso será usado para validar visualmente alterações do site antes da promoção para `main`.
 
-## Cabeçalhos e cache
+## Cabeçalhos, CSP e cache
 
-`public/_headers` é copiado pelo Vite para `dist/_headers` e será interpretado pelo Cloudflare Pages. A configuração atual aplica cabeçalhos básicos de segurança, revalidação imediata para `/content/*` e cache específico para `/assets/*`.
+`public/_headers` é copiado pelo Vite para `dist/_headers` e será interpretado pelo Cloudflare Pages.
+
+A configuração inclui:
+
+- `Content-Security-Policy` com origem padrão restrita ao próprio site;
+- liberação explícita apenas de `www.youtube-nocookie.com` para iframes de palestras;
+- bloqueio de objetos/plugins e enquadramento do site em frames de terceiros;
+- `X-Content-Type-Options: nosniff`;
+- `Referrer-Policy: strict-origin-when-cross-origin`;
+- `Permissions-Policy` desabilitando câmera, microfone, geolocalização, pagamento e USB;
+- revalidação imediata para `/content/*`;
+- cache específico para `/assets/*`.
 
 ## Pages CMS
 
@@ -81,8 +105,9 @@ O domínio próprio será conectado somente depois que:
 4. os dados institucionais estiverem confirmados;
 5. as afirmações históricas e a redação jurídica estiverem confirmadas;
 6. `public/content/publicacao.json` estiver com todas as validações verdadeiras e `status: aprovado`;
-7. `main` contiver a versão aprovada.
+7. `robots.txt` estiver liberado para indexação;
+8. `main` contiver a versão aprovada.
 
 ## Estado desta etapa
 
-A V001-A7 prepara uma barreira técnica adicional contra publicação prematura. Nenhuma conta Cloudflare, domínio ou produção é alterada automaticamente por esta etapa.
+A V001-A9 prepara e testa o pacote para integração com Cloudflare Pages sem alterar conta Cloudflare, domínio ou produção. Nenhum deploy é feito por esta etapa.
