@@ -1,0 +1,13 @@
+{
+  "status": "pendente",
+  "production_branch": "main",
+  "checks": {
+    "redacao_juridica_confirmada": false,
+    "creditos_imagens_confirmados": false,
+    "dados_contato_confirmados": false,
+    "afirmacoes_historicas_confirmadas": false,
+    "revisao_visual_confirmada": false,
+    "pages_cms_testado": false
+  },
+  "notes": "A publicacao em producao deve permanecer bloqueada enquanto qualquer validacao obrigatoria estiver pendente."
+}

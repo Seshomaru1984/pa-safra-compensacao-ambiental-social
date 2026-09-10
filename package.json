@@ -3,9 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "vite --host 127.0.0.1 --port 4173 --strictPort",
-    "build": "vite build",
-    "check": "node tools/check.mjs"
+    "images:prepare": "node tools/prepare-requester-images.mjs",
+    "dev": "npm run images:prepare && vite --host 127.0.0.1 --port 4286 --strictPort",
+    "build": "npm run images:prepare && node tools/prepublish.mjs && vite build",
+    "check": "npm run images:prepare && node tools/check.mjs",
+    "cms:test": "node tools/cms-contract.mjs",
+    "cloudflare:test": "node tools/cloudflare-readiness.mjs",
+    "cloudflare:env-test": "node tools/cloudflare-env-contract.mjs",
+    "prepublish:check": "node tools/prepublish.mjs --strict",
+    "smoke": "node tools/smoke-build.mjs",
+    "preview": "npm run images:prepare && vite preview --host 127.0.0.1 --port 4286 --strictPort"
   },
   "devDependencies": {
     "vite": "^7.0.0"
