@@ -4,7 +4,7 @@ PA SAFRA - BUILD LOCAL E ARQUIVAMENTO DE PACOTE
 Fluxo padrao para builds executados em um PC Windows:
 1. valida que a pasta e o repositorio sao exclusivamente do PA Safra;
 2. exige worktree limpo;
-3. executa npm ci, npm run check, node --check app.js e npm run build;
+3. executa npm ci, npm run check, node --check app.js, npm run build e npm run smoke;
 4. cria uma pasta de pacote dentro do proprio projeto em _PACOTES-LOCAL;
 5. gera inicialmente o ZIP em Downloads;
 6. calcula SHA-256;
@@ -152,6 +152,7 @@ try {
     Invoke-Checked $Npm @("run","check") "Validar estrutura editorial"
     Invoke-Checked $Node @("--check","app.js") "Validar JavaScript"
     Invoke-Checked $Npm @("run","build") "Gerar dist"
+    Invoke-Checked $Npm @("run","smoke") "Executar smoke test do build"
 
     $dist = Join-Path $ProjectRoot "dist"
     $index = Join-Path $dist "index.html"
@@ -206,6 +207,7 @@ GATES:
 - npm run check: OK
 - node --check app.js: OK
 - npm run build: OK
+- npm run smoke: OK
 - dist/index.html: OK
 - ZIP criado em Downloads: OK
 - ZIP movido para _PACOTES-LOCAL: OK

@@ -6,6 +6,7 @@
     "dev": "vite --host 127.0.0.1 --port 4286 --strictPort",
     "build": "vite build",
     "check": "node tools/check.mjs",
+    "smoke": "node tools/smoke-build.mjs",
     "preview": "vite preview --host 127.0.0.1 --port 4286 --strictPort"
   },
   "devDependencies": {

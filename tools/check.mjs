@@ -7,6 +7,8 @@ const required = [
   'styles.css',
   'app.js',
   '.pages.yml',
+  'public/_headers',
+  'tools/smoke-build.mjs',
   'public/content/site.json',
   'public/content/noticias.json',
   'public/content/videos.json',
@@ -66,6 +68,20 @@ if (fs.existsSync(appPath)) {
   const app = fs.readFileSync(appPath, 'utf8');
   for (const token of ['/content/site.json', '/content/noticias.json', '/content/videos.json', '/content/paginas.json', '/content/destaques.json', '/content/galeria.json']) {
     if (!app.includes(token)) errors.push(`Integracao CMS ausente em app.js: ${token}`);
+  }
+}
+
+const headersPath = path.join(root, 'public/_headers');
+if (fs.existsSync(headersPath)) {
+  const headers = fs.readFileSync(headersPath, 'utf8');
+  for (const token of [
+    'X-Content-Type-Options: nosniff',
+    'Referrer-Policy: strict-origin-when-cross-origin',
+    'Permissions-Policy:',
+    '/content/*',
+    '/assets/*',
+  ]) {
+    if (!headers.includes(token)) errors.push(`Regra obrigatoria ausente em public/_headers: ${token}`);
   }
 }
 
