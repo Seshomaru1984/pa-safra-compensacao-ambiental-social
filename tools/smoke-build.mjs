@@ -8,6 +8,7 @@ const errors = [];
 const required = [
   'index.html',
   '_headers',
+  'robots.txt',
   'content/publicacao.json',
   'content/site.json',
   'content/noticias.json',
@@ -102,9 +103,16 @@ const headersPath = path.join(dist, '_headers');
 if (fs.existsSync(headersPath)) {
   const headers = fs.readFileSync(headersPath, 'utf8');
   for (const token of [
+    'Content-Security-Policy:',
+    "default-src 'self'",
+    "frame-src https://www.youtube-nocookie.com",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "frame-ancestors 'none'",
     'X-Content-Type-Options: nosniff',
     'Referrer-Policy: strict-origin-when-cross-origin',
     'Permissions-Policy:',
+    'X-Frame-Options: DENY',
     '/content/*',
     'Cache-Control: public, max-age=0, must-revalidate',
     '/assets/*',
@@ -113,10 +121,11 @@ if (fs.existsSync(headersPath)) {
   }
 }
 
+let publication = null;
 const publicationPath = path.join(dist, 'content/publicacao.json');
 if (fs.existsSync(publicationPath)) {
   try {
-    const publication = JSON.parse(fs.readFileSync(publicationPath, 'utf8'));
+    publication = JSON.parse(fs.readFileSync(publicationPath, 'utf8'));
     if (publication.production_branch !== 'main') {
       errors.push('content/publicacao.json no build deve manter production_branch como main.');
     }
@@ -125,6 +134,19 @@ if (fs.existsSync(publicationPath)) {
     }
   } catch {
     // JSON ja e validado acima.
+  }
+}
+
+const robotsPath = path.join(dist, 'robots.txt');
+if (fs.existsSync(robotsPath) && publication) {
+  const robots = fs.readFileSync(robotsPath, 'utf8');
+  const blocked = /User-agent:\s*\*[^]*Disallow:\s*\/\s*$/im.test(robots);
+  const approved = publication.status === 'aprovado' && Object.values(publication.checks || {}).every(Boolean);
+  if (!approved && !blocked) {
+    errors.push('robots.txt deve bloquear indexacao enquanto a publicacao estiver pendente.');
+  }
+  if (approved && blocked) {
+    errors.push('robots.txt nao pode continuar bloqueando indexacao apos aprovacao integral.');
   }
 }
 
