@@ -32,6 +32,9 @@ jobs:
       - name: Validar estrutura editorial
         run: npm run check
 
+      - name: Validar contrato operacional do Pages CMS
+        run: npm run cms:test
+
       - name: Confirmar trava editorial enquanto pendente
         shell: bash
         run: |
@@ -88,6 +91,7 @@ jobs:
           echo "- Branch: \`$GITHUB_REF_NAME\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- Commit: \`$GITHUB_SHA\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run check: OK" >> "$GITHUB_STEP_SUMMARY"
+          echo "- npm run cms:test: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- trava editorial pendente: bloqueio confirmado" >> "$GITHUB_STEP_SUMMARY"
           echo "- node --check app.js: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- PowerShell parser do empacotador: OK" >> "$GITHUB_STEP_SUMMARY"
@@ -95,4 +99,4 @@ jobs:
           echo "- npm run smoke: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- artefato dist: gerado por 14 dias" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Esta rotina valida que a producao continua bloqueada enquanto as pendencias editoriais existirem. Ela nao faz merge nem publica em producao." >> "$GITHUB_STEP_SUMMARY"
+          echo "Esta rotina valida o contrato tecnico do Pages CMS e confirma que a producao continua bloqueada enquanto as pendencias editoriais existirem. Ela nao faz merge nem publica em producao." >> "$GITHUB_STEP_SUMMARY"
