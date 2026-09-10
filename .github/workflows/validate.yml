@@ -3,17 +3,59 @@ name: validate
 on:
   push:
   pull_request:
+  workflow_dispatch:
+    inputs:
+      payload:
+        description: Contexto opcional enviado pelo Pages CMS em JSON
+        required: false
+        type: string
+
+permissions:
+  contents: read
 
 jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
-      - run: npm run check
-      - run: node --check app.js
-      - run: npm run build
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Validar estrutura editorial
+        run: npm run check
+
+      - name: Validar JavaScript
+        run: node --check app.js
+
+      - name: Gerar build
+        run: npm run build
+
+      - name: Guardar build validado
+        uses: actions/upload-artifact@v4
+        with:
+          name: pa-safra-dist-${{ github.sha }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Registrar resultado
+        if: success()
+        run: |
+          echo "## PA Safra - validacao concluida" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Branch: \`$GITHUB_REF_NAME\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Commit: \`$GITHUB_SHA\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- npm run check: OK" >> "$GITHUB_STEP_SUMMARY"
+          echo "- node --check app.js: OK" >> "$GITHUB_STEP_SUMMARY"
+          echo "- npm run build: OK" >> "$GITHUB_STEP_SUMMARY"
+          echo "- artefato dist: gerado por 14 dias" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Esta rotina apenas valida. Ela nao faz merge nem publica em producao." >> "$GITHUB_STEP_SUMMARY"
