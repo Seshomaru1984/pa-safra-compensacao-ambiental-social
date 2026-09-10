@@ -1,0 +1,30 @@
+[
+  {
+    "image": "/assets/img/solicitante-rio-cristalino.jpg",
+    "image_alt": "Curso d’água de águas claras cercado por vegetação, com uma embarcação",
+    "caption": "Paisagem natural enviada pelo solicitante para composição do projeto.",
+    "credit": "Crédito/licença a confirmar antes da publicação definitiva.",
+    "published": true
+  },
+  {
+    "image": "/assets/img/solicitante-cerrado.jpg",
+    "image_alt": "Paisagem de Cerrado com vegetação aberta e relevo elevado ao fundo",
+    "caption": "Paisagem de Cerrado enviada pelo solicitante para composição do projeto.",
+    "credit": "Crédito/licença a confirmar antes da publicação definitiva.",
+    "published": true
+  },
+  {
+    "image": "/assets/img/rio-nova-xavantina.jpg",
+    "image_alt": "Trecho de rio com vegetação nas margens e banco de areia",
+    "caption": "Região de Nova Xavantina.",
+    "credit": "A Notícia em Foco — crédito registrado no material-base do projeto.",
+    "published": true
+  },
+  {
+    "image": "/assets/img/atrativos-nova-xavantina.jpg",
+    "image_alt": "Montagem com paisagens naturais e atrativos de Nova Xavantina",
+    "caption": "Atrativos naturais da região.",
+    "credit": "Crédito editorial a confirmar.",
+    "published": true
+  }
+]

@@ -6,7 +6,7 @@
   <meta name="description" content="Projeto de Compensação Ambiental e Social - PA Safra: educação ambiental, informação e recursos para comunidades de Nova Xavantina/MT." />
   <meta name="theme-color" content="#173f35" />
   <title>Projeto de Compensação Ambiental e Social - PA Safra</title>
-  <link rel="icon" href="assets/icons/pa-safra.svg" type="image/svg+xml" />
+  <link rel="icon" href="/assets/icons/pa-safra.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -22,18 +22,21 @@
           </svg>
         </span>
         <span>
-          <strong>PA Safra</strong>
-          <small>Compensação Ambiental e Social</small>
+          <strong id="brand-name">PA Safra</strong>
+          <small id="brand-tagline">Compensação Ambiental e Social</small>
         </span>
       </a>
 
       <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="menu-principal">Menu</button>
       <nav id="menu-principal" class="main-nav" aria-label="Navegação principal">
         <a href="#inicio" data-nav="inicio">Início</a>
-        <a href="#sobre" data-nav="sobre">Sobre este site</a>
-        <a href="#legado" data-nav="legado">Memória e legado</a>
+        <a href="#sobre" data-nav="sobre">Sobre o Projeto</a>
         <a href="#palestras" data-nav="palestras">Palestras</a>
-        <a href="#recursos" data-nav="recursos">Recursos oficiais</a>
+        <a href="#noticias" data-nav="noticias">Notícias</a>
+        <a href="#galeria" data-nav="galeria">Galeria</a>
+        <span id="cms-pages-nav" class="cms-pages-nav"></span>
+        <a href="#recursos" data-nav="recursos">Links Úteis</a>
+        <a href="#legado" data-nav="legado">Memória e legado</a>
       </nav>
     </div>
   </header>
@@ -43,9 +46,9 @@
       <div class="hero">
         <div class="shell hero-grid">
           <div class="hero-copy">
-            <p class="eyebrow">Nova Xavantina • Mato Grosso</p>
+            <p class="eyebrow" id="hero-eyebrow">Nova Xavantina • Mato Grosso</p>
             <h1 id="titulo-inicio">Projeto de Compensação Ambiental e Social - PA Safra</h1>
-            <p class="hero-lead">Informação, educação ambiental e recursos úteis para fortalecer a prevenção, a responsabilidade socioambiental e a cidadania nas comunidades da região.</p>
+            <p class="hero-lead" id="hero-lead">Informação, educação ambiental e recursos úteis para fortalecer a prevenção, a responsabilidade socioambiental e a cidadania nas comunidades da região.</p>
             <div class="hero-actions">
               <a class="button primary" href="#sobre">Conheça o projeto</a>
               <a class="button ghost" href="#recursos">Órgãos e referências</a>
@@ -60,11 +63,11 @@
 
           <div class="hero-media" aria-label="Imagens da região e registro histórico">
             <figure class="photo photo-main">
-              <img src="assets/img/rio-nova-xavantina.jpg" alt="Trecho de rio com vegetação nas margens e banco de areia" />
-              <figcaption>Região de Nova Xavantina. Crédito: <a href="https://www.anoticiaemfoco.com.br/" target="_blank" rel="noopener noreferrer">A Notícia em Foco</a>.</figcaption>
+              <img id="hero-image" src="/assets/img/solicitante-rio-cristalino.jpg" alt="Curso d’água de águas claras cercado por vegetação, com uma embarcação" />
+              <figcaption>Imagem fornecida pelo solicitante para composição do projeto. Crédito/licença a confirmar antes da publicação definitiva.</figcaption>
             </figure>
             <figure class="photo photo-secondary">
-              <img src="assets/img/atrativos-nova-xavantina.jpg" alt="Montagem com paisagens naturais e atrativos de Nova Xavantina" />
+              <img src="/assets/img/atrativos-nova-xavantina.jpg" alt="Montagem com paisagens naturais e atrativos de Nova Xavantina" />
               <figcaption>Atrativos naturais da região. Crédito editorial a confirmar.</figcaption>
             </figure>
           </div>
@@ -74,27 +77,32 @@
       <div class="shell section-stack">
         <section class="intro-band" aria-labelledby="eixos-titulo">
           <div>
-            <p class="eyebrow">Eixos do projeto</p>
+            <p class="eyebrow" id="home-intro-eyebrow">Eixos do projeto</p>
             <h2 id="eixos-titulo">Reparação que também informa, previne e aproxima</h2>
           </div>
-          <p>O site foi estruturado para reunir conteúdo institucional do projeto, palestras gravadas, referências ambientais e caminhos rápidos para órgãos públicos e informações de interesse local.</p>
+          <p id="home-intro-text">O site foi estruturado para reunir conteúdo institucional do projeto, palestras gravadas, referências ambientais e caminhos rápidos para órgãos públicos e informações de interesse local.</p>
         </section>
 
-        <section class="card-grid" aria-label="Áreas principais do site">
+        <section id="destaques-list" class="card-grid" aria-label="Eixos e acessos principais do projeto">
           <article class="feature-card">
             <span class="feature-number">01</span>
-            <h3>Educação ambiental</h3>
-            <p>Conteúdos para ampliar a compreensão sobre preservação, prevenção de danos e uso responsável dos recursos naturais.</p>
+            <h3>Palestras</h3>
+            <p>Gravações e materiais de apoio voltados à educação ambiental e à informação de interesse da comunidade.</p>
           </article>
           <article class="feature-card">
             <span class="feature-number">02</span>
-            <h3>Informação acessível</h3>
-            <p>Materiais reunidos em linguagem clara, com navegação simples para moradores, trabalhadores rurais e demais interessados.</p>
+            <h3>Preservação</h3>
+            <p>Conteúdos sobre prevenção de danos, conservação ambiental e uso responsável dos recursos naturais.</p>
           </article>
           <article class="feature-card">
             <span class="feature-number">03</span>
-            <h3>Comunidade e território</h3>
-            <p>Foco nas comunidades de Alvorada, Córrego do Jatobá, Vila do Banco Safra e nos demais munícipes de Nova Xavantina.</p>
+            <h3>Conhecimento</h3>
+            <p>Referências oficiais, materiais educativos e informações reunidas de forma clara e acessível.</p>
+          </article>
+          <article class="feature-card">
+            <span class="feature-number">04</span>
+            <h3>Comunidade</h3>
+            <p>Espaço informativo voltado às comunidades do PA Safra e aos demais munícipes de Nova Xavantina.</p>
           </article>
         </section>
 
@@ -105,7 +113,20 @@
             <p>Nova Xavantina reúne formações rochosas, cachoeiras, praias naturais e ilhas fluviais associadas ao Rio das Mortes, em uma paisagem marcada pelo Cerrado e por zonas de transição para a Amazônia.</p>
             <a class="text-link" href="https://visitenovaxavantina.com.br/" target="_blank" rel="noopener noreferrer">Conhecer o portal turístico de Nova Xavantina ↗</a>
           </div>
-          <img src="assets/img/atrativos-nova-xavantina.jpg" alt="Montagem de atrativos naturais de Nova Xavantina, incluindo serra, rio e cachoeira" />
+          <img src="/assets/img/solicitante-cerrado.jpg" alt="Paisagem de Cerrado com vegetação aberta e relevo elevado ao fundo" />
+        </section>
+
+        <section class="quick-access-panel" aria-labelledby="acesso-rapido-titulo">
+          <div>
+            <p class="eyebrow">Acesso rápido</p>
+            <h2 id="acesso-rapido-titulo">Caminhos diretos para o conteúdo</h2>
+          </div>
+          <div class="quick-access-links">
+            <a class="quick-access-link" href="#palestras">Assista às palestras</a>
+            <a class="quick-access-link" href="#sobre">Conheça o projeto</a>
+            <a class="quick-access-link" href="#galeria">Galeria de fotos</a>
+            <a class="quick-access-link" href="#recursos">Links ambientais e úteis</a>
+          </div>
         </section>
       </div>
     </section>
@@ -116,14 +137,14 @@
           <div>
             <p class="eyebrow">Institucional</p>
             <h1 id="titulo-sobre">Sobre este site</h1>
-            <p>Finalidade, público e compromisso ambiental do projeto.</p>
+            <p id="about-summary">Finalidade, público e compromisso ambiental do projeto.</p>
           </div>
-          <img src="assets/img/rio-nova-xavantina.jpg" alt="Trecho de rio e vegetação na região de Nova Xavantina" />
+          <img src="/assets/img/rio-nova-xavantina.jpg" alt="Trecho de rio e vegetação na região de Nova Xavantina" />
         </div>
       </div>
 
       <div class="shell prose-layout">
-        <article class="prose-card">
+        <article class="prose-card" id="about-body">
           <p>Este site foi criado no âmbito do Termo de Ajustamento de Conduta (TAC) firmado entre o Espólio de Wolnei Divino Franco e o Ministério Público do Estado de Mato Grosso, como parte das medidas de compensação ambiental e social pela degradação ocorrida na região de Nova Xavantina/MT.</p>
 
           <p>Nosso objetivo é centralizar informações, disponibilizar palestras gravadas e oferecer recursos úteis para a comunidade de Alvorada, Córrego do Jatobá, Vila do Banco Safra e demais munícipes de Nova Xavantina.</p>
@@ -146,6 +167,25 @@
       </div>
     </section>
 
+    <section class="view" data-view="noticias" aria-labelledby="titulo-noticias" hidden>
+      <div class="page-hero compact blue">
+        <div class="shell">
+          <p class="eyebrow">Atualizações do projeto</p>
+          <h1 id="titulo-noticias">Notícias</h1>
+          <p>Informes, ações, registros e conteúdos publicados pelos responsáveis pelo projeto.</p>
+        </div>
+      </div>
+
+      <div class="shell section-stack">
+        <div id="noticias-list" class="news-grid" aria-live="polite">
+          <article class="empty-state">
+            <strong>Nenhuma notícia publicada ainda.</strong>
+            <p>As atualizações cadastradas no painel administrativo aparecerão aqui automaticamente.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
     <section class="view" data-view="legado" aria-labelledby="titulo-legado" hidden>
       <div class="page-hero legacy-hero">
         <div class="shell legacy-grid">
@@ -154,7 +194,7 @@
             <h1 id="titulo-legado">Um legado ligado à terra e à comunidade</h1>
           </div>
           <figure class="legacy-photo">
-            <img src="assets/img/registro-historico.jpg" alt="Registro histórico em preto e branco com três homens adultos" />
+            <img src="/assets/img/registro-historico.jpg" alt="Registro histórico em preto e branco com três homens adultos" />
             <figcaption>Registro histórico. Crédito: <a href="https://georgezarur.com.br/" target="_blank" rel="noopener noreferrer">George Zarur</a>.</figcaption>
           </figure>
         </div>
@@ -195,23 +235,35 @@
           <strong>Área em preparação.</strong>
           <span>Os conteúdos serão incluídos após validação do material, autoria, créditos e autorização para disponibilização.</span>
         </div>
-        <section class="card-grid placeholder-grid" aria-label="Estrutura prevista para palestras">
-          <article class="feature-card placeholder-card">
-            <span class="tag">Previsto</span>
-            <h2>Preservação e prevenção</h2>
-            <p>Conteúdos introdutórios sobre proteção ambiental, prevenção de danos e responsabilidades compartilhadas.</p>
+        <div id="videos-list" class="video-grid" aria-live="polite">
+          <article class="empty-state">
+            <strong>Nenhum vídeo publicado ainda.</strong>
+            <p>Quando os conteúdos forem cadastrados, os vídeos do YouTube aparecerão aqui automaticamente.</p>
           </article>
-          <article class="feature-card placeholder-card">
-            <span class="tag">Previsto</span>
-            <h2>Comunidade e território</h2>
-            <p>Materiais voltados à realidade das comunidades rurais e aos desafios ambientais locais.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" data-view="galeria" aria-labelledby="titulo-galeria" hidden>
+      <div class="page-hero compact blue">
+        <div class="shell">
+          <p class="eyebrow">Registros do projeto e da região</p>
+          <h1 id="titulo-galeria">Galeria</h1>
+          <p>Imagens selecionadas para contextualizar o território, as atividades e os registros do projeto.</p>
+        </div>
+      </div>
+
+      <div class="shell section-stack">
+        <div class="status-banner editorial-warning" role="note">
+          <strong>Créditos em conferência.</strong>
+          <span>As imagens fornecidas pelo solicitante foram incorporadas ao ambiente de desenvolvimento. A fonte, autoria e licença devem ser confirmadas antes da publicação definitiva.</span>
+        </div>
+        <div id="galeria-list" class="gallery-grid" aria-live="polite">
+          <article class="empty-state">
+            <strong>Galeria em preparação.</strong>
+            <p>As imagens cadastradas no painel administrativo aparecerão aqui automaticamente.</p>
           </article>
-          <article class="feature-card placeholder-card">
-            <span class="tag">Previsto</span>
-            <h2>Fontes oficiais</h2>
-            <p>Guias e referências para localizar informações confiáveis em órgãos ambientais e instituições públicas.</p>
-          </article>
-        </section>
+        </div>
       </div>
     </section>
 
@@ -219,7 +271,7 @@
       <div class="page-hero compact blue">
         <div class="shell">
           <p class="eyebrow">Acesso direto</p>
-          <h1 id="titulo-recursos">Recursos e órgãos oficiais</h1>
+          <h1 id="titulo-recursos">Links úteis e órgãos oficiais</h1>
           <p>Links institucionais para consulta de informações ambientais, orientações e serviços públicos.</p>
         </div>
       </div>
@@ -261,16 +313,27 @@
         </section>
       </div>
     </section>
+    <div id="cms-pages-root"></div>
   </main>
 
   <footer class="site-footer">
-    <div class="shell footer-grid">
+    <div class="shell footer-grid footer-grid-expanded">
       <div>
         <strong>Projeto de Compensação Ambiental e Social - PA Safra</strong>
         <p>Nova Xavantina/MT</p>
+        <p class="footer-dedication">“<span id="footer-dedication">Que esta iniciativa sirva como um legado de responsabilidade ambiental e cuidado com a comunidade.</span>”</p>
+      </div>
+      <div class="footer-links">
+        <strong>Navegação do portal</strong>
+        <a href="#sobre">Sobre o Projeto</a>
+        <a href="#palestras">Palestras e vídeos</a>
+        <a href="#galeria">Galeria</a>
+        <a href="#recursos">Links úteis</a>
       </div>
       <div class="footer-note">
-        <p>Versão inicial de desenvolvimento. Conteúdo institucional e histórico sujeito à validação documental antes da publicação definitiva.</p>
+        <strong>Informação institucional</strong>
+        <p id="footer-institutional-note">Iniciativa desenvolvida no âmbito do projeto de compensação ambiental e social relacionado ao TAC. A redação jurídica definitiva e os dados de contato serão publicados somente após validação dos responsáveis.</p>
+        <p>Versão de desenvolvimento. Conteúdo institucional, histórico, créditos de imagens e dados de contato sujeitos à validação antes da publicação definitiva.</p>
         <p>© <span id="ano"></span> PA Safra</p>
       </div>
     </div>

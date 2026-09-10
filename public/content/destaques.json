@@ -1,0 +1,26 @@
+[
+  {
+    "number": "01",
+    "title": "Palestras",
+    "text": "Gravações e materiais de apoio voltados à educação ambiental e à informação de interesse da comunidade.",
+    "published": true
+  },
+  {
+    "number": "02",
+    "title": "Preservação",
+    "text": "Conteúdos sobre prevenção de danos, conservação ambiental e uso responsável dos recursos naturais.",
+    "published": true
+  },
+  {
+    "number": "03",
+    "title": "Conhecimento",
+    "text": "Referências oficiais, materiais educativos e informações reunidas de forma clara e acessível.",
+    "published": true
+  },
+  {
+    "number": "04",
+    "title": "Comunidade",
+    "text": "Espaço informativo voltado às comunidades do PA Safra e aos demais munícipes de Nova Xavantina.",
+    "published": true
+  }
+]

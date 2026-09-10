@@ -1,30 +1,33 @@
-# Projeto de Compensação Ambiental e Social - PA Safra
+# PA Safra — Compensação Ambiental e Social
 
-Portal de desenvolvimento do Projeto de Compensação Ambiental e Social - PA Safra, com foco em Nova Xavantina/MT e nas comunidades de Alvorada, Córrego do Jatobá e Vila do Banco Safra.
+Portal institucional e informativo do Projeto de Compensação Ambiental e Social — PA Safra, em Nova Xavantina/MT.
 
-## Desenvolvimento local
+## Desenvolvimento
 
-Execute `INICIAR-PA-SAFRA.ps1` ou use o atalho `PA Safra - Desenvolvimento` criado na Área de Trabalho.
+- `main`: estado consolidado e aprovado;
+- `develop`: integração de desenvolvimento;
+- branches `feat/...` e `fix/...`: alterações isoladas por etapa;
+- validação automática: `npm ci`, `npm run check`, `node --check app.js` e `npm run build`.
 
-Endereço local:
+## Conteúdo editável
 
-`http://127.0.0.1:4173/`
+A estrutura V001-A3 separa o conteúdo editorial do layout e prepara o projeto para edição via Pages CMS. Os dados editáveis ficam em `public/content/`, e as imagens públicas ficam em `public/assets/`.
 
-## Validação
+A configuração do painel está em `.pages.yml`.
 
-- `npm run check`
-- `node --check app.js`
-- `npm run build`
+## Execução local
 
-## GitHub
+```powershell
+npm ci
+npm run dev
+```
 
-Repositório previsto:
+O servidor de desenvolvimento usa a porta local exclusiva `4286` com `--strictPort`.
 
-`Seshomaru1984/pa-safra-compensacao-ambiental-social`
+## Publicação planejada
 
-O script inicial cria o repositório como privado por padrão e publica o primeiro commit usando GitHub CLI (`gh`).
-## Fluxo de desenvolvimento seguro
+A arquitetura definida para produção é GitHub + Pages CMS + Cloudflare Pages + domínio próprio. A publicação em produção ainda não foi executada.
 
-O projeto utiliza `main` como estado consolidado e `develop` como base de integracao. Alteracoes relevantes sao implementadas em branches proprias, passam pelo gate local e sao publicadas por Pull Request para `develop`.
+## Validação editorial
 
-A politica completa esta em [`docs/GIT-WORKFLOW.md`](docs/GIT-WORKFLOW.md).
+Antes da publicação definitiva, devem ser confirmados créditos/licenças das imagens fornecidas pelo solicitante, dados de contato e afirmações históricas/biográficas que dependam de documentação específica.

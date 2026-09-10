@@ -1,0 +1,318 @@
+media:
+  - name: site_images
+    label: Imagens institucionais
+    input: public/assets/img
+    output: /assets/img
+    extensions: [jpg, jpeg, png, webp]
+    rename: safe
+  - name: uploads
+    label: Imagens de noticias e paginas
+    input: public/assets/uploads
+    output: /assets/uploads
+    extensions: [jpg, jpeg, png, webp]
+    rename: safe
+
+settings:
+  content:
+    merge: true
+  commit:
+    identity: user
+    templates:
+      create: "content(create): {path}"
+      update: "content(update): {path}"
+      delete: "content(delete): {path}"
+      rename: "content(rename): {oldPath} -> {newPath}"
+
+content:
+  - name: site
+    label: Configuracoes do site
+    type: file
+    path: public/content/site.json
+    format: json
+    operations:
+      create: false
+      rename: false
+      delete: false
+    fields:
+      - name: page_title
+        label: Titulo da aba do navegador
+        type: string
+        required: true
+      - name: description
+        label: Descricao do site
+        type: text
+        required: true
+      - name: brand_name
+        label: Nome curto no cabecalho
+        type: string
+        required: true
+      - name: brand_tagline
+        label: Complemento no cabecalho
+        type: string
+      - name: hero
+        label: Capa / entrada
+        type: object
+        fields:
+          - name: eyebrow
+            label: Identificacao superior
+            type: string
+          - name: title
+            label: Titulo principal
+            type: string
+            required: true
+          - name: lead
+            label: Texto de apoio
+            type: text
+          - name: title_alignment
+            label: Alinhamento do titulo
+            type: select
+            options:
+              values:
+                - name: left
+                  label: Esquerda
+                - name: right
+                  label: Direita
+          - name: title_size
+            label: Tamanho do titulo
+            type: select
+            options:
+              values:
+                - name: standard
+                  label: Padrao
+                - name: compact
+                  label: Menor
+                - name: small
+                  label: Pequeno
+          - name: image
+            label: Imagem principal
+            type: image
+            options:
+              media: site_images
+              extensions: [jpg, jpeg, png, webp]
+              rename: safe
+          - name: image_alt
+            label: Descricao acessivel da imagem
+            type: string
+      - name: home
+        label: Secao inicial
+        type: object
+        fields:
+          - name: intro_eyebrow
+            label: Rotulo
+            type: string
+          - name: intro_title
+            label: Titulo
+            type: string
+          - name: intro_text
+            label: Texto
+            type: text
+      - name: about
+        label: Sobre este site
+        type: object
+        fields:
+          - name: title
+            label: Titulo
+            type: string
+          - name: summary
+            label: Resumo
+            type: text
+          - name: body
+            label: Texto completo
+            type: rich-text
+            options:
+              format: html
+              media: uploads
+      - name: theme
+        label: Cores basicas
+        type: object
+        fields:
+          - name: primary
+            label: Verde principal
+            type: string
+            pattern:
+              regex: "^#[0-9A-Fa-f]{6}$"
+              message: "Use uma cor hexadecimal, por exemplo #1f5949"
+          - name: accent
+            label: Cor de destaque
+            type: string
+            pattern:
+              regex: "^#[0-9A-Fa-f]{6}$"
+              message: "Use uma cor hexadecimal, por exemplo #b46d3f"
+      - name: footer
+        label: Rodape institucional
+        type: object
+        fields:
+          - name: dedication
+            label: Frase de homenagem
+            type: text
+          - name: institutional_note
+            label: Nota institucional
+            type: text
+
+  - name: highlights
+    label: Eixos / Destaques da pagina inicial
+    type: file
+    path: public/content/destaques.json
+    format: json
+    list: true
+    operations:
+      create: false
+      rename: false
+      delete: false
+    fields:
+      - name: number
+        label: Numero
+        type: string
+      - name: title
+        label: Titulo
+        type: string
+        required: true
+      - name: text
+        label: Texto
+        type: text
+        required: true
+      - name: published
+        label: Exibir
+        type: boolean
+
+  - name: gallery
+    label: Galeria de fotos
+    type: file
+    path: public/content/galeria.json
+    format: json
+    list: true
+    operations:
+      create: false
+      rename: false
+      delete: false
+    fields:
+      - name: image
+        label: Imagem
+        type: image
+        required: true
+        options:
+          media: site_images
+          extensions: [jpg, jpeg, png, webp]
+          rename: safe
+      - name: image_alt
+        label: Descricao acessivel
+        type: string
+      - name: caption
+        label: Legenda
+        type: text
+      - name: credit
+        label: Credito / fonte
+        type: text
+      - name: published
+        label: Exibir
+        type: boolean
+
+  - name: news
+    label: Noticias
+    type: file
+    path: public/content/noticias.json
+    format: json
+    list: true
+    operations:
+      create: false
+      rename: false
+      delete: false
+    fields:
+      - name: title
+        label: Titulo
+        type: string
+        required: true
+      - name: date
+        label: Data
+        type: date
+        required: true
+      - name: summary
+        label: Resumo
+        type: text
+      - name: image
+        label: Imagem
+        type: image
+        options:
+          media: uploads
+          extensions: [jpg, jpeg, png, webp]
+          rename: safe
+      - name: image_alt
+        label: Descricao acessivel da imagem
+        type: string
+      - name: body
+        label: Conteudo
+        type: rich-text
+        options:
+          format: html
+          media: uploads
+      - name: published
+        label: Publicada
+        type: boolean
+
+  - name: videos
+    label: Videos / Palestras
+    type: file
+    path: public/content/videos.json
+    format: json
+    list: true
+    operations:
+      create: false
+      rename: false
+      delete: false
+    fields:
+      - name: title
+        label: Titulo
+        type: string
+        required: true
+      - name: description
+        label: Descricao
+        type: text
+      - name: youtube_url
+        label: Link do YouTube
+        type: string
+        required: true
+      - name: published
+        label: Publicado
+        type: boolean
+
+  - name: pages
+    label: Paginas adicionais
+    type: file
+    path: public/content/paginas.json
+    format: json
+    list: true
+    operations:
+      create: false
+      rename: false
+      delete: false
+    fields:
+      - name: slug
+        label: Endereco curto
+        type: string
+        required: true
+        pattern:
+          regex: "^[a-z0-9-]+$"
+          message: "Use apenas letras minusculas, numeros e hifens"
+      - name: nav_label
+        label: Nome no menu
+        type: string
+        required: true
+      - name: eyebrow
+        label: Rotulo superior
+        type: string
+      - name: title
+        label: Titulo
+        type: string
+        required: true
+      - name: summary
+        label: Resumo
+        type: text
+      - name: body
+        label: Conteudo
+        type: rich-text
+        options:
+          format: html
+          media: uploads
+      - name: published
+        label: Publicada
+        type: boolean
