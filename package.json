@@ -12,6 +12,7 @@
     "cloudflare:env-test": "node tools/cloudflare-env-contract.mjs",
     "prepublish:check": "node tools/prepublish.mjs --strict",
     "smoke": "node tools/smoke-build.mjs",
+    "smoke:remote": "node tools/smoke-remote.mjs",
     "preview": "npm run images:prepare && vite preview --host 127.0.0.1 --port 4286 --strictPort"
   },
   "devDependencies": {

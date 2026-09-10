@@ -60,7 +60,9 @@ jobs:
           echo "Trava editorial: BLOQUEIO CONFIRMADO"
 
       - name: Validar JavaScript
-        run: node --check app.js
+        run: |
+          node --check app.js
+          node --check tools/smoke-remote.mjs
 
       - name: Validar sintaxe do empacotador PowerShell
         shell: pwsh
@@ -105,7 +107,7 @@ jobs:
           echo "- npm run cloudflare:test: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run cloudflare:env-test: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- trava editorial pendente: bloqueio confirmado" >> "$GITHUB_STEP_SUMMARY"
-          echo "- node --check app.js: OK" >> "$GITHUB_STEP_SUMMARY"
+          echo "- sintaxe app.js e smoke-remote.mjs: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- PowerShell parser do empacotador: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run build (advisory/preview): OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run smoke: OK, inclusive assinatura/tamanho de imagens" >> "$GITHUB_STEP_SUMMARY"
