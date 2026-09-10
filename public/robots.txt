@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /
+
+# PA Safra: indexacao bloqueada enquanto a publicacao definitiva estiver pendente.
