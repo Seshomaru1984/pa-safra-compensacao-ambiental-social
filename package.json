@@ -8,6 +8,7 @@
     "check": "node tools/check.mjs",
     "cms:test": "node tools/cms-contract.mjs",
     "cloudflare:test": "node tools/cloudflare-readiness.mjs",
+    "cloudflare:env-test": "node tools/cloudflare-env-contract.mjs",
     "prepublish:check": "node tools/prepublish.mjs --strict",
     "smoke": "node tools/smoke-build.mjs",
     "preview": "vite preview --host 127.0.0.1 --port 4286 --strictPort"
