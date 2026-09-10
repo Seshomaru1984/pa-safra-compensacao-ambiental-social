@@ -2,6 +2,24 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const root = process.cwd();
+const requiredImages = [
+  'public/assets/img/rio-nova-xavantina.jpg',
+  'public/assets/img/registro-historico.jpg',
+  'public/assets/img/atrativos-nova-xavantina.jpg',
+  'public/assets/img/solicitante-rio-cristalino.webp',
+  'public/assets/img/solicitante-cerrado.webp',
+];
+
+const sourceParts = [
+  'assets-source/requester/rio/part01.b64',
+  'assets-source/requester/rio/part02.b64',
+  'assets-source/requester/rio/part03.b64',
+  'assets-source/requester/rio/part04.b64',
+  'assets-source/requester/cerrado/part01.b64',
+  'assets-source/requester/cerrado/part02.b64',
+  'assets-source/requester/cerrado/part03.b64',
+];
+
 const required = [
   'index.html',
   'styles.css',
@@ -10,6 +28,7 @@ const required = [
   'public/_headers',
   'tools/prepublish.mjs',
   'tools/smoke-build.mjs',
+  'tools/prepare-requester-images.mjs',
   'public/content/publicacao.json',
   'public/content/site.json',
   'public/content/noticias.json',
@@ -18,11 +37,8 @@ const required = [
   'public/content/destaques.json',
   'public/content/galeria.json',
   'public/assets/icons/pa-safra.svg',
-  'public/assets/img/rio-nova-xavantina.jpg',
-  'public/assets/img/registro-historico.jpg',
-  'public/assets/img/atrativos-nova-xavantina.jpg',
-  'public/assets/img/solicitante-rio-cristalino.jpg',
-  'public/assets/img/solicitante-cerrado.jpg',
+  ...requiredImages,
+  ...sourceParts,
 ];
 
 const contentJson = [
@@ -40,6 +56,34 @@ for (const rel of required) {
   if (!fs.existsSync(path.join(root, rel))) errors.push(`Arquivo ausente: ${rel}`);
 }
 
+function validateImage(rel) {
+  const full = path.join(root, rel);
+  if (!fs.existsSync(full)) return;
+  const data = fs.readFileSync(full);
+  if (data.length < 32) {
+    errors.push(`Imagem muito pequena ou corrompida: ${rel}`);
+    return;
+  }
+
+  if (/\.webp$/i.test(rel)) {
+    if (data.toString('ascii', 0, 4) !== 'RIFF' || data.toString('ascii', 8, 12) !== 'WEBP') {
+      errors.push(`Assinatura WebP invalida: ${rel}`);
+      return;
+    }
+    const declaredLength = data.readUInt32LE(4) + 8;
+    if (declaredLength !== data.length) errors.push(`WebP truncado/inconsistente: ${rel}`);
+  } else if (/\.jpe?g$/i.test(rel)) {
+    if (!(data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff)) {
+      errors.push(`Assinatura JPEG invalida: ${rel}`);
+    }
+    if (!(data[data.length - 2] === 0xff && data[data.length - 1] === 0xd9)) {
+      errors.push(`JPEG truncado/inconsistente: ${rel}`);
+    }
+  }
+}
+
+requiredImages.forEach(validateImage);
+
 for (const rel of contentJson) {
   const full = path.join(root, rel);
   if (!fs.existsSync(full)) continue;
@@ -54,15 +98,37 @@ const publicationPath = path.join(root, 'public/content/publicacao.json');
 if (fs.existsSync(publicationPath)) {
   try {
     const publication = JSON.parse(fs.readFileSync(publicationPath, 'utf8'));
-    if (publication.production_branch !== 'main') {
-      errors.push('publicacao.json deve manter production_branch como main.');
-    }
+    if (publication.production_branch !== 'main') errors.push('publicacao.json deve manter production_branch como main.');
     if (!publication.checks || typeof publication.checks !== 'object') {
       errors.push('publicacao.json deve conter o objeto checks.');
     } else {
       for (const [key, value] of Object.entries(publication.checks)) {
         if (typeof value !== 'boolean') errors.push(`Validacao de publicacao deve ser booleana: ${key}`);
       }
+    }
+  } catch {
+    // Erro de JSON ja registrado acima.
+  }
+}
+
+const sitePath = path.join(root, 'public/content/site.json');
+if (fs.existsSync(sitePath)) {
+  try {
+    const site = JSON.parse(fs.readFileSync(sitePath, 'utf8'));
+    if (site?.hero?.image !== '/assets/img/solicitante-rio-cristalino.webp') {
+      errors.push('Imagem principal deve apontar para o WebP reconstruido e validado.');
+    }
+  } catch {
+    // Erro de JSON ja registrado acima.
+  }
+}
+
+const galleryPath = path.join(root, 'public/content/galeria.json');
+if (fs.existsSync(galleryPath)) {
+  try {
+    const gallery = JSON.parse(fs.readFileSync(galleryPath, 'utf8'));
+    for (const image of ['/assets/img/solicitante-rio-cristalino.webp', '/assets/img/solicitante-cerrado.webp']) {
+      if (!gallery.some((item) => item?.image === image)) errors.push(`Galeria nao referencia a imagem validada: ${image}`);
     }
   } catch {
     // Erro de JSON ja registrado acima.
@@ -105,13 +171,7 @@ if (fs.existsSync(appPath)) {
 const headersPath = path.join(root, 'public/_headers');
 if (fs.existsSync(headersPath)) {
   const headers = fs.readFileSync(headersPath, 'utf8');
-  for (const token of [
-    'X-Content-Type-Options: nosniff',
-    'Referrer-Policy: strict-origin-when-cross-origin',
-    'Permissions-Policy:',
-    '/content/*',
-    '/assets/*',
-  ]) {
+  for (const token of ['X-Content-Type-Options: nosniff', 'Referrer-Policy: strict-origin-when-cross-origin', 'Permissions-Policy:', '/content/*', '/assets/*']) {
     if (!headers.includes(token)) errors.push(`Regra obrigatoria ausente em public/_headers: ${token}`);
   }
 }

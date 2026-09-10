@@ -5,6 +5,14 @@ const root = process.cwd();
 const dist = path.join(root, 'dist');
 const errors = [];
 
+const requiredImages = [
+  'assets/img/rio-nova-xavantina.jpg',
+  'assets/img/registro-historico.jpg',
+  'assets/img/atrativos-nova-xavantina.jpg',
+  'assets/img/solicitante-rio-cristalino.webp',
+  'assets/img/solicitante-cerrado.webp',
+];
+
 const required = [
   'index.html',
   '_headers',
@@ -17,11 +25,7 @@ const required = [
   'content/destaques.json',
   'content/galeria.json',
   'assets/icons/pa-safra.svg',
-  'assets/img/rio-nova-xavantina.jpg',
-  'assets/img/registro-historico.jpg',
-  'assets/img/atrativos-nova-xavantina.jpg',
-  'assets/img/solicitante-rio-cristalino.jpg',
-  'assets/img/solicitante-cerrado.jpg',
+  ...requiredImages,
 ];
 
 if (!fs.existsSync(dist)) {
@@ -33,11 +37,33 @@ if (!fs.existsSync(dist)) {
       errors.push(`Saida obrigatoria ausente no build: ${rel}`);
       continue;
     }
-    if (fs.statSync(full).isFile() && fs.statSync(full).size === 0) {
-      errors.push(`Arquivo vazio no build: ${rel}`);
-    }
+    if (fs.statSync(full).isFile() && fs.statSync(full).size === 0) errors.push(`Arquivo vazio no build: ${rel}`);
   }
 }
+
+function validateImage(rel) {
+  const full = path.join(dist, rel);
+  if (!fs.existsSync(full)) return;
+  const data = fs.readFileSync(full);
+  if (data.length < 32) {
+    errors.push(`Imagem muito pequena ou corrompida no build: ${rel}`);
+    return;
+  }
+
+  if (/\.webp$/i.test(rel)) {
+    if (data.toString('ascii', 0, 4) !== 'RIFF' || data.toString('ascii', 8, 12) !== 'WEBP') {
+      errors.push(`Assinatura WebP invalida no build: ${rel}`);
+      return;
+    }
+    const declaredLength = data.readUInt32LE(4) + 8;
+    if (declaredLength !== data.length) errors.push(`WebP truncado/inconsistente no build: ${rel}`);
+  } else if (/\.jpe?g$/i.test(rel)) {
+    if (!(data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff)) errors.push(`Assinatura JPEG invalida no build: ${rel}`);
+    if (!(data[data.length - 2] === 0xff && data[data.length - 1] === 0xd9)) errors.push(`JPEG truncado/inconsistente no build: ${rel}`);
+  }
+}
+
+requiredImages.forEach(validateImage);
 
 const jsonFiles = [
   'content/publicacao.json',
@@ -65,19 +91,11 @@ const indexPath = path.join(dist, 'index.html');
 if (fs.existsSync(indexPath)) {
   const html = fs.readFileSync(indexPath, 'utf8');
   if (html.includes('\uFFFD')) errors.push('index.html contem caractere de substituicao UTF-8.');
-  if (!html.includes('Projeto de Compensação Ambiental e Social - PA Safra')) {
-    errors.push('Identidade do PA Safra ausente no index.html gerado.');
-  }
-  if (!/(?:src|href)="[^"]*\/assets\//.test(html)) {
-    errors.push('index.html gerado nao referencia assets compilados pelo Vite.');
-  }
+  if (!html.includes('Projeto de Compensação Ambiental e Social - PA Safra')) errors.push('Identidade do PA Safra ausente no index.html gerado.');
+  if (!/(?:src|href)="[^"]*\/assets\//.test(html)) errors.push('index.html gerado nao referencia assets compilados pelo Vite.');
 }
 
-const forbiddenTokens = [
-  'contato@exemplo.com',
-  "url('https://unsplash.com')",
-  'url("https://unsplash.com")',
-];
+const forbiddenTokens = ['contato@exemplo.com', "url('https://unsplash.com')", 'url("https://unsplash.com")'];
 
 function scanTextTree(dir) {
   if (!fs.existsSync(dir)) return;
@@ -90,9 +108,7 @@ function scanTextTree(dir) {
     if (!/\.(?:html|css|js|json|txt|svg)$/i.test(entry.name) && entry.name !== '_headers') continue;
     const text = fs.readFileSync(full, 'utf8');
     for (const token of forbiddenTokens) {
-      if (text.includes(token)) {
-        errors.push(`Placeholder proibido encontrado em ${path.relative(dist, full)}: ${token}`);
-      }
+      if (text.includes(token)) errors.push(`Placeholder proibido encontrado em ${path.relative(dist, full)}: ${token}`);
     }
   }
 }
@@ -126,12 +142,8 @@ const publicationPath = path.join(dist, 'content/publicacao.json');
 if (fs.existsSync(publicationPath)) {
   try {
     publication = JSON.parse(fs.readFileSync(publicationPath, 'utf8'));
-    if (publication.production_branch !== 'main') {
-      errors.push('content/publicacao.json no build deve manter production_branch como main.');
-    }
-    if (!publication.checks || typeof publication.checks !== 'object') {
-      errors.push('content/publicacao.json no build deve conter o objeto checks.');
-    }
+    if (publication.production_branch !== 'main') errors.push('content/publicacao.json no build deve manter production_branch como main.');
+    if (!publication.checks || typeof publication.checks !== 'object') errors.push('content/publicacao.json no build deve conter o objeto checks.');
   } catch {
     // JSON ja e validado acima.
   }
@@ -142,12 +154,8 @@ if (fs.existsSync(robotsPath) && publication) {
   const robots = fs.readFileSync(robotsPath, 'utf8');
   const blocked = /User-agent:\s*\*[^]*Disallow:\s*\/\s*$/im.test(robots);
   const approved = publication.status === 'aprovado' && Object.values(publication.checks || {}).every(Boolean);
-  if (!approved && !blocked) {
-    errors.push('robots.txt deve bloquear indexacao enquanto a publicacao estiver pendente.');
-  }
-  if (approved && blocked) {
-    errors.push('robots.txt nao pode continuar bloqueando indexacao apos aprovacao integral.');
-  }
+  if (!approved && !blocked) errors.push('robots.txt deve bloquear indexacao enquanto a publicacao estiver pendente.');
+  if (approved && blocked) errors.push('robots.txt nao pode continuar bloqueando indexacao apos aprovacao integral.');
 }
 
 const sitePath = path.join(dist, 'content/site.json');
@@ -157,9 +165,8 @@ if (fs.existsSync(sitePath)) {
     const heroImage = site?.hero?.image;
     if (typeof heroImage === 'string' && heroImage.trim()) {
       const normalized = heroImage.replace(/^\/+/, '');
-      if (!fs.existsSync(path.join(dist, normalized))) {
-        errors.push(`Imagem principal configurada nao existe no build: ${heroImage}`);
-      }
+      if (!fs.existsSync(path.join(dist, normalized))) errors.push(`Imagem principal configurada nao existe no build: ${heroImage}`);
+      if (heroImage === '/assets/img/solicitante-rio-cristalino.webp') validateImage(normalized);
     }
   } catch {
     // JSON principal ja e validado acima.

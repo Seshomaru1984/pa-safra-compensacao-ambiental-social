@@ -7,3 +7,7 @@ npm-debug.log*
 
 # Artefatos locais de build e pacotes para teste
 _PACOTES-LOCAL/
+
+# Imagens do solicitante reconstruidas a partir das fontes Base64 versionadas.
+public/assets/img/solicitante-rio-cristalino.webp
+public/assets/img/solicitante-cerrado.webp
