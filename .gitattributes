@@ -1,0 +1,21 @@
+# PA Safra - normalizacao de finais de linha
+* text=auto
+
+*.html text eol=lf
+*.css  text eol=lf
+*.js   text eol=lf
+*.mjs  text eol=lf
+*.json text eol=lf
+*.md   text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.webp binary
+*.gif binary
+*.ico binary
