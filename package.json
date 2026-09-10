@@ -4,8 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 4286 --strictPort",
-    "build": "vite build",
+    "build": "node tools/prepublish.mjs && vite build",
     "check": "node tools/check.mjs",
+    "prepublish:check": "node tools/prepublish.mjs --strict",
     "smoke": "node tools/smoke-build.mjs",
     "preview": "vite preview --host 127.0.0.1 --port 4286 --strictPort"
   },
