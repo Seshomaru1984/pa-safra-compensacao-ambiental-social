@@ -1,0 +1,49 @@
+name: remote-preview
+
+on:
+  workflow_dispatch:
+    inputs:
+      preview_url:
+        description: URL HTTPS do preview Cloudflare Pages (*.pages.dev)
+        required: true
+        type: string
+      allowed_host:
+        description: Host exato opcional para dominio customizado futuro
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  smoke-remote:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Validar sintaxe do smoke remoto
+        run: node --check tools/smoke-remote.mjs
+
+      - name: Validar preview publicado
+        env:
+          PA_SAFRA_PREVIEW_URL: ${{ inputs.preview_url }}
+          PA_SAFRA_ALLOWED_HOST: ${{ inputs.allowed_host }}
+        run: npm run smoke:remote
+
+      - name: Registrar resultado
+        if: success()
+        run: |
+          echo "## PA Safra - preview remoto validado" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- URL: \`${{ inputs.preview_url }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- identidade/UTF-8: OK" >> "$GITHUB_STEP_SUMMARY"
+          echo "- cabecalhos HTTP: OK" >> "$GITHUB_STEP_SUMMARY"
+          echo "- estado editorial pendente: OK" >> "$GITHUB_STEP_SUMMARY"
+          echo "- robots bloqueando indexacao: OK" >> "$GITHUB_STEP_SUMMARY"
+          echo "- WebPs do solicitante: OK" >> "$GITHUB_STEP_SUMMARY"
