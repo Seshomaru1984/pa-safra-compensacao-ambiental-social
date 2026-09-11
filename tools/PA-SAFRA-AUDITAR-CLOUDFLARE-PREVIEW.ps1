@@ -100,8 +100,19 @@ if (-not $project) {
 Write-Host "Pages: OK - $ProjetoPages" -ForegroundColor Green
 Write-Host "Dominio Pages: $($project.'Project Domains')"
 
+$databases = @(Invoke-WranglerJson -Arguments @('d1', 'list', '--json') -Label 'd1 list')
+Write-Host ''
+Write-Host "D1 databases encontrados: $($databases.Count)" -ForegroundColor Cyan
+foreach ($database in $databases) {
+    $name = if ($database.name) { $database.name } else { '(sem nome)' }
+    $uuid = if ($database.uuid) { $database.uuid } else { '(sem id)' }
+    Write-Host "  - $name | $uuid"
+}
+
+# Mantido apenas como verificação de legado da A17. A A18 não usa Workers KV.
 $namespaces = @(Invoke-WranglerJson -Arguments @('kv', 'namespace', 'list') -Label 'kv namespace list')
-Write-Host "KV namespaces encontrados: $($namespaces.Count)"
+Write-Host ''
+Write-Host "KV namespaces encontrados (legado A17; esperado 0): $($namespaces.Count)" -ForegroundColor Cyan
 foreach ($namespace in $namespaces) {
     $title = if ($namespace.title) { $namespace.title } else { '(sem titulo)' }
     Write-Host "  - $title"
