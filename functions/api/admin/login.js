@@ -144,7 +144,3 @@ export async function onRequestPost({ request, env }) {
     'set-cookie': cookie,
   });
 }
-
-export function onRequest() {
-  return json({ ok: false, error: 'Método não permitido.' }, 405);
-}
