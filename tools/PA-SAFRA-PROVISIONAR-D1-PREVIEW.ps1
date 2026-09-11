@@ -87,7 +87,14 @@ Write-Host "Repositorio: $RepositorioEsperado" -ForegroundColor Green
 Write-Host "Projeto Pages: $ProjetoPages" -ForegroundColor Green
 Write-Host "Banco D1 alvo: $BancoEsperado" -ForegroundColor Yellow
 Write-Host 'Este script NAO altera main, dominio, DNS, secrets ou bindings do Pages.' -ForegroundColor Yellow
+Write-Host 'A criacao do D1 nao pode gerar/alterar arquivo Wrangler do projeto.' -ForegroundColor Yellow
 Write-Host ''
+
+$configNames = @('wrangler.jsonc', 'wrangler.json', 'wrangler.toml')
+$configBefore = @{}
+foreach ($configName in $configNames) {
+    $configBefore[$configName] = Test-Path -LiteralPath (Join-Path $PWD $configName)
+}
 
 $databases = @(Invoke-WranglerJson -Arguments @('d1', 'list', '--json') -Label 'd1 list')
 $matches = @($databases | Where-Object { $_.name -eq $BancoEsperado })
@@ -98,7 +105,21 @@ if ($matches.Count -gt 1) {
 
 if ($matches.Count -eq 0) {
     Write-Host "Criando D1 dedicado: $BancoEsperado" -ForegroundColor Cyan
-    Invoke-Wrangler -Arguments @('d1', 'create', $BancoEsperado) -Label 'd1 create'
+    Invoke-Wrangler -Arguments @(
+        'd1', 'create', $BancoEsperado,
+        '--update-config=false',
+        '--experimental-auto-create=false',
+        '--experimental-provision=false',
+        '--install-skills=false'
+    ) -Label 'd1 create'
+
+    foreach ($configName in $configNames) {
+        $existsAfter = Test-Path -LiteralPath (Join-Path $PWD $configName)
+        if (-not $configBefore[$configName] -and $existsAfter) {
+            throw "Wrangler criou inesperadamente $configName. Nao prossiga com bindings antes de revisar esse arquivo."
+        }
+    }
+
     $databases = @(Invoke-WranglerJson -Arguments @('d1', 'list', '--json') -Label 'd1 list apos create')
     $matches = @($databases | Where-Object { $_.name -eq $BancoEsperado })
     if ($matches.Count -ne 1) {
