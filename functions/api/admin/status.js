@@ -77,16 +77,23 @@ function credentialsConfigured(env) {
   );
 }
 
+function rateLimitConfigured(env) {
+  const kv = env.PA_SAFRA_AUTH_KV;
+  return Boolean(kv && typeof kv.get === 'function' && typeof kv.put === 'function' && typeof kv.delete === 'function');
+}
+
 export async function onRequestGet({ request, env }) {
   const enabled = String(env.PA_SAFRA_ADMIN_ENABLED || '').toLowerCase() === 'true';
   const credentialsReady = credentialsConfigured(env);
+  const rateLimitReady = rateLimitConfigured(env);
   const tokenConfigured = Boolean(String(env.GITHUB_CONTENT_TOKEN || '').trim());
   const session = credentialsReady ? await verifySession(request, env) : null;
   const authenticated = Boolean(session);
 
   let message = 'Administração ainda não habilitada.';
   if (enabled && !credentialsReady) message = 'Login administrativo ainda não configurado.';
-  else if (enabled && credentialsReady && !authenticated) message = 'Informe usuário e senha para acessar.';
+  else if (enabled && credentialsReady && !rateLimitReady) message = 'Proteção contra tentativas repetidas ainda não configurada.';
+  else if (enabled && credentialsReady && rateLimitReady && !authenticated) message = 'Informe usuário e senha para acessar.';
   else if (enabled && authenticated && !tokenConfigured) message = 'Acesso autorizado; publicação ainda não configurada.';
   else if (enabled && authenticated && tokenConfigured) message = 'Painel pronto para publicar.';
 
@@ -94,12 +101,17 @@ export async function onRequestGet({ request, env }) {
     mode: 'native-admin-password',
     enabled,
     credentials_configured: credentialsReady,
+    rate_limit_configured: rateLimitReady,
     authenticated,
     token_configured: tokenConfigured,
-    write_enabled: enabled && credentialsReady && authenticated && tokenConfigured,
+    write_enabled: enabled && credentialsReady && rateLimitReady && authenticated && tokenConfigured,
     user: authenticated ? session.user : null,
     session_expires_at: authenticated ? session.exp : null,
     branch: String(env.PA_SAFRA_CONTENT_BRANCH || 'main'),
     message,
   });
+}
+
+export function onRequest() {
+  return json({ ok: false, error: 'Método não permitido.' }, 405);
 }
