@@ -6,11 +6,14 @@ Este checklist deve ser concluído antes de promover o site para `main` e antes 
 
 - `npm ci` concluído sem erro;
 - `npm run check` concluído;
+- `npm run admin:test` concluído;
 - `node --check app.js` concluído;
+- validação de sintaxe do painel e das Pages Functions concluída;
 - parser PowerShell do empacotador concluído;
 - `npm run build` concluído em modo de desenvolvimento/preview;
 - `npm run smoke` concluído;
 - `dist/index.html` presente;
+- `dist/admin/index.html` presente;
 - `dist/_headers` presente;
 - `dist/content/publicacao.json` presente;
 - arquivos JSON de conteúdo válidos;
@@ -28,7 +31,7 @@ Antes da publicação definitiva, todos os campos abaixo devem estar `true`:
 - `dados_contato_confirmados`;
 - `afirmacoes_historicas_confirmadas`;
 - `revisao_visual_confirmada`;
-- `pages_cms_testado`.
+- `admin_nativo_validado`.
 
 Depois disso, alterar `status` para `aprovado` e executar deliberadamente:
 
@@ -38,7 +41,7 @@ Esse comando deve concluir com `PREPUBLICACAO: APROVADO` antes da promoção fin
 
 ## Cloudflare Pages
 
-Configuração planejada:
+Configuração:
 
 - repositório: `Seshomaru1984/pa-safra-compensacao-ambiental-social`;
 - branch de produção: `main`;
@@ -51,20 +54,23 @@ No Cloudflare Pages, `npm run build` detecta `CF_PAGES=1` e `CF_PAGES_BRANCH=mai
 
 O arquivo `public/_headers` é copiado pelo Vite para `dist/_headers` e contém as regras de cabeçalhos e cache previstas para o Cloudflare Pages.
 
-## Pages CMS
+## Painel administrativo nativo
 
-Antes de uso editorial real:
+Antes de habilitar escrita administrativa real:
 
-- conectar a conta GitHub no Pages CMS;
-- confirmar que o repositório PA Safra aparece no painel;
-- abrir a branch de trabalho correta;
-- confirmar leitura da configuração `.pages.yml`;
-- testar edição de um campo não crítico;
-- confirmar que a edição gera commit apenas na branch escolhida;
-- executar **Validar alterações**;
-- confirmar que o workflow `validate` conclui com sucesso;
-- revisar o preview antes de qualquer promoção;
-- só então marcar `pages_cms_testado` como verdadeiro.
+- validar a interface `/admin` em desktop e celular;
+- configurar Cloudflare Access para proteger as rotas administrativas;
+- definir a lista de e-mails administrativos autorizados;
+- criar credencial GitHub de escopo mínimo e restrita ao repositório PA Safra;
+- armazenar a credencial exclusivamente como secret no Cloudflare;
+- manter `PA_SAFRA_ADMIN_ENABLED` desativado até todas as proteções estarem configuradas;
+- validar edição de página inicial e palestras em ambiente controlado;
+- confirmar que apenas arquivos editoriais permitidos podem ser alterados;
+- confirmar que as alterações ficam versionadas no GitHub;
+- revisar o preview após a alteração;
+- só então marcar `admin_nativo_validado` como verdadeiro.
+
+O painel não substitui os gates jurídicos/editoriais e não pode alterá-los automaticamente.
 
 ## Pendências editoriais obrigatórias
 
@@ -73,7 +79,7 @@ Antes da publicação definitiva, confirmar:
 - créditos e licenças das duas imagens fornecidas pelo solicitante;
 - dados de contato institucionais que serão publicados;
 - redação jurídica definitiva referente ao TAC;
-- afirmações históricas e biográficas que ainda dependem de documentação específica;
+- afirmações históricas e biográficas que ainda dependam de documentação específica;
 - qualquer identificação nominal que ainda não tenha sido formalmente aprovada;
 - revisão visual em desktop e celular.
 
