@@ -5,6 +5,9 @@
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
   X-Frame-Options: DENY
 
+/admin/*
+  Cache-Control: private, no-store, max-age=0
+
 /content/*
   Cache-Control: public, max-age=0, must-revalidate
 
