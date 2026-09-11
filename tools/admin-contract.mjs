@@ -16,6 +16,8 @@ for (const rel of [
   'functions/api/admin/status.js',
   'functions/api/admin/content.js',
   'tools/admin-credentials.mjs',
+  'tools/admin-auth-test.mjs',
+  'tools/PA-SAFRA-GERAR-CREDENCIAIS-ADMIN.ps1',
   'docs/ADR-0002-ADMIN-NATIVO.md',
 ]) {
   if (!exists(rel)) fail(`Admin nativo: arquivo ausente: ${rel}`);
@@ -92,6 +94,11 @@ for (const token of ['pbkdf2Sync', 'randomBytes', 'PA_SAFRA_ADMIN_PASSWORD_HASH'
 }
 if (credentialsTool.includes('console.log(password)')) fail('Admin nativo: senha não pode ser impressa pelo utilitário.');
 
+const powershellTool = read('tools/PA-SAFRA-GERAR-CREDENCIAIS-ADMIN.ps1');
+for (const token of ['Read-Host', '-AsSecureString', 'Rfc2898DeriveBytes', 'HashAlgorithmName]::SHA256', 'PA_SAFRA_ADMIN_PASSWORD_HASH', 'PA_SAFRA_SESSION_SECRET']) {
+  if (!powershellTool.includes(token)) fail(`Admin nativo: gerador PowerShell incompleto: ${token}`);
+}
+
 const publicationPath = 'public/content/publicacao.json';
 if (exists(publicationPath)) {
   try {
@@ -115,6 +122,7 @@ console.log('- /admin com login próprio presente');
 console.log('- sessão HttpOnly assinada por HMAC prevista');
 console.log('- senha validada por hash PBKDF2, sem senha em código/GitHub');
 console.log('- login bloqueia após 5 falhas/15 min via Workers KV');
+console.log('- geradores de credenciais Node e PowerShell presentes');
 console.log('- escrita depende de sessão válida + secret GitHub');
 console.log('- escopo inicial limitado a site e vídeos');
 console.log('- gate admin_nativo_validado permanece pendente');
