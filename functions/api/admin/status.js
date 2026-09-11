@@ -39,7 +39,3 @@ export async function onRequestGet({ request, env }) {
       : 'Escrita administrativa desativada até a configuração segura do Cloudflare Access.',
   });
 }
-
-export function onRequest() {
-  return json({ error: 'Método não permitido.' }, 405);
-}
