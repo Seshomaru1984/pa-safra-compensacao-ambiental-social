@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Administração | PA Safra</title>
+  <link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body>
+  <main class="admin-shell">
+    <header class="admin-header">
+      <div>
+        <p class="eyebrow">PA Safra</p>
+        <h1>Administração de conteúdo</h1>
+        <p class="subtitle">Atualize informações do site sem editar código.</p>
+      </div>
+      <a class="site-link" href="/" target="_blank" rel="noopener">Abrir site</a>
+    </header>
+
+    <section class="status-card" aria-live="polite">
+      <span id="admin-status-dot" class="status-dot"></span>
+      <div>
+        <strong id="admin-status-title">Verificando acesso…</strong>
+        <p id="admin-status-message">Aguarde.</p>
+      </div>
+    </section>
+
+    <nav class="admin-tabs" aria-label="Áreas administrativas">
+      <button class="tab is-active" type="button" data-tab="inicio">Página inicial</button>
+      <button class="tab" type="button" data-tab="videos">Palestras e vídeos</button>
+    </nav>
+
+    <section id="panel-inicio" class="panel is-active" data-panel="inicio">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Conteúdo principal</p>
+          <h2>Página inicial</h2>
+        </div>
+      </div>
+
+      <form id="site-form" class="editor-grid">
+        <div class="form-card">
+          <label>
+            Complemento no cabeçalho
+            <input id="brand-tagline" name="brand_tagline" maxlength="160" autocomplete="off">
+          </label>
+          <label>
+            Título principal
+            <textarea id="hero-title" name="hero_title" rows="3" maxlength="220" required></textarea>
+          </label>
+          <label>
+            Texto de apoio
+            <textarea id="hero-lead" name="hero_lead" rows="5" maxlength="800"></textarea>
+          </label>
+          <div class="form-actions">
+            <button id="preview-site" class="button secondary" type="button">Pré-visualizar</button>
+            <button id="save-site" class="button primary" type="submit" disabled>Publicar alterações</button>
+          </div>
+        </div>
+
+        <aside class="preview-card" aria-label="Pré-visualização da página inicial">
+          <span class="preview-label">Pré-visualização</span>
+          <small id="preview-brand">Compensação Ambiental e Social</small>
+          <h3 id="preview-title">Projeto de Compensação Ambiental e Social - PA Safra</h3>
+          <p id="preview-lead"></p>
+        </aside>
+      </form>
+    </section>
+
+    <section id="panel-videos" class="panel" data-panel="videos" hidden>
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Atualizações periódicas</p>
+          <h2>Palestras e vídeos</h2>
+          <p>Adicione links do YouTube; o site cuida da apresentação automaticamente.</p>
+        </div>
+        <button id="add-video" class="button secondary" type="button">+ Adicionar palestra</button>
+      </div>
+
+      <div id="videos-list" class="video-editor-list"></div>
+      <div class="form-actions align-end">
+        <button id="save-videos" class="button primary" type="button" disabled>Publicar alterações</button>
+      </div>
+    </section>
+
+    <div id="admin-message" class="toast" role="status" aria-live="polite" hidden></div>
+  </main>
+
+  <template id="video-editor-template">
+    <article class="video-editor-card">
+      <div class="video-card-head">
+        <strong>Palestra</strong>
+        <button class="link-button remove-video" type="button">Remover da lista</button>
+      </div>
+      <label>
+        Título
+        <input class="video-title" maxlength="220" required>
+      </label>
+      <label>
+        Link do YouTube
+        <input class="video-url" type="url" maxlength="500" placeholder="https://www.youtube.com/watch?v=..." required>
+      </label>
+      <label>
+        Descrição curta
+        <textarea class="video-description" rows="3" maxlength="1800"></textarea>
+      </label>
+      <label class="checkbox-row">
+        <input class="video-published" type="checkbox" checked>
+        Mostrar no site
+      </label>
+    </article>
+  </template>
+
+  <script type="module" src="/admin/admin.js"></script>
+</body>
+</html>
