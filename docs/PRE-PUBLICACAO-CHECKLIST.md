@@ -8,7 +8,7 @@ Este checklist deve ser concluído antes de promover o site para `main` e antes 
 - `npm run check` concluído;
 - `npm run admin:test` concluído;
 - `node --check app.js` concluído;
-- validação de sintaxe do painel e das Pages Functions concluída;
+- validação de sintaxe do painel, login e Pages Functions concluída;
 - parser PowerShell do empacotador concluído;
 - `npm run build` concluído em modo de desenvolvimento/preview;
 - `npm run smoke` concluído;
@@ -59,11 +59,14 @@ O arquivo `public/_headers` é copiado pelo Vite para `dist/_headers` e contém 
 Antes de habilitar escrita administrativa real:
 
 - validar a interface `/admin` em desktop e celular;
-- configurar Cloudflare Access para proteger as rotas administrativas;
-- definir a lista de e-mails administrativos autorizados;
+- definir um usuário administrativo próprio do PA Safra;
+- gerar localmente `PA_SAFRA_ADMIN_PASSWORD_HASH` e `PA_SAFRA_SESSION_SECRET` com `node tools/admin-credentials.mjs`;
+- armazenar o hash e o segredo somente como secrets/variáveis do Cloudflare, nunca no GitHub;
 - criar credencial GitHub de escopo mínimo e restrita ao repositório PA Safra;
 - armazenar a credencial exclusivamente como secret no Cloudflare;
 - manter `PA_SAFRA_ADMIN_ENABLED` desativado até todas as proteções estarem configuradas;
+- validar login correto e rejeição de senha incorreta;
+- validar expiração/encerramento de sessão;
 - validar edição de página inicial e palestras em ambiente controlado;
 - confirmar que apenas arquivos editoriais permitidos podem ser alterados;
 - confirmar que as alterações ficam versionadas no GitHub;
