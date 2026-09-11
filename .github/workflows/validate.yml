@@ -58,8 +58,11 @@ jobs:
         run: |
           node --check app.js
           node --check public/admin/admin.js
+          node --check functions/api/admin/login.js
+          node --check functions/api/admin/logout.js
           node --check functions/api/admin/status.js
           node --check functions/api/admin/content.js
+          node --check tools/admin-credentials.mjs
           node --check tools/smoke-remote.mjs
           node --check tools/admin-contract.mjs
 
@@ -103,6 +106,7 @@ jobs:
           echo "- imagens do solicitante: reconstruidas e integridade WebP confirmada" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run check: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run admin:test: OK" >> "$GITHUB_STEP_SUMMARY"
+          echo "- autenticacao nativa usuario/senha e sessao assinada: sintaxe OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run cloudflare:test: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run cloudflare:env-test: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- trava editorial pendente: bloqueio confirmado" >> "$GITHUB_STEP_SUMMARY"
@@ -112,4 +116,4 @@ jobs:
           echo "- npm run smoke: OK, inclusive assinatura/tamanho de imagens" >> "$GITHUB_STEP_SUMMARY"
           echo "- artefato dist: gerado por 14 dias" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Esta rotina valida a fundacao do painel administrativo nativo, a preparacao Cloudflare, as imagens e confirma que a producao continua bloqueada enquanto as pendencias editoriais existirem. Ela nao faz merge nem publica em producao." >> "$GITHUB_STEP_SUMMARY"
+          echo "Esta rotina valida o painel administrativo nativo com login proprio, a preparacao Cloudflare, as imagens e confirma que a producao continua bloqueada enquanto as pendencias editoriais existirem. Ela nao faz merge nem publica em producao." >> "$GITHUB_STEP_SUMMARY"
