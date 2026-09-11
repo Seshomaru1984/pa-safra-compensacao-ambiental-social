@@ -261,7 +261,3 @@ export async function onRequestPut({ request, env }) {
     user: auth.user,
   });
 }
-
-export function onRequest() {
-  return json({ ok: false, error: 'Método não permitido.' }, 405);
-}
