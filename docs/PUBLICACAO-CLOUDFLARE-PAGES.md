@@ -6,6 +6,7 @@
 - edição cotidiana: painel administrativo nativo em `/admin`;
 - API administrativa: Cloudflare Pages Functions;
 - autenticação administrativa: login próprio do PA Safra por usuário e senha;
+- proteção de tentativas de login: Workers KV por binding `PA_SAFRA_AUTH_KV`;
 - build: Vite;
 - hospedagem: Cloudflare Pages;
 - domínio: domínio próprio já disponível segundo confirmação do usuário, porém ainda não solicitado/configurado no projeto.
@@ -92,12 +93,15 @@ A interface carrega os JSONs públicos do próprio site. A escrita é feita excl
 
 A autenticação é nativa: usuário e senha do próprio PA Safra. O navegador recebe apenas um cookie de sessão assinado, `HttpOnly`, `Secure` e `SameSite=Strict`. A senha não é gravada em texto puro nem enviada ao GitHub.
 
+A V001-A17 acrescenta proteção de força bruta ao endpoint de login. O identificador do cliente é derivado do endereço fornecido pelo cabeçalho Cloudflare, transformado por SHA-256 antes de ser usado como chave. O sistema permite até 5 falhas dentro de uma janela de 15 minutos; ao atingir o limite, bloqueia novas tentativas por 15 minutos e responde HTTP 429 com `Retry-After`. O armazenamento de contadores usa Workers KV e falha de forma fechada: se o binding não estiver disponível, o login administrativo não é liberado.
+
 A API administrativa permanece bloqueada até que todos os requisitos abaixo sejam configurados no Cloudflare:
 
 - `PA_SAFRA_ADMIN_ENABLED=true`;
 - `PA_SAFRA_ADMIN_USER` com o nome de usuário administrativo;
 - `PA_SAFRA_ADMIN_PASSWORD_HASH` armazenado como secret;
 - `PA_SAFRA_SESSION_SECRET` armazenado como secret;
+- binding KV `PA_SAFRA_AUTH_KV` apontando para um namespace dedicado de autenticação;
 - `GITHUB_CONTENT_TOKEN` armazenado como secret, nunca exposto no navegador;
 - `PA_SAFRA_CONTENT_BRANCH` para definir a branch editorial alvo quando necessário.
 
@@ -131,7 +135,7 @@ O nome do domínio, registrador e dados de DNS serão solicitados somente quando
 
 1. o preview `*.pages.dev` estiver funcional e visualmente aprovado;
 2. o smoke remoto estiver PASS;
-3. o painel administrativo estiver autenticado e validado operacionalmente;
+3. o painel administrativo estiver autenticado, protegido contra tentativas repetidas e validado operacionalmente;
 4. os créditos/licenças pendentes estiverem resolvidos;
 5. os dados institucionais estiverem confirmados;
 6. as afirmações históricas e a redação jurídica estiverem confirmadas;
@@ -143,4 +147,4 @@ Não solicitar senha, token ou cookie do registrador/Cloudflare pelo chat. Prefe
 
 ## Estado desta etapa
 
-A V001-A16 substitui a autenticação por e-mail/Cloudflare Access pela autenticação nativa do próprio PA Safra. O login, a sessão assinada e os endpoints administrativos são implementados com escrita ainda desativada por padrão. A próxima etapa operacional será configurar as variáveis e secrets em ambiente de preview e executar um teste ponta a ponta sem liberar produção.
+A V001-A17 adiciona proteção persistente contra tentativas repetidas ao login nativo. O próximo passo operacional é criar o namespace Workers KV e vincular `PA_SAFRA_AUTH_KV`, depois configurar as credenciais e secrets somente no ambiente de preview e executar teste ponta a ponta sem liberar produção.
