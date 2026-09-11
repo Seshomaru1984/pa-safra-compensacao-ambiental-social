@@ -24,8 +24,14 @@ const required = [
   'index.html',
   'styles.css',
   'app.js',
-  '.pages.yml',
   'public/_headers',
+  'public/admin/index.html',
+  'public/admin/admin.css',
+  'public/admin/admin.js',
+  'functions/api/admin/status.js',
+  'functions/api/admin/content.js',
+  'docs/ADR-0002-ADMIN-NATIVO.md',
+  'tools/admin-contract.mjs',
   'tools/prepublish.mjs',
   'tools/smoke-build.mjs',
   'tools/prepare-requester-images.mjs',
@@ -105,6 +111,8 @@ if (fs.existsSync(publicationPath)) {
       for (const [key, value] of Object.entries(publication.checks)) {
         if (typeof value !== 'boolean') errors.push(`Validacao de publicacao deve ser booleana: ${key}`);
       }
+      if ('pages_cms_testado' in publication.checks) errors.push('Gate legado pages_cms_testado não deve permanecer.');
+      if (publication.checks.admin_nativo_validado !== false) errors.push('admin_nativo_validado deve permanecer pendente nesta fase.');
     }
   } catch {
     // Erro de JSON ja registrado acima.
@@ -164,7 +172,7 @@ const appPath = path.join(root, 'app.js');
 if (fs.existsSync(appPath)) {
   const app = fs.readFileSync(appPath, 'utf8');
   for (const token of ['/content/site.json', '/content/noticias.json', '/content/videos.json', '/content/paginas.json', '/content/destaques.json', '/content/galeria.json']) {
-    if (!app.includes(token)) errors.push(`Integracao CMS ausente em app.js: ${token}`);
+    if (!app.includes(token)) errors.push(`Integracao de conteudo ausente em app.js: ${token}`);
   }
 }
 
