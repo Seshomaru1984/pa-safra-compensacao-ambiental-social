@@ -17,9 +17,23 @@ function showMessage(message, type = 'ok') {
 }
 
 async function readJson(url) {
-  const response = await fetch(url, { cache: 'no-store' });
+  const response = await fetch(url, { cache: 'no-store', credentials: 'same-origin' });
   if (!response.ok) throw new Error(`Falha ao carregar dados (${response.status}).`);
   return response.json();
+}
+
+function showLogin(message = '') {
+  $('#login-panel').hidden = false;
+  $('#admin-app').hidden = true;
+  $('#logout-button').hidden = true;
+  $('#login-message').textContent = message;
+  $('#login-password').value = '';
+}
+
+function showAdmin() {
+  $('#login-panel').hidden = true;
+  $('#admin-app').hidden = false;
+  $('#logout-button').hidden = false;
 }
 
 function setWriteAvailability() {
@@ -85,14 +99,40 @@ function collectVideos() {
   }));
 }
 
+async function refreshStatus() {
+  state.status = await readJson('/api/admin/status').catch(() => ({
+    enabled: false,
+    authenticated: false,
+    write_enabled: false,
+    message: 'API administrativa ainda não disponível neste ambiente.',
+  }));
+  return state.status;
+}
+
+async function loadEditableContent() {
+  const [site, videos] = await Promise.all([
+    readJson('/content/site.json'),
+    readJson('/content/videos.json'),
+  ]);
+  state.site = site;
+  state.videos = videos;
+  applySiteToForm();
+  renderVideos();
+}
+
 async function publish(resource, data) {
   if (!state.status?.write_enabled) throw new Error('A publicação ainda não está habilitada neste ambiente.');
   const response = await fetch('/api/admin/content', {
     method: 'PUT',
+    credentials: 'same-origin',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ resource, data }),
   });
   const result = await response.json().catch(() => ({}));
+  if (response.status === 401) {
+    state.status = { ...state.status, authenticated: false, write_enabled: false };
+    showLogin('Sua sessão expirou. Entre novamente.');
+  }
   if (!response.ok || !result.ok) throw new Error(result.error || `Falha ao publicar (${response.status}).`);
   return result;
 }
@@ -143,6 +183,58 @@ async function saveVideos() {
   }
 }
 
+async function login(event) {
+  event.preventDefault();
+  const button = $('#login-button');
+  const username = $('#login-user').value.trim();
+  const password = $('#login-password').value;
+  $('#login-message').textContent = '';
+  button.disabled = true;
+  button.textContent = 'Entrando…';
+
+  try {
+    const response = await fetch('/api/admin/login', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result.ok) throw new Error(result.error || 'Não foi possível entrar.');
+
+    $('#login-password').value = '';
+    await refreshStatus();
+    if (!state.status?.authenticated) throw new Error('Sessão não confirmada pelo servidor.');
+    await loadEditableContent();
+    showAdmin();
+    setWriteAvailability();
+  } catch (error) {
+    showLogin(error.message);
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Entrar';
+  }
+}
+
+async function logout() {
+  const button = $('#logout-button');
+  button.disabled = true;
+  try {
+    await fetch('/api/admin/logout', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'content-type': 'application/json' },
+      body: '{}',
+    });
+  } finally {
+    state.status = null;
+    state.site = null;
+    state.videos = [];
+    showLogin('Sessão encerrada.');
+    button.disabled = false;
+  }
+}
+
 function bindTabs() {
   $$('.tab').forEach((tab) => {
     tab.addEventListener('click', () => {
@@ -159,6 +251,8 @@ function bindTabs() {
 
 async function boot() {
   bindTabs();
+  $('#login-form').addEventListener('submit', login);
+  $('#logout-button').addEventListener('click', logout);
   $('#site-form').addEventListener('submit', saveSite);
   $('#preview-site').addEventListener('click', refreshPreview);
   $('#brand-tagline').addEventListener('input', refreshPreview);
@@ -168,24 +262,16 @@ async function boot() {
   $('#save-videos').addEventListener('click', saveVideos);
 
   try {
-    const [status, site, videos] = await Promise.all([
-      readJson('/api/admin/status').catch(() => ({
-        write_enabled: false,
-        message: 'API administrativa ainda não disponível neste ambiente.',
-      })),
-      readJson('/content/site.json'),
-      readJson('/content/videos.json'),
-    ]);
-    state.status = status;
-    state.site = site;
-    state.videos = videos;
-    applySiteToForm();
-    renderVideos();
-    setWriteAvailability();
+    await refreshStatus();
+    if (state.status?.authenticated) {
+      await loadEditableContent();
+      showAdmin();
+      setWriteAvailability();
+      return;
+    }
+    showLogin(state.status?.message || 'Informe usuário e senha para acessar.');
   } catch (error) {
-    state.status = { write_enabled: false, message: error.message };
-    setWriteAvailability();
-    showMessage(error.message, 'error');
+    showLogin(error.message);
   }
 }
 

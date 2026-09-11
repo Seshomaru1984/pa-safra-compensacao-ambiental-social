@@ -3,6 +3,7 @@ const RESOURCES = {
   site: 'public/content/site.json',
   videos: 'public/content/videos.json',
 };
+const COOKIE_NAME = 'pa_safra_admin_session';
 const MAX_BODY_BYTES = 120_000;
 
 const json = (data, status = 200) => new Response(JSON.stringify(data), {
@@ -13,14 +14,68 @@ const json = (data, status = 200) => new Response(JSON.stringify(data), {
   },
 });
 
-function allowedEmails(env) {
-  return String(env.PA_SAFRA_ADMIN_EMAILS || '')
-    .split(',')
-    .map((value) => value.trim().toLowerCase())
-    .filter(Boolean);
+function bytesFromBase64Url(value) {
+  const normalized = String(value || '').replace(/-/g, '+').replace(/_/g, '/');
+  const padded = normalized + '='.repeat((4 - (normalized.length % 4 || 4)) % 4);
+  const binary = atob(padded);
+  return Uint8Array.from(binary, (char) => char.charCodeAt(0));
 }
 
-function authorize(request, env) {
+function base64UrlFromBytes(bytes) {
+  let binary = '';
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+function constantTimeEqual(left, right) {
+  const a = left instanceof Uint8Array ? left : new TextEncoder().encode(String(left));
+  const b = right instanceof Uint8Array ? right : new TextEncoder().encode(String(right));
+  const size = Math.max(a.length, b.length);
+  let diff = a.length ^ b.length;
+  for (let i = 0; i < size; i += 1) diff |= (a[i] || 0) ^ (b[i] || 0);
+  return diff === 0;
+}
+
+function cookieValue(request, name) {
+  const header = request.headers.get('Cookie') || '';
+  for (const part of header.split(';')) {
+    const [key, ...rest] = part.trim().split('=');
+    if (key === name) return rest.join('=');
+  }
+  return '';
+}
+
+async function verifySession(request, env) {
+  const secret = String(env.PA_SAFRA_SESSION_SECRET || '');
+  if (secret.length < 32) return null;
+  const token = cookieValue(request, COOKIE_NAME);
+  const [payloadEncoded, signatureEncoded, extra] = String(token || '').split('.');
+  if (!payloadEncoded || !signatureEncoded || extra) return null;
+
+  try {
+    const key = await crypto.subtle.importKey(
+      'raw',
+      new TextEncoder().encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign'],
+    );
+    const signature = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(payloadEncoded));
+    const expected = base64UrlFromBytes(new Uint8Array(signature));
+    if (!constantTimeEqual(expected, signatureEncoded)) return null;
+
+    const payload = JSON.parse(new TextDecoder().decode(bytesFromBase64Url(payloadEncoded)));
+    const now = Math.floor(Date.now() / 1000);
+    const configuredUser = String(env.PA_SAFRA_ADMIN_USER || '').trim().toLowerCase();
+    if (!payload || payload.v !== 1 || payload.sub !== configuredUser || !Number.isInteger(payload.exp) || payload.exp <= now) return null;
+    return { user: payload.sub, exp: payload.exp };
+  } catch {
+    return null;
+  }
+}
+
+async function authorize(request, env) {
   if (String(env.PA_SAFRA_ADMIN_ENABLED || '').toLowerCase() !== 'true') {
     return { ok: false, status: 503, error: 'Administração ainda não habilitada.' };
   }
@@ -28,20 +83,19 @@ function authorize(request, env) {
   const token = String(env.GITHUB_CONTENT_TOKEN || '').trim();
   if (!token) return { ok: false, status: 503, error: 'Credencial de publicação não configurada.' };
 
-  const email = String(request.headers.get('Cf-Access-Authenticated-User-Email') || '')
-    .trim()
-    .toLowerCase();
-  const assertion = String(request.headers.get('Cf-Access-Jwt-Assertion') || '').trim();
-  if (!email || !assertion || !allowedEmails(env).includes(email)) {
-    return { ok: false, status: 403, error: 'Acesso administrativo não autorizado.' };
-  }
+  const session = await verifySession(request, env);
+  if (!session) return { ok: false, status: 401, error: 'Sessão administrativa inválida ou expirada.' };
 
   const origin = request.headers.get('Origin');
   if (!origin || origin !== new URL(request.url).origin) {
     return { ok: false, status: 403, error: 'Origem da requisição não autorizada.' };
   }
+  const fetchSite = request.headers.get('Sec-Fetch-Site');
+  if (fetchSite && fetchSite !== 'same-origin') {
+    return { ok: false, status: 403, error: 'Contexto da requisição não autorizado.' };
+  }
 
-  return { ok: true, token, email };
+  return { ok: true, token, user: session.user };
 }
 
 function ensurePlainObject(value, name) {
@@ -133,9 +187,7 @@ function toBase64Utf8(text) {
   const bytes = new TextEncoder().encode(text);
   let binary = '';
   const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
-  }
+  for (let i = 0; i < bytes.length; i += chunk) binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
   return btoa(binary);
 }
 
@@ -146,14 +198,14 @@ async function githubRequest(path, token, init = {}) {
       accept: 'application/vnd.github+json',
       authorization: `Bearer ${token}`,
       'x-github-api-version': '2026-03-10',
-      'user-agent': 'pa-safra-native-admin/1.0',
+      'user-agent': 'pa-safra-native-admin/1.1',
       ...(init.headers || {}),
     },
   });
 }
 
 export async function onRequestPut({ request, env }) {
-  const auth = authorize(request, env);
+  const auth = await authorize(request, env);
   if (!auth.ok) return json({ ok: false, error: auth.error }, auth.status);
 
   const declared = Number(request.headers.get('content-length') || 0);
@@ -181,9 +233,7 @@ export async function onRequestPut({ request, env }) {
 
   const branch = String(env.PA_SAFRA_CONTENT_BRANCH || 'main').trim() || 'main';
   const current = await githubRequest(`/contents/${filePath}?ref=${encodeURIComponent(branch)}`, auth.token);
-  if (!current.ok) {
-    return json({ ok: false, error: `Não foi possível carregar a versão atual (${current.status}).` }, 502);
-  }
+  if (!current.ok) return json({ ok: false, error: `Não foi possível carregar a versão atual (${current.status}).` }, 502);
   const currentData = await current.json();
   if (!currentData?.sha) return json({ ok: false, error: 'SHA atual do conteúdo não encontrado.' }, 502);
 
@@ -200,9 +250,7 @@ export async function onRequestPut({ request, env }) {
   });
 
   const result = await update.json().catch(() => ({}));
-  if (!update.ok) {
-    return json({ ok: false, error: result?.message || `Falha de publicação (${update.status}).` }, 502);
-  }
+  if (!update.ok) return json({ ok: false, error: result?.message || `Falha de publicação (${update.status}).` }, 502);
 
   return json({
     ok: true,
@@ -210,6 +258,6 @@ export async function onRequestPut({ request, env }) {
     message: 'Alteração enviada para publicação.',
     commit: result?.commit?.sha || null,
     branch,
-    user: auth.email,
+    user: auth.user,
   });
 }

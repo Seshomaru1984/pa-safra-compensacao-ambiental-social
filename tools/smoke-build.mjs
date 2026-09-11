@@ -61,7 +61,7 @@ function validateImage(rel) {
     const declaredLength = data.readUInt32LE(4) + 8;
     if (declaredLength !== data.length) errors.push(`WebP truncado/inconsistente no build: ${rel}`);
   } else if (/\.jpe?g$/i.test(rel)) {
-    if (!(data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff)) errors.push(`Assinatura JPEG invalida no build: ${rel}`);
+    if (!(data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff)) errors.push(`Assinatura JPEG invalida: ${rel}`);
     if (!(data[data.length - 2] === 0xff && data[data.length - 1] === 0xd9)) errors.push(`JPEG truncado/inconsistente no build: ${rel}`);
   }
 }
@@ -101,8 +101,16 @@ if (fs.existsSync(indexPath)) {
 const adminPath = path.join(dist, 'admin/index.html');
 if (fs.existsSync(adminPath)) {
   const html = fs.readFileSync(adminPath, 'utf8');
-  for (const token of ['Administração de conteúdo', 'Página inicial', 'Palestras e vídeos', '/admin/admin.js']) {
+  for (const token of ['Administração de conteúdo', 'Entrar no painel', 'Página inicial', 'Palestras e vídeos', '/admin/admin.js']) {
     if (!html.includes(token)) errors.push(`Admin nativo incompleto no build: ${token}`);
+  }
+}
+
+const adminJsPath = path.join(dist, 'admin/admin.js');
+if (fs.existsSync(adminJsPath)) {
+  const js = fs.readFileSync(adminJsPath, 'utf8');
+  for (const token of ['/api/admin/login', '/api/admin/logout', '/api/admin/status', '/api/admin/content']) {
+    if (!js.includes(token)) errors.push(`Integração do admin ausente no build: ${token}`);
   }
 }
 

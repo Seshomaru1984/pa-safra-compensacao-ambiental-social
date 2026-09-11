@@ -26,11 +26,12 @@ Será criado um painel nativo em `/admin`, com formulários específicos por tip
 
 A primeira fase cobre:
 
-1. edição da página inicial;
-2. edição de palestras/vídeos do YouTube;
-3. pré-visualização simples antes da gravação;
-4. backend em Cloudflare Pages Functions;
-5. gravação controlada nos JSONs do próprio repositório GitHub.
+1. autenticação nativa por usuário e senha;
+2. edição da página inicial;
+3. edição de palestras/vídeos do YouTube;
+4. pré-visualização simples antes da gravação;
+5. backend em Cloudflare Pages Functions;
+6. gravação controlada nos JSONs do próprio repositório GitHub.
 
 ## Persistência
 
@@ -45,19 +46,37 @@ Os JSONs já existentes continuam sendo a fonte de conteúdo:
 
 Não será introduzido banco de dados nesta fase.
 
-## Segurança
+## Autenticação
+
+A experiência normal do usuário administrativo será própria do PA Safra:
+
+`/admin → usuário + senha → sessão administrativa`
+
+Não será exigida conta GitHub, conta Cloudflare, e-mail ou outro provedor externo para o usuário final.
+
+A senha nunca será armazenada em texto puro. A configuração usa:
+
+- `PA_SAFRA_ADMIN_USER`: nome de usuário administrativo;
+- `PA_SAFRA_ADMIN_PASSWORD_HASH`: hash PBKDF2-SHA256 com salt aleatório;
+- `PA_SAFRA_SESSION_SECRET`: segredo aleatório para assinatura HMAC das sessões;
+- cookie de sessão `HttpOnly`, `Secure` e `SameSite=Strict`, com validade limitada.
+
+A geração inicial do hash e do segredo de sessão deve ocorrer localmente pelo utilitário `tools/admin-credentials.mjs`, sem transmitir a senha pelo chat ou gravá-la no repositório.
+
+## Segurança de escrita
 
 O painel não terá escrita habilitada apenas por existir no deploy.
 
 A API administrativa deverá exigir:
 
 - `PA_SAFRA_ADMIN_ENABLED=true` no ambiente Cloudflare;
-- autenticação anterior por Cloudflare Access;
-- e-mail autenticado presente na lista `PA_SAFRA_ADMIN_EMAILS`;
+- credenciais nativas configuradas;
+- sessão administrativa válida e assinada;
 - token GitHub armazenado como secret do Cloudflare, nunca no navegador;
 - token GitHub com acesso restrito ao repositório do PA Safra e permissão mínima de `Contents: write`;
 - lista branca de arquivos editáveis e validação de formato/tamanho;
-- requisições de escrita somente same-origin.
+- requisições de escrita somente same-origin;
+- verificação adicional de `Sec-Fetch-Site` quando o cabeçalho estiver disponível.
 
 Até essas condições serem configuradas, o painel pode ser visualizado, mas a API deve permanecer bloqueada para escrita.
 
@@ -83,7 +102,8 @@ O painel não será um construtor de sites e não permitirá:
 
 - GitHub: versionamento e fonte de conteúdo;
 - Cloudflare Pages: publicação;
-- Cloudflare Pages Functions: API administrativa;
-- Cloudflare Access: autenticação do painel/rotas administrativas.
+- Cloudflare Pages Functions: API administrativa.
+
+Cloudflare Access não é requisito para a experiência normal do administrador. Pode ser adotado futuramente como camada adicional opcional, sem substituir o login nativo.
 
 Não há dependência operacional do Pages CMS.

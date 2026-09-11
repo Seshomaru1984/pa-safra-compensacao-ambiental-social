@@ -11,8 +11,11 @@ for (const rel of [
   'public/admin/index.html',
   'public/admin/admin.css',
   'public/admin/admin.js',
+  'functions/api/admin/login.js',
+  'functions/api/admin/logout.js',
   'functions/api/admin/status.js',
   'functions/api/admin/content.js',
+  'tools/admin-credentials.mjs',
   'docs/ADR-0002-ADMIN-NATIVO.md',
 ]) {
   if (!exists(rel)) fail(`Admin nativo: arquivo ausente: ${rel}`);
@@ -22,30 +25,59 @@ if (exists('.pages.yml')) fail('Pages CMS não deve permanecer como dependência
 if (exists('tools/cms-contract.mjs')) fail('Contrato legado do Pages CMS ainda presente.');
 
 const html = read('public/admin/index.html');
-for (const token of ['Administração de conteúdo', 'Página inicial', 'Palestras e vídeos', '/admin/admin.js']) {
+for (const token of ['Administração de conteúdo', 'Entrar no painel', 'Página inicial', 'Palestras e vídeos', '/admin/admin.js']) {
   if (!html.includes(token)) fail(`Admin nativo: interface ausente/incompleta: ${token}`);
 }
 
 const adminJs = read('public/admin/admin.js');
-for (const token of ['/api/admin/status', '/api/admin/content', '/content/site.json', '/content/videos.json']) {
+for (const token of [
+  '/api/admin/login',
+  '/api/admin/logout',
+  '/api/admin/status',
+  '/api/admin/content',
+  '/content/site.json',
+  '/content/videos.json',
+]) {
   if (!adminJs.includes(token)) fail(`Admin nativo: integração ausente: ${token}`);
 }
 
+const loginJs = read('functions/api/admin/login.js');
 const statusJs = read('functions/api/admin/status.js');
 const contentJs = read('functions/api/admin/content.js');
-for (const token of ['PA_SAFRA_ADMIN_ENABLED', 'PA_SAFRA_ADMIN_EMAILS', 'GITHUB_CONTENT_TOKEN']) {
-  if (!`${statusJs}\n${contentJs}`.includes(token)) fail(`Admin nativo: variável de segurança ausente: ${token}`);
+const authText = `${loginJs}\n${statusJs}\n${contentJs}`;
+
+for (const token of [
+  'PA_SAFRA_ADMIN_ENABLED',
+  'PA_SAFRA_ADMIN_USER',
+  'PA_SAFRA_ADMIN_PASSWORD_HASH',
+  'PA_SAFRA_SESSION_SECRET',
+  'GITHUB_CONTENT_TOKEN',
+  'pa_safra_admin_session',
+  'PBKDF2',
+  'HMAC',
+]) {
+  if (!authText.includes(token)) fail(`Admin nativo: contrato de autenticação ausente: ${token}`);
 }
+
+for (const forbidden of ['PA_SAFRA_ADMIN_EMAILS', 'Cf-Access-Authenticated-User-Email', 'Cf-Access-Jwt-Assertion']) {
+  if (authText.includes(forbidden)) fail(`Admin nativo: dependência externa de autenticação ainda presente: ${forbidden}`);
+}
+
 for (const token of [
   "Seshomaru1984/pa-safra-compensacao-ambiental-social",
   "site: 'public/content/site.json'",
   "videos: 'public/content/videos.json'",
-  'Cf-Access-Authenticated-User-Email',
-  'Cf-Access-Jwt-Assertion',
   'https://api.github.com/repos/',
+  'Sec-Fetch-Site',
 ]) {
   if (!contentJs.includes(token)) fail(`Admin nativo: contrato de escrita incompleto: ${token}`);
 }
+
+const credentialsTool = read('tools/admin-credentials.mjs');
+for (const token of ['pbkdf2Sync', 'randomBytes', 'PA_SAFRA_ADMIN_PASSWORD_HASH', 'PA_SAFRA_SESSION_SECRET']) {
+  if (!credentialsTool.includes(token)) fail(`Admin nativo: utilitário de credenciais incompleto: ${token}`);
+}
+if (credentialsTool.includes('console.log(password)')) fail('Admin nativo: senha não pode ser impressa pelo utilitário.');
 
 const publicationPath = 'public/content/publicacao.json';
 if (exists(publicationPath)) {
@@ -66,8 +98,9 @@ if (errors.length) {
 
 console.log('ADMIN NATIVO CONTRACT: OK');
 console.log('- Pages CMS removido como dependência');
-console.log('- /admin presente');
-console.log('- API de status e escrita controlada presente');
-console.log('- escrita depende de Access + allowlist + secret GitHub');
+console.log('- /admin com login próprio presente');
+console.log('- sessão HttpOnly assinada por HMAC prevista');
+console.log('- senha validada por hash PBKDF2, sem senha em código/GitHub');
+console.log('- escrita depende de sessão válida + secret GitHub');
 console.log('- escopo inicial limitado a site e vídeos');
 console.log('- gate admin_nativo_validado permanece pendente');

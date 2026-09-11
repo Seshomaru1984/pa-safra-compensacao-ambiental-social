@@ -8,6 +8,7 @@
     "build": "npm run images:prepare && node tools/prepublish.mjs && vite build",
     "check": "npm run images:prepare && node tools/check.mjs",
     "admin:test": "node tools/admin-contract.mjs",
+    "admin:credentials": "node tools/admin-credentials.mjs",
     "cloudflare:test": "node tools/cloudflare-readiness.mjs",
     "cloudflare:env-test": "node tools/cloudflare-env-contract.mjs",
     "prepublish:check": "node tools/prepublish.mjs --strict",
