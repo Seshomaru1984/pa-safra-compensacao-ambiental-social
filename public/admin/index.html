@@ -15,73 +15,98 @@
         <h1>Administração de conteúdo</h1>
         <p class="subtitle">Atualize informações do site sem editar código.</p>
       </div>
-      <a class="site-link" href="/" target="_blank" rel="noopener">Abrir site</a>
+      <div class="header-actions">
+        <a class="site-link" href="/" target="_blank" rel="noopener">Abrir site</a>
+        <button id="logout-button" class="site-link button-link" type="button" hidden>Sair</button>
+      </div>
     </header>
 
-    <section class="status-card" aria-live="polite">
-      <span id="admin-status-dot" class="status-dot"></span>
-      <div>
-        <strong id="admin-status-title">Verificando acesso…</strong>
-        <p id="admin-status-message">Aguarde.</p>
+    <section id="login-panel" class="login-panel" aria-labelledby="login-title">
+      <div class="login-card">
+        <p class="eyebrow">Acesso administrativo</p>
+        <h2 id="login-title">Entrar no painel</h2>
+        <p class="login-help">Use o usuário e a senha definidos para a administração do PA Safra.</p>
+        <form id="login-form" class="login-form">
+          <label>
+            Usuário
+            <input id="login-user" name="username" autocomplete="username" maxlength="80" required>
+          </label>
+          <label>
+            Senha
+            <input id="login-password" name="password" type="password" autocomplete="current-password" maxlength="256" required>
+          </label>
+          <button id="login-button" class="button primary" type="submit">Entrar</button>
+        </form>
+        <p id="login-message" class="login-message" role="status" aria-live="polite"></p>
       </div>
     </section>
 
-    <nav class="admin-tabs" aria-label="Áreas administrativas">
-      <button class="tab is-active" type="button" data-tab="inicio">Página inicial</button>
-      <button class="tab" type="button" data-tab="videos">Palestras e vídeos</button>
-    </nav>
-
-    <section id="panel-inicio" class="panel is-active" data-panel="inicio">
-      <div class="panel-heading">
+    <section id="admin-app" hidden>
+      <section class="status-card" aria-live="polite">
+        <span id="admin-status-dot" class="status-dot"></span>
         <div>
-          <p class="eyebrow">Conteúdo principal</p>
-          <h2>Página inicial</h2>
+          <strong id="admin-status-title">Verificando acesso…</strong>
+          <p id="admin-status-message">Aguarde.</p>
         </div>
-      </div>
+      </section>
 
-      <form id="site-form" class="editor-grid">
-        <div class="form-card">
-          <label>
-            Complemento no cabeçalho
-            <input id="brand-tagline" name="brand_tagline" maxlength="160" autocomplete="off">
-          </label>
-          <label>
-            Título principal
-            <textarea id="hero-title" name="hero_title" rows="3" maxlength="220" required></textarea>
-          </label>
-          <label>
-            Texto de apoio
-            <textarea id="hero-lead" name="hero_lead" rows="5" maxlength="800"></textarea>
-          </label>
-          <div class="form-actions">
-            <button id="preview-site" class="button secondary" type="button">Pré-visualizar</button>
-            <button id="save-site" class="button primary" type="submit" disabled>Publicar alterações</button>
+      <nav class="admin-tabs" aria-label="Áreas administrativas">
+        <button class="tab is-active" type="button" data-tab="inicio">Página inicial</button>
+        <button class="tab" type="button" data-tab="videos">Palestras e vídeos</button>
+      </nav>
+
+      <section id="panel-inicio" class="panel is-active" data-panel="inicio">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Conteúdo principal</p>
+            <h2>Página inicial</h2>
           </div>
         </div>
 
-        <aside class="preview-card" aria-label="Pré-visualização da página inicial">
-          <span class="preview-label">Pré-visualização</span>
-          <small id="preview-brand">Compensação Ambiental e Social</small>
-          <h3 id="preview-title">Projeto de Compensação Ambiental e Social - PA Safra</h3>
-          <p id="preview-lead"></p>
-        </aside>
-      </form>
-    </section>
+        <form id="site-form" class="editor-grid">
+          <div class="form-card">
+            <label>
+              Complemento no cabeçalho
+              <input id="brand-tagline" name="brand_tagline" maxlength="160" autocomplete="off">
+            </label>
+            <label>
+              Título principal
+              <textarea id="hero-title" name="hero_title" rows="3" maxlength="220" required></textarea>
+            </label>
+            <label>
+              Texto de apoio
+              <textarea id="hero-lead" name="hero_lead" rows="5" maxlength="800"></textarea>
+            </label>
+            <div class="form-actions">
+              <button id="preview-site" class="button secondary" type="button">Pré-visualizar</button>
+              <button id="save-site" class="button primary" type="submit" disabled>Publicar alterações</button>
+            </div>
+          </div>
 
-    <section id="panel-videos" class="panel" data-panel="videos" hidden>
-      <div class="panel-heading">
-        <div>
-          <p class="eyebrow">Atualizações periódicas</p>
-          <h2>Palestras e vídeos</h2>
-          <p>Adicione links do YouTube; o site cuida da apresentação automaticamente.</p>
+          <aside class="preview-card" aria-label="Pré-visualização da página inicial">
+            <span class="preview-label">Pré-visualização</span>
+            <small id="preview-brand">Compensação Ambiental e Social</small>
+            <h3 id="preview-title">Projeto de Compensação Ambiental e Social - PA Safra</h3>
+            <p id="preview-lead"></p>
+          </aside>
+        </form>
+      </section>
+
+      <section id="panel-videos" class="panel" data-panel="videos" hidden>
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Atualizações periódicas</p>
+            <h2>Palestras e vídeos</h2>
+            <p>Adicione links do YouTube; o site cuida da apresentação automaticamente.</p>
+          </div>
+          <button id="add-video" class="button secondary" type="button">+ Adicionar palestra</button>
         </div>
-        <button id="add-video" class="button secondary" type="button">+ Adicionar palestra</button>
-      </div>
 
-      <div id="videos-list" class="video-editor-list"></div>
-      <div class="form-actions align-end">
-        <button id="save-videos" class="button primary" type="button" disabled>Publicar alterações</button>
-      </div>
+        <div id="videos-list" class="video-editor-list"></div>
+        <div class="form-actions align-end">
+          <button id="save-videos" class="button primary" type="button" disabled>Publicar alterações</button>
+        </div>
+      </section>
     </section>
 
     <div id="admin-message" class="toast" role="status" aria-live="polite" hidden></div>
