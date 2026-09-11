@@ -6,7 +6,7 @@
 - edição cotidiana: painel administrativo nativo em `/admin`;
 - API administrativa: Cloudflare Pages Functions;
 - autenticação administrativa: login próprio do PA Safra por usuário e senha;
-- proteção de tentativas de login: Workers KV por binding `PA_SAFRA_AUTH_KV`;
+- proteção de tentativas de login: Cloudflare D1 por binding `PA_SAFRA_AUTH_DB`;
 - build: Vite;
 - hospedagem: Cloudflare Pages;
 - domínio: domínio próprio já disponível segundo confirmação do usuário, porém ainda não solicitado/configurado no projeto.
@@ -79,6 +79,8 @@ Branches de desenvolvimento e Pull Requests servem para validação e preview. A
 
 Não configurar a branch `develop` ou branches `feat/...` como produção.
 
+Para a validação de escrita do painel administrativo, a branch editorial controlada é `content/pa-v001-admin-preview`. O painel de preview deve escrever nela durante o teste operacional, nunca diretamente em `main`.
+
 ## Painel administrativo nativo
 
 A área `/admin` é uma interface própria do PA Safra destinada a atualizações simples por usuário leigo. Ela não é construtor de sites e não permite edição livre de código.
@@ -93,19 +95,22 @@ A interface carrega os JSONs públicos do próprio site. A escrita é feita excl
 
 A autenticação é nativa: usuário e senha do próprio PA Safra. O navegador recebe apenas um cookie de sessão assinado, `HttpOnly`, `Secure` e `SameSite=Strict`. A senha não é gravada em texto puro nem enviada ao GitHub.
 
-A V001-A17 acrescenta proteção de força bruta ao endpoint de login. O identificador do cliente é derivado do endereço fornecido pelo cabeçalho Cloudflare, transformado por SHA-256 antes de ser usado como chave. O sistema permite até 5 falhas dentro de uma janela de 15 minutos; ao atingir o limite, bloqueia novas tentativas por 15 minutos e responde HTTP 429 com `Retry-After`. O armazenamento de contadores usa Workers KV e falha de forma fechada: se o binding não estiver disponível, o login administrativo não é liberado.
+A V001-A17 introduziu o primeiro rate limiter usando Workers KV. A auditoria da V001-A18 substitui esse backend por D1 antes da ativação externa. O motivo é de consistência: o contador de tentativas é estado de segurança que precisa de atualização coordenada; ele não deve depender de propagação eventual ou de múltiplas gravações concorrentes na mesma chave.
+
+Na V001-A18, o identificador do cliente continua sendo derivado do endereço fornecido pelo cabeçalho Cloudflare e transformado por SHA-256 antes de ser persistido. O sistema permite até 5 falhas dentro de 15 minutos; ao atingir o limite, bloqueia novas tentativas por 15 minutos e responde HTTP 429 com `Retry-After`. O estado fica na tabela D1 `admin_login_rate`, criada por `migrations/0001_admin_login_rate.sql`. Se o binding D1 estiver ausente ou indisponível, o login falha fechado com HTTP 503.
 
 A API administrativa permanece bloqueada até que todos os requisitos abaixo sejam configurados no Cloudflare:
 
-- `PA_SAFRA_ADMIN_ENABLED=true`;
+- `PA_SAFRA_ADMIN_ENABLED=true` somente depois de concluir os demais itens;
 - `PA_SAFRA_ADMIN_USER` com o nome de usuário administrativo;
 - `PA_SAFRA_ADMIN_PASSWORD_HASH` armazenado como secret;
 - `PA_SAFRA_SESSION_SECRET` armazenado como secret;
-- binding KV `PA_SAFRA_AUTH_KV` apontando para um namespace dedicado de autenticação;
+- binding D1 `PA_SAFRA_AUTH_DB` apontando para banco dedicado à autenticação;
+- migration `migrations/0001_admin_login_rate.sql` aplicada ao banco do ambiente de preview;
 - `GITHUB_CONTENT_TOKEN` armazenado como secret, nunca exposto no navegador;
-- `PA_SAFRA_CONTENT_BRANCH` para definir a branch editorial alvo quando necessário.
+- `PA_SAFRA_CONTENT_BRANCH=content/pa-v001-admin-preview` durante a validação operacional.
 
-O hash da senha e o segredo de sessão são gerados localmente com `node tools/admin-credentials.mjs`. Nenhuma senha deve ser enviada pelo chat ou commitada no repositório.
+O hash da senha e o segredo de sessão são gerados localmente com `node tools/admin-credentials.mjs` ou `tools/PA-SAFRA-GERAR-CREDENCIAIS-ADMIN.ps1`. Nenhuma senha deve ser enviada pelo chat ou commitada no repositório.
 
 A credencial GitHub deve ser restrita exclusivamente ao repositório PA Safra e utilizar permissão mínima de conteúdo necessária para atualizar os JSONs editoriais.
 
@@ -147,4 +152,4 @@ Não solicitar senha, token ou cookie do registrador/Cloudflare pelo chat. Prefe
 
 ## Estado desta etapa
 
-A V001-A17 adiciona proteção persistente contra tentativas repetidas ao login nativo. O próximo passo operacional é criar o namespace Workers KV e vincular `PA_SAFRA_AUTH_KV`, depois configurar as credenciais e secrets somente no ambiente de preview e executar teste ponta a ponta sem liberar produção.
+A V001-A18 corrige o backend do rate limiter para D1 antes de qualquer ativação real. O próximo passo operacional, depois de a branch A18 permanecer verde no CI, é criar um banco D1 dedicado somente no ambiente de preview, aplicar a migration, vinculá-lo como `PA_SAFRA_AUTH_DB` e então configurar as demais credenciais/secrets também somente em preview. Produção, domínio próprio e aprovações editoriais permanecem fora desta etapa.
