@@ -70,21 +70,27 @@ jobs:
           node --check tools/smoke-remote.mjs
           node --check tools/admin-contract.mjs
 
-      - name: Validar sintaxe do empacotador PowerShell
+      - name: Validar sintaxe dos scripts PowerShell
         shell: pwsh
         run: |
-          $tokens = $null
-          $errors = $null
-          [System.Management.Automation.Language.Parser]::ParseFile(
-            (Join-Path $PWD 'tools/PA-SAFRA-BUILD-E-ARQUIVAR.ps1'),
-            [ref]$tokens,
-            [ref]$errors
-          ) | Out-Null
-          if (@($errors).Count -gt 0) {
-            $errors | ForEach-Object { Write-Error $_.Message }
-            exit 1
+          $arquivos = @(
+            'tools/PA-SAFRA-BUILD-E-ARQUIVAR.ps1',
+            'tools/PA-SAFRA-GERAR-CREDENCIAIS-ADMIN.ps1'
+          )
+          foreach ($rel in $arquivos) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              (Join-Path $PWD $rel),
+              [ref]$tokens,
+              [ref]$errors
+            ) | Out-Null
+            if (@($errors).Count -gt 0) {
+              $errors | ForEach-Object { Write-Error "$rel - $($_.Message)" }
+              exit 1
+            }
+            Write-Host "PowerShell parser: OK - $rel"
           }
-          Write-Host 'PowerShell parser: OK'
 
       - name: Gerar build de desenvolvimento/preview
         run: npm run build
@@ -112,6 +118,7 @@ jobs:
           echo "- npm run admin:test: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run admin:auth-test: OK (401/429/Retry-After/cookie/fail-closed)" >> "$GITHUB_STEP_SUMMARY"
           echo "- autenticacao nativa usuario/senha e sessao assinada: sintaxe OK" >> "$GITHUB_STEP_SUMMARY"
+          echo "- gerador PowerShell de credenciais: parser OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run cloudflare:test: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run cloudflare:env-test: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- trava editorial pendente: bloqueio confirmado" >> "$GITHUB_STEP_SUMMARY"
