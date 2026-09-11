@@ -62,6 +62,8 @@ Antes de habilitar escrita administrativa real:
 - definir um usuário administrativo próprio do PA Safra;
 - gerar localmente `PA_SAFRA_ADMIN_PASSWORD_HASH` e `PA_SAFRA_SESSION_SECRET` com `node tools/admin-credentials.mjs`;
 - armazenar o hash e o segredo somente como secrets/variáveis do Cloudflare, nunca no GitHub;
+- criar e vincular um namespace Workers KV ao binding `PA_SAFRA_AUTH_KV` para controle de tentativas de login;
+- confirmar bloqueio temporário após 5 falhas dentro de 15 minutos e resposta HTTP 429 com `Retry-After`;
 - criar credencial GitHub de escopo mínimo e restrita ao repositório PA Safra;
 - armazenar a credencial exclusivamente como secret no Cloudflare;
 - manter `PA_SAFRA_ADMIN_ENABLED` desativado até todas as proteções estarem configuradas;
