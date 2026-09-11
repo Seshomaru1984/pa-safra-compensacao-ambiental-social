@@ -20,7 +20,3 @@ export async function onRequestPost({ request }) {
     'set-cookie': `${COOKIE_NAME}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Strict`,
   });
 }
-
-export function onRequest() {
-  return json({ ok: false, error: 'Método não permitido.' }, 405);
-}
