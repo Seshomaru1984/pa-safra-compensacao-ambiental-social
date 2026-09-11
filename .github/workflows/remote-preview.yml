@@ -1,6 +1,9 @@
 name: remote-preview
 
 on:
+  push:
+    branches:
+      - feat/pa-v001-a13-preview-cloudflare-f1
   workflow_dispatch:
     inputs:
       preview_url:
@@ -32,8 +35,8 @@ jobs:
 
       - name: Validar preview publicado
         env:
-          PA_SAFRA_PREVIEW_URL: ${{ inputs.preview_url }}
-          PA_SAFRA_ALLOWED_HOST: ${{ inputs.allowed_host }}
+          PA_SAFRA_PREVIEW_URL: ${{ inputs.preview_url || 'https://4d31ffe3.pa-safra-compensacao-ambiental-social.pages.dev' }}
+          PA_SAFRA_ALLOWED_HOST: ${{ inputs.allowed_host || '' }}
         run: npm run smoke:remote
 
       - name: Registrar resultado
@@ -41,7 +44,7 @@ jobs:
         run: |
           echo "## PA Safra - preview remoto validado" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "- URL: \`${{ inputs.preview_url }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- URL: \`${{ inputs.preview_url || 'https://4d31ffe3.pa-safra-compensacao-ambiental-social.pages.dev' }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- identidade/UTF-8: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- cabecalhos HTTP: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- estado editorial pendente: OK" >> "$GITHUB_STEP_SUMMARY"
