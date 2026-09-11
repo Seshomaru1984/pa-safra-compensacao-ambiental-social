@@ -42,7 +42,7 @@ for (const token of [
   "videos: 'public/content/videos.json'",
   'Cf-Access-Authenticated-User-Email',
   'Cf-Access-Jwt-Assertion',
-  'Contents',
+  'https://api.github.com/repos/',
 ]) {
   if (!contentJs.includes(token)) fail(`Admin nativo: contrato de escrita incompleto: ${token}`);
 }
