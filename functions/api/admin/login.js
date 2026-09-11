@@ -99,9 +99,9 @@ function configured(env) {
 }
 
 function rateStore(env) {
-  const kv = env.PA_SAFRA_AUTH_KV;
-  if (!kv || typeof kv.get !== 'function' || typeof kv.put !== 'function' || typeof kv.delete !== 'function') return null;
-  return kv;
+  const db = env.PA_SAFRA_AUTH_DB;
+  if (!db || typeof db.prepare !== 'function' || typeof db.batch !== 'function') return null;
+  return db;
 }
 
 async function loginRateKey(request) {
@@ -110,19 +110,18 @@ async function loginRateKey(request) {
   return `login:${[...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('')}`;
 }
 
-async function readRateState(kv, key) {
-  const raw = await kv.get(key);
-  if (!raw) return { count: 0, window_started_at: 0, blocked_until: 0 };
-  try {
-    const parsed = JSON.parse(raw);
-    return {
-      count: Number.isInteger(parsed?.count) ? parsed.count : 0,
-      window_started_at: Number.isInteger(parsed?.window_started_at) ? parsed.window_started_at : 0,
-      blocked_until: Number.isInteger(parsed?.blocked_until) ? parsed.blocked_until : 0,
-    };
-  } catch {
-    return { count: 0, window_started_at: 0, blocked_until: 0 };
-  }
+async function readRateState(db, key) {
+  const row = await db
+    .prepare('SELECT count, window_started_at, blocked_until FROM admin_login_rate WHERE client_key = ? LIMIT 1')
+    .bind(key)
+    .first();
+
+  if (!row) return { count: 0, window_started_at: 0, blocked_until: 0 };
+  return {
+    count: Number.isInteger(row.count) ? row.count : Number(row.count || 0),
+    window_started_at: Number.isInteger(row.window_started_at) ? row.window_started_at : Number(row.window_started_at || 0),
+    blocked_until: Number.isInteger(row.blocked_until) ? row.blocked_until : Number(row.blocked_until || 0),
+  };
 }
 
 function limitedResponse(blockedUntil) {
@@ -135,21 +134,57 @@ function limitedResponse(blockedUntil) {
   }, 429, { 'retry-after': String(retryAfter) });
 }
 
-async function registerFailure(kv, key, previous) {
+async function registerFailure(db, key) {
   const now = Math.floor(Date.now() / 1000);
-  const withinWindow = previous.window_started_at > 0 && now - previous.window_started_at < RATE_WINDOW_SECONDS;
-  const count = (withinWindow ? previous.count : 0) + 1;
-  const windowStartedAt = withinWindow ? previous.window_started_at : now;
-  const blockedUntil = count >= RATE_MAX_FAILURES ? now + RATE_LOCK_SECONDS : 0;
-  const state = {
-    count,
-    window_started_at: windowStartedAt,
-    blocked_until: blockedUntil,
+  const upsert = db.prepare(`
+    INSERT INTO admin_login_rate (
+      client_key, count, window_started_at, blocked_until, updated_at
+    ) VALUES (?, 1, ?, 0, ?)
+    ON CONFLICT(client_key) DO UPDATE SET
+      count = CASE
+        WHEN admin_login_rate.blocked_until > ? THEN admin_login_rate.count
+        WHEN ? - admin_login_rate.window_started_at < ? THEN admin_login_rate.count + 1
+        ELSE 1
+      END,
+      window_started_at = CASE
+        WHEN admin_login_rate.blocked_until > ? THEN admin_login_rate.window_started_at
+        WHEN ? - admin_login_rate.window_started_at < ? THEN admin_login_rate.window_started_at
+        ELSE ?
+      END,
+      blocked_until = CASE
+        WHEN admin_login_rate.blocked_until > ? THEN admin_login_rate.blocked_until
+        WHEN (CASE
+          WHEN ? - admin_login_rate.window_started_at < ? THEN admin_login_rate.count + 1
+          ELSE 1
+        END) >= ? THEN ? + ?
+        ELSE 0
+      END,
+      updated_at = ?
+  `).bind(
+    key, now, now,
+    now, now, RATE_WINDOW_SECONDS,
+    now, now, RATE_WINDOW_SECONDS, now,
+    now, now, RATE_WINDOW_SECONDS, RATE_MAX_FAILURES, now, RATE_LOCK_SECONDS,
+    now,
+  );
+
+  const select = db
+    .prepare('SELECT count, window_started_at, blocked_until FROM admin_login_rate WHERE client_key = ? LIMIT 1')
+    .bind(key);
+
+  const results = await db.batch([upsert, select]);
+  const row = results?.[1]?.results?.[0];
+  if (!row) throw new Error('Estado de bloqueio não retornado pelo D1.');
+
+  return {
+    count: Number(row.count || 0),
+    window_started_at: Number(row.window_started_at || 0),
+    blocked_until: Number(row.blocked_until || 0),
   };
-  await kv.put(key, JSON.stringify(state), {
-    expirationTtl: Math.max(RATE_WINDOW_SECONDS, RATE_LOCK_SECONDS) + 120,
-  });
-  return state;
+}
+
+async function clearFailures(db, key) {
+  await db.prepare('DELETE FROM admin_login_rate WHERE client_key = ?').bind(key).run();
 }
 
 export async function onRequestPost({ request, env }) {
@@ -163,8 +198,8 @@ export async function onRequestPost({ request, env }) {
     return json({ ok: false, error: 'Origem da requisição não autorizada.' }, 403);
   }
 
-  const kv = rateStore(env);
-  if (!kv) {
+  const db = rateStore(env);
+  if (!db) {
     return json({ ok: false, error: 'Proteção contra tentativas repetidas ainda não configurada.' }, 503);
   }
 
@@ -172,7 +207,7 @@ export async function onRequestPost({ request, env }) {
   let rateState;
   try {
     rateKey = await loginRateKey(request);
-    rateState = await readRateState(kv, rateKey);
+    rateState = await readRateState(db, rateKey);
   } catch {
     return json({ ok: false, error: 'Proteção de acesso temporariamente indisponível.' }, 503);
   }
@@ -190,7 +225,7 @@ export async function onRequestPost({ request, env }) {
     body = JSON.parse(raw);
   } catch {
     try {
-      const next = await registerFailure(kv, rateKey, rateState);
+      const next = await registerFailure(db, rateKey);
       if (next.blocked_until > now) return limitedResponse(next.blocked_until);
     } catch {
       return json({ ok: false, error: 'Proteção de acesso temporariamente indisponível.' }, 503);
@@ -202,7 +237,7 @@ export async function onRequestPost({ request, env }) {
   const password = String(body?.password || '');
   if (!username || !password || username.length > 80 || password.length > 256) {
     try {
-      const next = await registerFailure(kv, rateKey, rateState);
+      const next = await registerFailure(db, rateKey);
       if (next.blocked_until > now) return limitedResponse(next.blocked_until);
     } catch {
       return json({ ok: false, error: 'Proteção de acesso temporariamente indisponível.' }, 503);
@@ -215,7 +250,7 @@ export async function onRequestPost({ request, env }) {
   const userOk = constantTimeEqual(username, configuredUser);
   if (!passwordOk || !userOk) {
     try {
-      const next = await registerFailure(kv, rateKey, rateState);
+      const next = await registerFailure(db, rateKey);
       if (next.blocked_until > now) return limitedResponse(next.blocked_until);
     } catch {
       return json({ ok: false, error: 'Proteção de acesso temporariamente indisponível.' }, 503);
@@ -224,7 +259,7 @@ export async function onRequestPost({ request, env }) {
   }
 
   try {
-    await kv.delete(rateKey);
+    await clearFailures(db, rateKey);
   } catch {
     // Falha ao limpar contador não invalida uma autenticação já comprovada.
   }
