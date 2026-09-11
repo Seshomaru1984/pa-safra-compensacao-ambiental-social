@@ -3,18 +3,22 @@
 ## Arquitetura definida
 
 - código e conteúdo: GitHub;
-- edição: Pages CMS;
+- edição cotidiana: painel administrativo nativo em `/admin`;
+- API administrativa: Cloudflare Pages Functions;
+- autenticação administrativa: Cloudflare Access;
 - build: Vite;
 - hospedagem: Cloudflare Pages;
 - domínio: domínio próprio já disponível segundo confirmação do usuário, porém ainda não solicitado/configurado no projeto.
 
-## Configuração recomendada no Cloudflare Pages
+O Pages CMS não faz parte da arquitetura operacional do PA Safra.
 
-Conectar por **Git integration** ao repositório:
+## Configuração do Cloudflare Pages
+
+Repositório conectado por Git integration:
 
 `Seshomaru1984/pa-safra-compensacao-ambiental-social`
 
-Usar:
+Configuração:
 
 - Production branch: `main`;
 - Build command: `npm run build`;
@@ -62,7 +66,7 @@ Enquanto `publicacao.json` estiver pendente, `robots.txt` permanece com `Disallo
 - dados de contato confirmados;
 - afirmações históricas confirmadas;
 - revisão visual confirmada;
-- Pages CMS testado.
+- painel administrativo nativo validado.
 
 Esses campos permanecem pendentes de forma deliberada. Nenhum deles deve ser alterado apenas para permitir um deploy.
 
@@ -74,13 +78,27 @@ Branches de desenvolvimento e Pull Requests servem para validação e preview. A
 
 Não configurar a branch `develop` ou branches `feat/...` como produção.
 
-## Preview
+## Painel administrativo nativo
 
-Com a integração Git do Cloudflare Pages, branches e Pull Requests podem receber deployments de preview separados da produção. A branch preparada para a próxima F1 remota é:
+A área `/admin` é uma interface própria do PA Safra destinada a atualizações simples por usuário leigo. Ela não é construtor de sites e não permite edição livre de código.
 
-`feat/pa-v001-a12-preparar-preview-cloudflare`
+Na primeira fase, o painel permite preparar alterações de:
 
-Assim que o Cloudflare gerar a URL `*.pages.dev` dessa branch, executar o workflow `remote-preview.yml` ou `npm run smoke:remote` contra essa URL. O preview não exige domínio próprio.
+- complemento do cabeçalho;
+- título e texto de apoio da página inicial;
+- palestras/vídeos do YouTube.
+
+A interface carrega os JSONs públicos do próprio site. A escrita é feita exclusivamente pela rota de Pages Functions `/api/admin/content`.
+
+A API administrativa permanece bloqueada até que todos os requisitos abaixo sejam configurados no Cloudflare:
+
+- `PA_SAFRA_ADMIN_ENABLED=true`;
+- `PA_SAFRA_ADMIN_EMAILS` com lista explícita de administradores;
+- `GITHUB_CONTENT_TOKEN` armazenado como secret, nunca exposto no navegador;
+- `PA_SAFRA_CONTENT_BRANCH` para definir a branch editorial alvo quando necessário;
+- Cloudflare Access protegendo as rotas administrativas.
+
+A credencial GitHub deve ser restrita exclusivamente ao repositório PA Safra e utilizar permissão mínima de conteúdo necessária para atualizar os JSONs editoriais.
 
 ## Cabeçalhos, CSP e cache
 
@@ -94,14 +112,9 @@ A configuração inclui:
 - `X-Content-Type-Options: nosniff`;
 - `Referrer-Policy: strict-origin-when-cross-origin`;
 - `Permissions-Policy` desabilitando câmera, microfone, geolocalização, pagamento e USB;
+- `no-store` para `/admin/*`;
 - revalidação imediata para `/content/*`;
 - cache específico para `/assets/*`.
-
-## Pages CMS
-
-O Pages CMS altera arquivos no GitHub. Mudanças editoriais devem seguir a política de branch definida para não transformar uma edição de conteúdo em publicação não revisada.
-
-O botão **Validar alterações** executa somente o gate técnico; não faz deploy nem merge.
 
 ## Domínio
 
@@ -111,7 +124,7 @@ O nome do domínio, registrador e dados de DNS serão solicitados somente quando
 
 1. o preview `*.pages.dev` estiver funcional e visualmente aprovado;
 2. o smoke remoto estiver PASS;
-3. o fluxo Pages CMS estiver validado operacionalmente;
+3. o painel administrativo estiver protegido e validado operacionalmente;
 4. os créditos/licenças pendentes estiverem resolvidos;
 5. os dados institucionais estiverem confirmados;
 6. as afirmações históricas e a redação jurídica estiverem confirmadas;
@@ -123,4 +136,4 @@ Não solicitar senha, token ou cookie do registrador/Cloudflare pelo chat. Prefe
 
 ## Estado desta etapa
 
-A V001-A12 prepara a branch de preview e registra o domínio como disponível, sem alterar a conta Cloudflare, DNS ou produção. A conexão externa com o Cloudflare Pages continua sendo o próximo passo para gerar uma URL de preview real.
+A V001-A15 inicia a substituição do Pages CMS por um painel administrativo nativo. A interface e a API são implementadas com escrita desativada por padrão. A próxima etapa operacional será proteger `/admin` e `/api/admin/*` com Cloudflare Access e configurar secrets/variáveis em ambiente de preview antes de qualquer escrita real.
