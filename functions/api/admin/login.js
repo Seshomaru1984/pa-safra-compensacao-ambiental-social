@@ -1,6 +1,9 @@
 const COOKIE_NAME = 'pa_safra_admin_session';
 const SESSION_SECONDS = 8 * 60 * 60;
 const MAX_BODY_BYTES = 8_000;
+const RATE_WINDOW_SECONDS = 15 * 60;
+const RATE_LOCK_SECONDS = 15 * 60;
+const RATE_MAX_FAILURES = 5;
 
 const json = (data, status = 200, extraHeaders = {}) => new Response(JSON.stringify(data), {
   status,
@@ -95,6 +98,60 @@ function configured(env) {
   );
 }
 
+function rateStore(env) {
+  const kv = env.PA_SAFRA_AUTH_KV;
+  if (!kv || typeof kv.get !== 'function' || typeof kv.put !== 'function' || typeof kv.delete !== 'function') return null;
+  return kv;
+}
+
+async function loginRateKey(request) {
+  const client = String(request.headers.get('CF-Connecting-IP') || 'unknown').trim();
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`pa-safra-admin-login|${client}`));
+  return `login:${[...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('')}`;
+}
+
+async function readRateState(kv, key) {
+  const raw = await kv.get(key);
+  if (!raw) return { count: 0, window_started_at: 0, blocked_until: 0 };
+  try {
+    const parsed = JSON.parse(raw);
+    return {
+      count: Number.isInteger(parsed?.count) ? parsed.count : 0,
+      window_started_at: Number.isInteger(parsed?.window_started_at) ? parsed.window_started_at : 0,
+      blocked_until: Number.isInteger(parsed?.blocked_until) ? parsed.blocked_until : 0,
+    };
+  } catch {
+    return { count: 0, window_started_at: 0, blocked_until: 0 };
+  }
+}
+
+function limitedResponse(blockedUntil) {
+  const now = Math.floor(Date.now() / 1000);
+  const retryAfter = Math.max(1, blockedUntil - now);
+  return json({
+    ok: false,
+    error: 'Muitas tentativas de acesso. Aguarde alguns minutos e tente novamente.',
+    retry_after_seconds: retryAfter,
+  }, 429, { 'retry-after': String(retryAfter) });
+}
+
+async function registerFailure(kv, key, previous) {
+  const now = Math.floor(Date.now() / 1000);
+  const withinWindow = previous.window_started_at > 0 && now - previous.window_started_at < RATE_WINDOW_SECONDS;
+  const count = (withinWindow ? previous.count : 0) + 1;
+  const windowStartedAt = withinWindow ? previous.window_started_at : now;
+  const blockedUntil = count >= RATE_MAX_FAILURES ? now + RATE_LOCK_SECONDS : 0;
+  const state = {
+    count,
+    window_started_at: windowStartedAt,
+    blocked_until: blockedUntil,
+  };
+  await kv.put(key, JSON.stringify(state), {
+    expirationTtl: Math.max(RATE_WINDOW_SECONDS, RATE_LOCK_SECONDS) + 120,
+  });
+  return state;
+}
+
 export async function onRequestPost({ request, env }) {
   if (String(env.PA_SAFRA_ADMIN_ENABLED || '').toLowerCase() !== 'true') {
     return json({ ok: false, error: 'Administração ainda não habilitada.' }, 503);
@@ -106,6 +163,23 @@ export async function onRequestPost({ request, env }) {
     return json({ ok: false, error: 'Origem da requisição não autorizada.' }, 403);
   }
 
+  const kv = rateStore(env);
+  if (!kv) {
+    return json({ ok: false, error: 'Proteção contra tentativas repetidas ainda não configurada.' }, 503);
+  }
+
+  let rateKey;
+  let rateState;
+  try {
+    rateKey = await loginRateKey(request);
+    rateState = await readRateState(kv, rateKey);
+  } catch {
+    return json({ ok: false, error: 'Proteção de acesso temporariamente indisponível.' }, 503);
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  if (rateState.blocked_until > now) return limitedResponse(rateState.blocked_until);
+
   const declared = Number(request.headers.get('content-length') || 0);
   if (declared > MAX_BODY_BYTES) return json({ ok: false, error: 'Requisição inválida.' }, 413);
 
@@ -115,12 +189,24 @@ export async function onRequestPost({ request, env }) {
     if (new TextEncoder().encode(raw).length > MAX_BODY_BYTES) throw new Error('Requisição inválida.');
     body = JSON.parse(raw);
   } catch {
+    try {
+      const next = await registerFailure(kv, rateKey, rateState);
+      if (next.blocked_until > now) return limitedResponse(next.blocked_until);
+    } catch {
+      return json({ ok: false, error: 'Proteção de acesso temporariamente indisponível.' }, 503);
+    }
     return json({ ok: false, error: 'Usuário ou senha inválidos.' }, 401);
   }
 
   const username = String(body?.username || '').trim().toLowerCase();
   const password = String(body?.password || '');
   if (!username || !password || username.length > 80 || password.length > 256) {
+    try {
+      const next = await registerFailure(kv, rateKey, rateState);
+      if (next.blocked_until > now) return limitedResponse(next.blocked_until);
+    } catch {
+      return json({ ok: false, error: 'Proteção de acesso temporariamente indisponível.' }, 503);
+    }
     return json({ ok: false, error: 'Usuário ou senha inválidos.' }, 401);
   }
 
@@ -128,10 +214,21 @@ export async function onRequestPost({ request, env }) {
   const passwordOk = await verifyPassword(password, env.PA_SAFRA_ADMIN_PASSWORD_HASH);
   const userOk = constantTimeEqual(username, configuredUser);
   if (!passwordOk || !userOk) {
+    try {
+      const next = await registerFailure(kv, rateKey, rateState);
+      if (next.blocked_until > now) return limitedResponse(next.blocked_until);
+    } catch {
+      return json({ ok: false, error: 'Proteção de acesso temporariamente indisponível.' }, 503);
+    }
     return json({ ok: false, error: 'Usuário ou senha inválidos.' }, 401);
   }
 
-  const now = Math.floor(Date.now() / 1000);
+  try {
+    await kv.delete(rateKey);
+  } catch {
+    // Falha ao limpar contador não invalida uma autenticação já comprovada.
+  }
+
   const token = await signSession({
     sub: configuredUser,
     iat: now,
@@ -143,4 +240,8 @@ export async function onRequestPost({ request, env }) {
   return json({ ok: true, user: configuredUser, message: 'Acesso autorizado.' }, 200, {
     'set-cookie': cookie,
   });
+}
+
+export function onRequest() {
+  return json({ ok: false, error: 'Método não permitido.' }, 405);
 }
