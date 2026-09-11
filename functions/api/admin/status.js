@@ -78,8 +78,8 @@ function credentialsConfigured(env) {
 }
 
 function rateLimitConfigured(env) {
-  const kv = env.PA_SAFRA_AUTH_KV;
-  return Boolean(kv && typeof kv.get === 'function' && typeof kv.put === 'function' && typeof kv.delete === 'function');
+  const db = env.PA_SAFRA_AUTH_DB;
+  return Boolean(db && typeof db.prepare === 'function' && typeof db.batch === 'function');
 }
 
 export async function onRequestGet({ request, env }) {
@@ -102,6 +102,7 @@ export async function onRequestGet({ request, env }) {
     enabled,
     credentials_configured: credentialsReady,
     rate_limit_configured: rateLimitReady,
+    rate_limit_backend: rateLimitReady ? 'd1' : null,
     authenticated,
     token_configured: tokenConfigured,
     write_enabled: enabled && credentialsReady && rateLimitReady && authenticated && tokenConfigured,
