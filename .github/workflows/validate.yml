@@ -33,6 +33,9 @@ jobs:
       - name: Validar contrato do admin nativo
         run: npm run admin:test
 
+      - name: Testar autenticação e bloqueio de tentativas
+        run: npm run admin:auth-test
+
       - name: Validar readiness Cloudflare
         run: npm run cloudflare:test
 
@@ -63,6 +66,7 @@ jobs:
           node --check functions/api/admin/status.js
           node --check functions/api/admin/content.js
           node --check tools/admin-credentials.mjs
+          node --check tools/admin-auth-test.mjs
           node --check tools/smoke-remote.mjs
           node --check tools/admin-contract.mjs
 
@@ -106,6 +110,7 @@ jobs:
           echo "- imagens do solicitante: reconstruidas e integridade WebP confirmada" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run check: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run admin:test: OK" >> "$GITHUB_STEP_SUMMARY"
+          echo "- npm run admin:auth-test: OK (401/429/Retry-After/cookie/fail-closed)" >> "$GITHUB_STEP_SUMMARY"
           echo "- autenticacao nativa usuario/senha e sessao assinada: sintaxe OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run cloudflare:test: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run cloudflare:env-test: OK" >> "$GITHUB_STEP_SUMMARY"
@@ -116,4 +121,4 @@ jobs:
           echo "- npm run smoke: OK, inclusive assinatura/tamanho de imagens" >> "$GITHUB_STEP_SUMMARY"
           echo "- artefato dist: gerado por 14 dias" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Esta rotina valida o painel administrativo nativo com login proprio, a preparacao Cloudflare, as imagens e confirma que a producao continua bloqueada enquanto as pendencias editoriais existirem. Ela nao faz merge nem publica em producao." >> "$GITHUB_STEP_SUMMARY"
+          echo "Esta rotina valida o painel administrativo nativo com login proprio, protecao contra tentativas repetidas, a preparacao Cloudflare, as imagens e confirma que a producao continua bloqueada enquanto as pendencias editoriais existirem. Ela nao faz merge nem publica em producao." >> "$GITHUB_STEP_SUMMARY"
