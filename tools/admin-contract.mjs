@@ -51,6 +51,7 @@ for (const token of [
   'PA_SAFRA_ADMIN_USER',
   'PA_SAFRA_ADMIN_PASSWORD_HASH',
   'PA_SAFRA_SESSION_SECRET',
+  'PA_SAFRA_AUTH_KV',
   'GITHUB_CONTENT_TOKEN',
   'pa_safra_admin_session',
   'PBKDF2',
@@ -62,6 +63,18 @@ for (const token of [
 for (const forbidden of ['PA_SAFRA_ADMIN_EMAILS', 'Cf-Access-Authenticated-User-Email', 'Cf-Access-Jwt-Assertion']) {
   if (authText.includes(forbidden)) fail(`Admin nativo: dependência externa de autenticação ainda presente: ${forbidden}`);
 }
+
+for (const token of [
+  'RATE_MAX_FAILURES = 5',
+  'RATE_WINDOW_SECONDS = 15 * 60',
+  'RATE_LOCK_SECONDS = 15 * 60',
+  "request.headers.get('CF-Connecting-IP')",
+  "'retry-after'",
+  '429',
+]) {
+  if (!loginJs.includes(token)) fail(`Admin nativo: proteção contra força bruta incompleta: ${token}`);
+}
+if (!statusJs.includes('rate_limit_configured')) fail('Admin nativo: status não expõe readiness do rate limiter.');
 
 for (const token of [
   "Seshomaru1984/pa-safra-compensacao-ambiental-social",
@@ -101,6 +114,7 @@ console.log('- Pages CMS removido como dependência');
 console.log('- /admin com login próprio presente');
 console.log('- sessão HttpOnly assinada por HMAC prevista');
 console.log('- senha validada por hash PBKDF2, sem senha em código/GitHub');
+console.log('- login bloqueia após 5 falhas/15 min via Workers KV');
 console.log('- escrita depende de sessão válida + secret GitHub');
 console.log('- escopo inicial limitado a site e vídeos');
 console.log('- gate admin_nativo_validado permanece pendente');
