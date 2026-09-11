@@ -7,7 +7,7 @@
     "dados_contato_confirmados": false,
     "afirmacoes_historicas_confirmadas": false,
     "revisao_visual_confirmada": false,
-    "pages_cms_testado": false
+    "admin_nativo_validado": false
   },
-  "notes": "A publicacao em producao deve permanecer bloqueada enquanto qualquer validacao obrigatoria estiver pendente."
+  "notes": "A publicação em produção deve permanecer bloqueada enquanto qualquer validação obrigatória estiver pendente. O painel administrativo nativo deve ser validado com autenticação e escrita controlada antes da liberação definitiva."
 }

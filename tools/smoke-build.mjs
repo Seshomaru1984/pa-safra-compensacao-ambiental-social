@@ -17,6 +17,9 @@ const required = [
   'index.html',
   '_headers',
   'robots.txt',
+  'admin/index.html',
+  'admin/admin.css',
+  'admin/admin.js',
   'content/publicacao.json',
   'content/site.json',
   'content/noticias.json',
@@ -95,6 +98,14 @@ if (fs.existsSync(indexPath)) {
   if (!/(?:src|href)="[^"]*\/assets\//.test(html)) errors.push('index.html gerado nao referencia assets compilados pelo Vite.');
 }
 
+const adminPath = path.join(dist, 'admin/index.html');
+if (fs.existsSync(adminPath)) {
+  const html = fs.readFileSync(adminPath, 'utf8');
+  for (const token of ['Administração de conteúdo', 'Página inicial', 'Palestras e vídeos', '/admin/admin.js']) {
+    if (!html.includes(token)) errors.push(`Admin nativo incompleto no build: ${token}`);
+  }
+}
+
 const forbiddenTokens = ['contato@exemplo.com', "url('https://unsplash.com')", 'url("https://unsplash.com")'];
 
 function scanTextTree(dir) {
@@ -129,6 +140,8 @@ if (fs.existsSync(headersPath)) {
     'Referrer-Policy: strict-origin-when-cross-origin',
     'Permissions-Policy:',
     'X-Frame-Options: DENY',
+    '/admin/*',
+    'Cache-Control: private, no-store, max-age=0',
     '/content/*',
     'Cache-Control: public, max-age=0, must-revalidate',
     '/assets/*',
@@ -144,6 +157,8 @@ if (fs.existsSync(publicationPath)) {
     publication = JSON.parse(fs.readFileSync(publicationPath, 'utf8'));
     if (publication.production_branch !== 'main') errors.push('content/publicacao.json no build deve manter production_branch como main.');
     if (!publication.checks || typeof publication.checks !== 'object') errors.push('content/publicacao.json no build deve conter o objeto checks.');
+    if ('pages_cms_testado' in (publication.checks || {})) errors.push('Gate legado pages_cms_testado não deve existir no build.');
+    if (publication.checks?.admin_nativo_validado !== false) errors.push('admin_nativo_validado deve permanecer pendente nesta fase.');
   } catch {
     // JSON ja e validado acima.
   }

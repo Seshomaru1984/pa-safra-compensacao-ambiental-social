@@ -4,11 +4,6 @@ on:
   push:
   pull_request:
   workflow_dispatch:
-    inputs:
-      payload:
-        description: Contexto opcional enviado pelo Pages CMS em JSON
-        required: false
-        type: string
 
 permissions:
   contents: read
@@ -35,8 +30,8 @@ jobs:
       - name: Validar estrutura editorial e integridade de imagens
         run: npm run check
 
-      - name: Validar contrato operacional do Pages CMS
-        run: npm run cms:test
+      - name: Validar contrato do admin nativo
+        run: npm run admin:test
 
       - name: Validar readiness Cloudflare
         run: npm run cloudflare:test
@@ -62,7 +57,11 @@ jobs:
       - name: Validar JavaScript
         run: |
           node --check app.js
+          node --check public/admin/admin.js
+          node --check functions/api/admin/status.js
+          node --check functions/api/admin/content.js
           node --check tools/smoke-remote.mjs
+          node --check tools/admin-contract.mjs
 
       - name: Validar sintaxe do empacotador PowerShell
         shell: pwsh
@@ -103,14 +102,14 @@ jobs:
           echo "- Commit: \`$GITHUB_SHA\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- imagens do solicitante: reconstruidas e integridade WebP confirmada" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run check: OK" >> "$GITHUB_STEP_SUMMARY"
-          echo "- npm run cms:test: OK" >> "$GITHUB_STEP_SUMMARY"
+          echo "- npm run admin:test: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run cloudflare:test: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run cloudflare:env-test: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- trava editorial pendente: bloqueio confirmado" >> "$GITHUB_STEP_SUMMARY"
-          echo "- sintaxe app.js e smoke-remote.mjs: OK" >> "$GITHUB_STEP_SUMMARY"
+          echo "- sintaxe do site, admin nativo, Pages Functions e smoke remoto: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- PowerShell parser do empacotador: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run build (advisory/preview): OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run smoke: OK, inclusive assinatura/tamanho de imagens" >> "$GITHUB_STEP_SUMMARY"
           echo "- artefato dist: gerado por 14 dias" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Esta rotina valida o contrato tecnico do Pages CMS, a preparacao Cloudflare, as imagens e confirma que a producao continua bloqueada enquanto as pendencias editoriais existirem. Ela nao faz merge nem publica em producao." >> "$GITHUB_STEP_SUMMARY"
+          echo "Esta rotina valida a fundacao do painel administrativo nativo, a preparacao Cloudflare, as imagens e confirma que a producao continua bloqueada enquanto as pendencias editoriais existirem. Ela nao faz merge nem publica em producao." >> "$GITHUB_STEP_SUMMARY"
