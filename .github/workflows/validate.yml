@@ -79,7 +79,8 @@ jobs:
             'tools/PA-SAFRA-AUDITAR-CLOUDFLARE-PREVIEW.ps1',
             'tools/PA-SAFRA-PROVISIONAR-D1-PREVIEW.ps1',
             'tools/PA-SAFRA-A18-CONTINUAR-D1-PREVIEW.ps1',
-            'tools/PA-SAFRA-A19-CONFIGURAR-PREVIEW-AUTH.ps1'
+            'tools/PA-SAFRA-A19-CONFIGURAR-PREVIEW-AUTH.ps1',
+            'tools/PA-SAFRA-A19-R3-CONTINUAR-PREVIEW-AUTH.ps1'
           )
           foreach ($rel in $arquivos) {
             $tokens = $null
@@ -122,7 +123,7 @@ jobs:
           echo "- npm run admin:test: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run admin:auth-test: OK (401/429/Retry-After/cookie/fail-closed)" >> "$GITHUB_STEP_SUMMARY"
           echo "- autenticacao nativa usuario/senha e sessao assinada: sintaxe OK" >> "$GITHUB_STEP_SUMMARY"
-          echo "- geradores, auditor, provisionador D1, executor A18 e configurador A19 PowerShell: parser OK" >> "$GITHUB_STEP_SUMMARY"
+          echo "- geradores, auditor, provisionador D1, executor A18, configurador A19 e executor R3 PowerShell: parser OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run cloudflare:test: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run cloudflare:env-test: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- trava editorial pendente: bloqueio confirmado" >> "$GITHUB_STEP_SUMMARY"
