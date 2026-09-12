@@ -67,6 +67,7 @@ jobs:
           node --check functions/api/admin/content.js
           node --check tools/admin-credentials.mjs
           node --check tools/admin-auth-test.mjs
+          node --check tools/admin-preview-runtime-diagnostic.mjs
           node --check tools/smoke-remote.mjs
           node --check tools/admin-contract.mjs
 
@@ -81,6 +82,7 @@ jobs:
             'tools/PA-SAFRA-A18-CONTINUAR-D1-PREVIEW.ps1',
             'tools/PA-SAFRA-A19-CONFIGURAR-PREVIEW-AUTH.ps1',
             'tools/PA-SAFRA-A19-R3-CONTINUAR-PREVIEW-AUTH.ps1',
+            'tools/PA-SAFRA-A19-R4-CORRIGIR-PBKDF2-PREVIEW.ps1',
             'tools/PA-SAFRA-A19-DIAGNOSTICAR-LOGIN-500.ps1'
           )
           foreach ($rel in $arquivos) {
@@ -122,16 +124,16 @@ jobs:
           echo "- imagens do solicitante: reconstruidas e integridade WebP confirmada" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run check: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run admin:test: OK" >> "$GITHUB_STEP_SUMMARY"
-          echo "- npm run admin:auth-test: OK (401/429/Retry-After/cookie/fail-closed)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- npm run admin:auth-test: OK (PBKDF2 100000, 401/429/Retry-After/cookie/fail-closed)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- hash PBKDF2 incompatível: resposta controlada 503, sem Worker exception" >> "$GITHUB_STEP_SUMMARY"
           echo "- autenticacao nativa usuario/senha e sessao assinada: sintaxe OK" >> "$GITHUB_STEP_SUMMARY"
-          echo "- geradores, auditor, provisionador D1, executor A18, configurador A19, executor R3 e diagnostico de login 500 PowerShell: parser OK" >> "$GITHUB_STEP_SUMMARY"
+          echo "- scripts PowerShell, inclusive correcao canonica A19 R4: parser OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run cloudflare:test: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run cloudflare:env-test: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- trava editorial pendente: bloqueio confirmado" >> "$GITHUB_STEP_SUMMARY"
           echo "- sintaxe do site, admin nativo, Pages Functions e smoke remoto: OK" >> "$GITHUB_STEP_SUMMARY"
-          echo "- PowerShell parser do empacotador: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run build (advisory/preview): OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run smoke: OK, inclusive assinatura/tamanho de imagens" >> "$GITHUB_STEP_SUMMARY"
           echo "- artefato dist: gerado por 14 dias" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Esta rotina valida o painel administrativo nativo com login proprio, rate limiter D1, a preparacao Cloudflare, as imagens e confirma que a producao continua bloqueada enquanto as pendencias editoriais existirem. Ela nao faz merge nem publica em producao." >> "$GITHUB_STEP_SUMMARY"
+          echo "Esta rotina valida o painel administrativo nativo, a compatibilidade PBKDF2 com Cloudflare Workers, o rate limiter D1, a preparacao Cloudflare, as imagens e confirma que a producao continua bloqueada enquanto as pendencias editoriais existirem. Ela nao faz merge nem publica em producao." >> "$GITHUB_STEP_SUMMARY"
