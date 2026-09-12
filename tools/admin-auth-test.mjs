@@ -5,22 +5,90 @@ const ORIGIN = 'https://preview.example.test';
 const TEST_USER = 'admin';
 const TEST_PASSWORD = 'Correct-Horse-Battery-Staple-123!';
 const ITERATIONS = 100_000;
+const RATE_WINDOW_SECONDS = 15 * 60;
+const RATE_LOCK_SECONDS = 15 * 60;
+const RATE_MAX_FAILURES = 5;
 
-class MemoryKV {
+class MemoryD1Statement {
+  constructor(db, sql) {
+    this.db = db;
+    this.sql = sql;
+    this.params = [];
+  }
+
+  bind(...params) {
+    this.params = params;
+    return this;
+  }
+
+  async first() {
+    if (!this.sql.includes('SELECT count, window_started_at, blocked_until')) {
+      throw new Error('Statement first() inesperado no mock D1.');
+    }
+    const row = this.db.rows.get(this.params[0]);
+    return row ? { ...row } : null;
+  }
+
+  async run() {
+    if (this.sql.includes('DELETE FROM admin_login_rate')) {
+      this.db.rows.delete(this.params[0]);
+      return { success: true, results: [] };
+    }
+    throw new Error('Statement run() inesperado no mock D1.');
+  }
+}
+
+class MemoryD1 {
   constructor() {
-    this.values = new Map();
+    this.rows = new Map();
   }
 
-  async get(key) {
-    return this.values.get(key) ?? null;
+  prepare(sql) {
+    return new MemoryD1Statement(this, sql);
   }
 
-  async put(key, value) {
-    this.values.set(key, value);
-  }
+  async batch(statements) {
+    const results = [];
+    for (const statement of statements) {
+      if (statement.sql.includes('INSERT INTO admin_login_rate')) {
+        const key = statement.params[0];
+        const now = Number(statement.params[1]);
+        const previous = this.rows.get(key) || {
+          count: 0,
+          window_started_at: 0,
+          blocked_until: 0,
+          updated_at: 0,
+        };
 
-  async delete(key) {
-    this.values.delete(key);
+        let next;
+        if (previous.blocked_until > now) {
+          next = { ...previous, updated_at: now };
+        } else {
+          const withinWindow = previous.window_started_at > 0
+            && now - previous.window_started_at < RATE_WINDOW_SECONDS;
+          const count = (withinWindow ? previous.count : 0) + 1;
+          const windowStartedAt = withinWindow ? previous.window_started_at : now;
+          next = {
+            count,
+            window_started_at: windowStartedAt,
+            blocked_until: count >= RATE_MAX_FAILURES ? now + RATE_LOCK_SECONDS : 0,
+            updated_at: now,
+          };
+        }
+        this.rows.set(key, next);
+        results.push({ success: true, results: [] });
+        continue;
+      }
+
+      if (statement.sql.includes('SELECT count, window_started_at, blocked_until')) {
+        const row = this.rows.get(statement.params[0]);
+        results.push({ success: true, results: row ? [{ ...row }] : [] });
+        continue;
+      }
+
+      throw new Error('Statement inesperado no batch do mock D1.');
+    }
+    return results;
   }
 }
 
@@ -40,7 +108,7 @@ function environment(overrides = {}) {
     PA_SAFRA_ADMIN_USER: TEST_USER,
     PA_SAFRA_ADMIN_PASSWORD_HASH: passwordHash(TEST_PASSWORD),
     PA_SAFRA_SESSION_SECRET: '0123456789abcdefghijklmnopqrstuvwxyz-SESSION-SECRET',
-    PA_SAFRA_AUTH_KV: new MemoryKV(),
+    PA_SAFRA_AUTH_DB: new MemoryD1(),
     ...overrides,
   };
 }
@@ -87,8 +155,8 @@ async function main() {
     assert(cookie.includes(token), `Cookie de sessão sem requisito obrigatório: ${token}`);
   }
 
-  const withoutKv = await attempt(environment({ PA_SAFRA_AUTH_KV: undefined }), { ip: '203.0.113.12' });
-  assert(withoutKv.status === 503, `Sem KV o login deve falhar fechado com 503; recebeu ${withoutKv.status}.`);
+  const withoutDb = await attempt(environment({ PA_SAFRA_AUTH_DB: undefined }), { ip: '203.0.113.12' });
+  assert(withoutDb.status === 503, `Sem D1 o login deve falhar fechado com 503; recebeu ${withoutDb.status}.`);
 
   const disabled = await attempt(environment({ PA_SAFRA_ADMIN_ENABLED: 'false' }), { ip: '203.0.113.13' });
   assert(disabled.status === 503, `Admin desativado deve responder 503; recebeu ${disabled.status}.`);
@@ -99,7 +167,7 @@ async function main() {
   console.log('- bloqueio permanece mesmo com senha correta no mesmo cliente');
   console.log('- outro cliente com credencial correta autentica');
   console.log('- cookie de sessão: HttpOnly + Secure + SameSite=Strict');
-  console.log('- ausência do KV: fail-closed 503');
+  console.log('- ausência do D1: fail-closed 503');
   console.log('- administração desativada: 503');
 }
 

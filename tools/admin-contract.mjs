@@ -18,6 +18,7 @@ for (const rel of [
   'tools/admin-credentials.mjs',
   'tools/admin-auth-test.mjs',
   'tools/PA-SAFRA-GERAR-CREDENCIAIS-ADMIN.ps1',
+  'migrations/0001_admin_login_rate.sql',
   'docs/ADR-0002-ADMIN-NATIVO.md',
 ]) {
   if (!exists(rel)) fail(`Admin nativo: arquivo ausente: ${rel}`);
@@ -53,7 +54,7 @@ for (const token of [
   'PA_SAFRA_ADMIN_USER',
   'PA_SAFRA_ADMIN_PASSWORD_HASH',
   'PA_SAFRA_SESSION_SECRET',
-  'PA_SAFRA_AUTH_KV',
+  'PA_SAFRA_AUTH_DB',
   'GITHUB_CONTENT_TOKEN',
   'pa_safra_admin_session',
   'PBKDF2',
@@ -62,8 +63,13 @@ for (const token of [
   if (!authText.includes(token)) fail(`Admin nativo: contrato de autenticação ausente: ${token}`);
 }
 
-for (const forbidden of ['PA_SAFRA_ADMIN_EMAILS', 'Cf-Access-Authenticated-User-Email', 'Cf-Access-Jwt-Assertion']) {
-  if (authText.includes(forbidden)) fail(`Admin nativo: dependência externa de autenticação ainda presente: ${forbidden}`);
+for (const forbidden of [
+  'PA_SAFRA_ADMIN_EMAILS',
+  'Cf-Access-Authenticated-User-Email',
+  'Cf-Access-Jwt-Assertion',
+  'PA_SAFRA_AUTH_KV',
+]) {
+  if (authText.includes(forbidden)) fail(`Admin nativo: dependência obsoleta/externa ainda presente: ${forbidden}`);
 }
 
 for (const token of [
@@ -73,10 +79,18 @@ for (const token of [
   "request.headers.get('CF-Connecting-IP')",
   "'retry-after'",
   '429',
+  'INSERT INTO admin_login_rate',
+  'db.batch([upsert, select])',
 ]) {
   if (!loginJs.includes(token)) fail(`Admin nativo: proteção contra força bruta incompleta: ${token}`);
 }
 if (!statusJs.includes('rate_limit_configured')) fail('Admin nativo: status não expõe readiness do rate limiter.');
+if (!statusJs.includes("rate_limit_backend: rateLimitReady ? 'd1' : null")) fail('Admin nativo: status não identifica backend D1 do rate limiter.');
+
+const migration = read('migrations/0001_admin_login_rate.sql');
+for (const token of ['CREATE TABLE IF NOT EXISTS admin_login_rate', 'client_key TEXT PRIMARY KEY', 'blocked_until INTEGER']) {
+  if (!migration.includes(token)) fail(`Admin nativo: migration D1 incompleta: ${token}`);
+}
 
 for (const token of [
   "Seshomaru1984/pa-safra-compensacao-ambiental-social",
@@ -121,7 +135,8 @@ console.log('- Pages CMS removido como dependência');
 console.log('- /admin com login próprio presente');
 console.log('- sessão HttpOnly assinada por HMAC prevista');
 console.log('- senha validada por hash PBKDF2, sem senha em código/GitHub');
-console.log('- login bloqueia após 5 falhas/15 min via Workers KV');
+console.log('- login bloqueia após 5 falhas/15 min com estado transacional em D1');
+console.log('- migration D1 do rate limiter presente');
 console.log('- geradores de credenciais Node e PowerShell presentes');
 console.log('- escrita depende de sessão válida + secret GitHub');
 console.log('- escopo inicial limitado a site e vídeos');
