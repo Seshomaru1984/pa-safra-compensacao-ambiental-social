@@ -3,16 +3,54 @@ Set-StrictMode -Version Latest
 
 $RepositorioEsperado = 'https://github.com/Seshomaru1984/pa-safra-compensacao-ambiental-social.git'
 $ProjetoPages = 'pa-safra-compensacao-ambiental-social'
-$PreviewUrl = 'https://ops-pa-v001-a19-preview-auth.pa-safra-compensacao-ambiental-social.pages.dev'
+$BranchEsperada = 'ops/pa-v001-a19-preview-auth-e2e'
+$DeploymentUrlEsperada = 'https://c0c272d4.pa-safra-compensacao-ambiental-social.pages.dev'
 $Raiz = Join-Path $env:USERPROFILE 'PA SAFRA'
 $LogDir = Join-Path $env:USERPROFILE 'Downloads\PA-SAFRA-LOGS'
 $Timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
-$TailOut = Join-Path $LogDir "PA-A19-DIAGNOSTICO-500-R3-$Timestamp.jsonl"
-$TailErr = Join-Path $LogDir "PA-A19-DIAGNOSTICO-500-R3-$Timestamp.stderr.txt"
+$TailOut = Join-Path $LogDir "PA-A19-DIAGNOSTICO-500-R4-$Timestamp.jsonl"
+$TailErr = Join-Path $LogDir "PA-A19-DIAGNOSTICO-500-R4-$Timestamp.stderr.txt"
+$ListErr = Join-Path $env:TEMP ("PA-A19-R4-LIST-$([guid]::NewGuid().ToString('N')).stderr.txt")
 
 function Fail {
     param([Parameter(Mandatory = $true)][string]$Message)
     throw $Message
+}
+
+function Get-OptionalProperty {
+    param(
+        [AllowNull()][object]$Object,
+        [Parameter(Mandatory = $true)][string]$Name
+    )
+
+    if ($null -eq $Object) { return $null }
+    $property = $Object.PSObject.Properties[$Name]
+    if ($null -eq $property) { return $null }
+    return $property.Value
+}
+
+function Get-DeploymentBranch {
+    param([AllowNull()][object]$Deployment)
+
+    $trigger = Get-OptionalProperty -Object $Deployment -Name 'deployment_trigger'
+    $metadata = Get-OptionalProperty -Object $trigger -Name 'metadata'
+    return [string](Get-OptionalProperty -Object $metadata -Name 'branch')
+}
+
+function Get-DeploymentUrl {
+    param([AllowNull()][object]$Deployment)
+    return [string](Get-OptionalProperty -Object $Deployment -Name 'url')
+}
+
+function Get-DeploymentCreatedOn {
+    param([AllowNull()][object]$Deployment)
+
+    $raw = [string](Get-OptionalProperty -Object $Deployment -Name 'created_on')
+    $parsed = [datetime]::MinValue
+    if (-not [string]::IsNullOrWhiteSpace($raw)) {
+        [datetime]::TryParse($raw, [ref]$parsed) | Out-Null
+    }
+    return $parsed
 }
 
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
@@ -32,23 +70,80 @@ if ($remote.Trim() -ne $RepositorioEsperado) {
 }
 
 Write-Host ''
-Write-Host 'PA SAFRA - A19 - DIAGNOSTICO DO LOGIN HTTP 500' -ForegroundColor Cyan
+Write-Host 'PA SAFRA - A19 - DIAGNOSTICO R4 DO LOGIN HTTP 500' -ForegroundColor Cyan
 Write-Host 'Modo: leitura/observabilidade; nenhuma configuracao sera alterada.' -ForegroundColor Cyan
 Write-Host 'Repositorio autorizado: OK' -ForegroundColor Green
 
-# Confirma que existe Preview antes de abrir o tail. O tail e direcionado pelo ambiente,
-# evitando depender de URL/ID de deployment que pode mudar de formato.
-$previewList = @(& npx.cmd --yes wrangler@4.131.1 pages deployment list --project-name $ProjetoPages --environment preview --json 2>&1)
-$previewListCode = $LASTEXITCODE
-if ($previewListCode -ne 0) {
-    $previewList | ForEach-Object { Write-Host ([string]$_) }
+$previousPreference = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+try {
+    $previewLines = @(
+        & npx.cmd --yes wrangler@4.131.1 pages deployment list `
+            --project-name $ProjetoPages `
+            --environment preview `
+            --json 2>$ListErr
+    )
+    $previewCode = $LASTEXITCODE
+}
+finally {
+    $ErrorActionPreference = $previousPreference
+}
+
+if ($previewCode -ne 0) {
+    if (Test-Path -LiteralPath $ListErr) { Get-Content -LiteralPath $ListErr }
     Fail 'NAO FOI POSSIVEL LISTAR DEPLOYMENTS DE PREVIEW.'
 }
-$previewText = (($previewList | ForEach-Object { [string]$_ }) -join [Environment]::NewLine).Trim()
-if ([string]::IsNullOrWhiteSpace($previewText) -or $previewText -eq '[]') {
+
+$previewText = (($previewLines | ForEach-Object { [string]$_ }) -join [Environment]::NewLine).Trim()
+if ([string]::IsNullOrWhiteSpace($previewText)) {
+    Fail 'LISTA DE DEPLOYMENTS DE PREVIEW VEIO VAZIA.'
+}
+
+try {
+    $deployments = @($previewText | ConvertFrom-Json)
+}
+catch {
+    Write-Host $previewText
+    Fail 'JSON DA LISTA DE DEPLOYMENTS NAO PODE SER INTERPRETADO.'
+}
+
+if ($deployments.Count -lt 1) {
     Fail 'NENHUM DEPLOYMENT DE PREVIEW FOI ENCONTRADO.'
 }
-Write-Host 'Preview existente: OK' -ForegroundColor Green
+
+$target = $deployments |
+    Where-Object { (Get-DeploymentUrl $_).TrimEnd('/') -eq $DeploymentUrlEsperada.TrimEnd('/') } |
+    Select-Object -First 1
+
+if ($null -eq $target) {
+    $target = $deployments |
+        Where-Object { (Get-DeploymentBranch $_) -eq $BranchEsperada } |
+        Sort-Object { Get-DeploymentCreatedOn $_ } -Descending |
+        Select-Object -First 1
+}
+
+if ($null -eq $target) {
+    $target = $deployments |
+        Sort-Object { Get-DeploymentCreatedOn $_ } -Descending |
+        Select-Object -First 1
+}
+
+$deploymentId = [string](Get-OptionalProperty -Object $target -Name 'id')
+$deploymentUrl = (Get-DeploymentUrl $target).TrimEnd('/')
+$deploymentBranch = Get-DeploymentBranch $target
+
+if ([string]::IsNullOrWhiteSpace($deploymentId)) {
+    Fail 'DEPLOYMENT SELECIONADO NAO POSSUI ID.'
+}
+if ([string]::IsNullOrWhiteSpace($deploymentUrl) -or $deploymentUrl -notmatch '^https://[A-Za-z0-9.-]+\.pages\.dev$') {
+    Fail "DEPLOYMENT SELECIONADO NAO POSSUI URL PAGES.DEV VALIDA: $deploymentUrl"
+}
+
+Write-Host "Deployment ID selecionado: $deploymentId" -ForegroundColor Green
+Write-Host "Deployment URL: $deploymentUrl" -ForegroundColor Green
+if (-not [string]::IsNullOrWhiteSpace($deploymentBranch)) {
+    Write-Host "Deployment branch: $deploymentBranch" -ForegroundColor Green
+}
 
 $argsTail = @(
     '--yes',
@@ -56,17 +151,16 @@ $argsTail = @(
     'pages',
     'deployment',
     'tail',
+    $deploymentId,
     '--project-name',
     $ProjetoPages,
-    '--environment',
-    'preview',
     '--format',
     'json',
     '--status',
     'error'
 )
 
-Write-Host 'Abrindo tail do deployment Preview mais recente...' -ForegroundColor Cyan
+Write-Host 'Abrindo tail pelo deployment ID exato...' -ForegroundColor Cyan
 $tail = Start-Process `
     -FilePath 'npx.cmd' `
     -ArgumentList $argsTail `
@@ -98,14 +192,14 @@ try {
     $Body = @{ username = 'admin'; password = $Senha } | ConvertTo-Json -Compress
 
     Write-Host ''
-    Write-Host 'Executando UMA tentativa de login...' -ForegroundColor Cyan
+    Write-Host 'Executando UMA tentativa de login no deployment exato...' -ForegroundColor Cyan
     $Http = $null
     try {
         $Resp = Invoke-WebRequest `
-            -Uri "$PreviewUrl/api/admin/login" `
+            -Uri "$deploymentUrl/api/admin/login" `
             -Method Post `
             -ContentType 'application/json' `
-            -Headers @{ Origin = $PreviewUrl } `
+            -Headers @{ Origin = $deploymentUrl } `
             -Body $Body `
             -TimeoutSec 45 `
             -UseBasicParsing
@@ -140,12 +234,14 @@ finally {
             & taskkill.exe /PID $tail.Id /T /F 2>$null | Out-Null
         }
     }
+    if (Test-Path -LiteralPath $ListErr) {
+        Remove-Item -LiteralPath $ListErr -Force -ErrorAction SilentlyContinue
+    }
     Start-Sleep -Seconds 2
 }
 
 Write-Host ''
 Write-Host '================ TAIL CLOUDFLARE ================' -ForegroundColor Cyan
-$tailText = ''
 if (Test-Path -LiteralPath $TailOut) {
     $tailText = Get-Content -LiteralPath $TailOut -Raw
     if (-not [string]::IsNullOrWhiteSpace($tailText)) {
@@ -169,6 +265,6 @@ if (Test-Path -LiteralPath $TailErr) {
 }
 
 Write-Host ''
-Write-Host 'DIAGNOSTICO CONCLUIDO.' -ForegroundColor Green
+Write-Host 'DIAGNOSTICO R4 CONCLUIDO.' -ForegroundColor Green
 Write-Host "JSONL: $TailOut" -ForegroundColor Cyan
 Write-Host "STDERR: $TailErr" -ForegroundColor Cyan
