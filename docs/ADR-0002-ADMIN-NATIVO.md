@@ -2,6 +2,7 @@
 
 Status: aprovado para implementação inicial
 Data: 2026-09-11
+Atualização de compatibilidade: 2026-09-12
 
 ## Contexto
 
@@ -62,7 +63,13 @@ A senha nunca será armazenada em texto puro. A configuração usa:
 - `PA_SAFRA_AUTH_DB`: binding D1 usado exclusivamente pelo rate limiter;
 - cookie de sessão `HttpOnly`, `Secure` e `SameSite=Strict`, com validade limitada.
 
-A geração inicial do hash e do segredo de sessão deve ocorrer localmente pelo utilitário `tools/admin-credentials.mjs` ou pelo gerador PowerShell equivalente, sem transmitir a senha pelo chat ou gravá-la no repositório.
+No Cloudflare Workers, o PBKDF2-SHA256 desta fase fica fixado em **100000 iterações**, teto de compatibilidade observado no runtime `workerd`. A A19 comprovou que o valor anterior de 310000 produzia `Worker threw exception` antes do retorno controlado do login. Hash com contagem diferente deve falhar fechado com HTTP 503 JSON, sem encaminhar uma configuração incompatível ao WebCrypto.
+
+A geração inicial/rotação do hash deve ocorrer localmente, sem transmitir a senha pelo chat ou gravá-la no repositório. O utilitário `tools/admin-credentials.mjs` usa o mesmo contrato de 100000 iterações. O segredo de sessão é independente do hash de senha e não deve ser renovado sem necessidade.
+
+O limite de 100000 é uma restrição de plataforma e é inferior a recomendações modernas de custo para PBKDF2-SHA256. Não será adotada uma implementação PBKDF2 intensiva em JavaScript para contornar o teto do Worker. Endurecimento posterior pode avaliar pepper server-side ou arquitetura/KDF diferente compatível com o ambiente.
+
+Evidência específica: `docs/evidencias/PA-V001-A19-PBKDF2-CLOUDFLARE-20260912.md`.
 
 ## Rate limiting
 
