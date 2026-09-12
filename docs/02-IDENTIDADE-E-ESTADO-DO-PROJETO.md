@@ -35,6 +35,7 @@ Aplicação específica da BASE-PROJETOS-WEB-V2 ao projeto PA Safra. Atualizado 
 | Banco | Cloudflare D1 apenas para estado técnico do rate limiter; não é fonte editorial |
 | D1 de Preview | `pa-safra-auth-preview` / `e99dd1d3-977e-40fd-a814-a00e269fc423` — VERIFICADO |
 | Autenticação | usuário/senha nativos + sessão assinada; cookie `HttpOnly`, `Secure`, `SameSite=Strict` |
+| Derivação de senha no Workers | PBKDF2-SHA256 / `100000` iterações; contagem diferente falha fechado com 503 |
 | Usuário administrativo de Preview | `admin` |
 | Branch editorial de Preview | `content/pa-v001-admin-preview` |
 | Token GitHub de escrita | NÃO CONFIGURADO na A19; escrita editorial permanece bloqueada |
@@ -48,27 +49,31 @@ Aplicação específica da BASE-PROJETOS-WEB-V2 ao projeto PA Safra. Atualizado 
 |---|---|
 | Revisado em | 12/09/2026 |
 | Item de trabalho | PA-V001-A19 — autenticação real do painel no Preview |
-| Fase atual | F1 — validação funcional, com defeito aberto |
-| Última fase satisfeita | T1 do candidato anterior à falha runtime: CI/build/smoke/parser e contrato local aprovados; isso não comprova login real |
-| HEAD remoto observado antes desta consolidação | `ca262a0f5af42ff18a5fd19ea43145b2fa579a02` |
-| Deploy Preview observado | deployment `c0c272d4...` concluído; alias A19 ativo |
-| Status remoto | `/api/admin/status` confirmou admin habilitado, credenciais configuradas, D1 ativo, branch editorial esperada e escrita GitHub bloqueada |
-| Implementação | IMPLEMENTADA no candidato A19 |
-| Validação técnica | PASS no alcance do CI/build/smoke; runtime de login não coberto por essa evidência |
-| Validação funcional | FAIL: login real retorna HTTP 500; sessão/logout não exercitados |
+| Fase atual | T1/F1 da correção PBKDF2 |
+| Última fase satisfeita | Diagnóstico runtime isolou o defeito e a correção foi implementada no candidato; F1 ainda não foi refeito com o hash compatível |
+| Checkpoint técnico anterior a este documento | `825440f023417dabefcc5bef96b9407ef443c687` |
+| Status remoto anterior à correção | `/api/admin/status` confirmou admin habilitado, credenciais configuradas, D1 ativo, branch editorial esperada e escrita GitHub bloqueada |
+| Diagnóstico runtime | run `34719004809`, artefato `10305203739`, SHA-256 `c15d3807727c93d73fa766e40e05a364f70bbff165c2d174c2bc61ec51e4bd24` |
+| Resultado do diagnóstico | senha aleatória incorreta também produziu HTTP 500 / `Worker threw exception`, antes do 401 controlado |
+| Causa confirmada | PBKDF2-SHA256 com 310000 iterações excedia o teto de 100000 do runtime Cloudflare Workers/workerd |
+| Implementação corretiva | verifier fixado em 100000; hash incompatível → 503 JSON; geradores alinhados; executor R4 criado |
+| Executor canônico atual | `tools/PA-SAFRA-A19-R4-CORRIGIR-PBKDF2-PREVIEW.ps1` |
+| R2/R3 | HISTÓRICO; não reexecutar neste gate |
+| Validação técnica | CI do HEAD corretivo deve concluir antes de executar R4 |
+| Validação funcional | PENDENTE: R4 deve renovar somente o hash de Preview, fazer deploy da correção e comprovar login/sessão/logout |
 | Publicação/produção | NAO_EXECUTADO para A19; `main`, `develop`, domínio e DNS preservados |
-| Bloqueio atual | causa do HTTP 500 ainda não confirmada; tentativas de `wrangler pages deployment tail` falharam no procedimento antes de observar o Worker |
-| Hipótese técnica principal | limite de CPU do Workers Free durante PBKDF2 de 310.000 iterações; hipótese sustentada por documentação oficial e pelo ponto do fluxo, ainda não tratada como causa confirmada |
-| Próxima ação | abandonar repetição de `tail` por tentativa; produzir diagnóstico/controlador mínimo no próprio candidato, validado no GitHub/CI, que diferencie D1/origem/crypto sem depender do testador que já falhou |
+| GitHub write | continua BLOQUEADO; `GITHUB_CONTENT_TOKEN` ausente |
+| `admin_nativo_validado` | `false` |
 
 ## 4. Evidências essenciais
 
 - A18 provisionou e validou o D1 remoto e `admin_login_rate`.
 - A19 concluiu build formal, deploy Preview e status remoto com escrita GitHub bloqueada.
-- Login real retornou HTTP 500 em tentativa controlada; senha incorreta não foi inferida, pois o contrato implementado reserva 401 para credenciais inválidas.
-- Três tentativas de observabilidade via `wrangler pages deployment tail` falharam como PROCEDIMENTO/TESTADOR antes de capturar a exceção do produto.
-- O CI do HEAD `ca262a0f5af42ff18a5fd19ea43145b2fa579a02` concluiu com sucesso, sem substituir F1.
+- O diagnóstico GitHub Actions não utilizou a senha real e comprovou que uma senha aleatória também atingia `Worker threw exception`.
+- O fluxo de login só chegaria a `registerFailure`/401 após `verifyPassword`; o erro 500 anterior ao 401, combinado com o teto PBKDF2 do Workers, confirmou a incompatibilidade de 310000 iterações.
+- Evidência detalhada: `docs/evidencias/PA-V001-A19-PBKDF2-CLOUDFLARE-20260912.md`.
+- A correção não habilita escrita editorial nem altera produção.
 
 ## 5. Regra de continuidade
 
-Não repetir build, secrets, D1 ou deploy já comprovados sem uma mudança que invalide essas evidências. Toda nova tentativa deve explicar o aprendizado e a diferença técnica. Após as falhas do `tail`, o próximo diagnóstico deve usar outro mecanismo, conforme a BASE V2 e o protocolo de correções.
+Não repetir A18, provisionamento D1 ou as tentativas R2/R3. A próxima execução local, somente depois de CI verde, é a R4 canônica. Ela deve pedir apenas a senha administrativa duas vezes, renovar apenas `PA_SAFRA_ADMIN_PASSWORD_HASH` no Preview, publicar o código corrigido e testar login/sessão/logout. Qualquer falha deve ser tratada pelo protocolo de correções antes de nova tentativa.
