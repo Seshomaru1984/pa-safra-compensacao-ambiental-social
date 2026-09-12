@@ -73,18 +73,22 @@ if (-not $whoami.loggedIn) {
     throw 'Wrangler nao esta autenticado.'
 }
 
-$projects = @(Invoke-WranglerJson -Arguments @('pages', 'project', 'list', '--json') -Label 'pages project list')
-$project = $projects | Where-Object {
-    $_.PSObject.Properties['Project Name'] -and $_.'Project Name' -eq $ProjetoPages
-} | Select-Object -First 1
-if (-not $project) {
-    throw "Projeto Pages esperado nao encontrado: $ProjetoPages"
-}
+# Valida o projeto Pages pelo nome exato sem depender do schema JSON de
+# `pages project list`, que mudou entre versoes do Wrangler. O comando abaixo
+# e somente leitura e falha se o projeto informado nao existir ou nao estiver
+# acessivel na conta autenticada.
+$previewDeployments = @(Invoke-WranglerJson -Arguments @(
+    'pages', 'deployment', 'list',
+    '--project-name', $ProjetoPages,
+    '--environment', 'preview',
+    '--json'
+) -Label 'validar projeto Pages pelo nome exato')
 
 Write-Host ''
 Write-Host 'PA SAFRA - PROVISIONAMENTO D1 DE PREVIEW' -ForegroundColor Cyan
 Write-Host "Repositorio: $RepositorioEsperado" -ForegroundColor Green
 Write-Host "Projeto Pages: $ProjetoPages" -ForegroundColor Green
+Write-Host "Deploys preview encontrados na validacao: $($previewDeployments.Count)" -ForegroundColor Green
 Write-Host "Banco D1 alvo: $BancoEsperado" -ForegroundColor Yellow
 Write-Host 'Este script NAO altera main, dominio, DNS, secrets ou bindings do Pages.' -ForegroundColor Yellow
 Write-Host 'A criacao do D1 nao pode gerar/alterar arquivo Wrangler do projeto.' -ForegroundColor Yellow
