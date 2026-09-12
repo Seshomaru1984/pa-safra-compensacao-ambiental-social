@@ -6,6 +6,7 @@ on:
       - ops/pa-v001-a19-preview-auth-e2e
     paths:
       - .github/workflows/a19-runtime-diagnostic.yml
+      - tools/admin-preview-runtime-diagnostic.mjs
   workflow_dispatch:
 
 permissions:
@@ -28,6 +29,14 @@ jobs:
         run: node --check tools/admin-preview-runtime-diagnostic.mjs
 
       - name: Diagnosticar Preview sem credencial real
+        id: diagnose
         run: node tools/admin-preview-runtime-diagnostic.mjs
 
-# Gatilho controlado do diagnostico runtime A19 - 2026-09-12
+      - name: Preservar evidencia runtime
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pa-safra-a19-runtime-diagnostic
+          path: a19-runtime-diagnostic-result.json
+          if-no-files-found: error
+          retention-days: 7
