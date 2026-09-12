@@ -1,0 +1,31 @@
+name: a19-runtime-diagnostic
+
+on:
+  push:
+    branches:
+      - ops/pa-v001-a19-preview-auth-e2e
+    paths:
+      - .github/workflows/a19-runtime-diagnostic.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose-login-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout candidato A19
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Validar sintaxe do diagnostico
+        run: node --check tools/admin-preview-runtime-diagnostic.mjs
+
+      - name: Diagnosticar Preview sem credencial real
+        run: node tools/admin-preview-runtime-diagnostic.mjs
