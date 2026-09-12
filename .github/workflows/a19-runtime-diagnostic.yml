@@ -29,3 +29,5 @@ jobs:
 
       - name: Diagnosticar Preview sem credencial real
         run: node tools/admin-preview-runtime-diagnostic.mjs
+
+# Gatilho controlado do diagnostico runtime A19 - 2026-09-12
