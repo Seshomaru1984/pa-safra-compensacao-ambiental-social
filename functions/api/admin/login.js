@@ -4,6 +4,7 @@ const MAX_BODY_BYTES = 8_000;
 const RATE_WINDOW_SECONDS = 15 * 60;
 const RATE_LOCK_SECONDS = 15 * 60;
 const RATE_MAX_FAILURES = 5;
+const PBKDF2_ITERATIONS = 100_000;
 
 const json = (data, status = 200, extraHeaders = {}) => new Response(JSON.stringify(data), {
   status,
@@ -43,7 +44,10 @@ async function verifyPassword(password, stored) {
   const parts = String(stored || '').split('$');
   if (parts.length !== 4 || parts[0] !== 'pbkdf2-sha256') return false;
   const iterations = Number(parts[1]);
-  if (!Number.isInteger(iterations) || iterations < 100_000 || iterations > 1_000_000) return false;
+  if (!Number.isInteger(iterations)) return false;
+  if (iterations !== PBKDF2_ITERATIONS) {
+    throw new Error(`PBKDF2_ITERATIONS_UNSUPPORTED:${iterations}`);
+  }
 
   let salt;
   let expected;
@@ -246,7 +250,12 @@ export async function onRequestPost({ request, env }) {
   }
 
   const configuredUser = String(env.PA_SAFRA_ADMIN_USER || '').trim().toLowerCase();
-  const passwordOk = await verifyPassword(password, env.PA_SAFRA_ADMIN_PASSWORD_HASH);
+  let passwordOk;
+  try {
+    passwordOk = await verifyPassword(password, env.PA_SAFRA_ADMIN_PASSWORD_HASH);
+  } catch {
+    return json({ ok: false, error: 'Configuração de credencial administrativa incompatível com o ambiente.' }, 503);
+  }
   const userOk = constantTimeEqual(username, configuredUser);
   if (!passwordOk || !userOk) {
     try {
