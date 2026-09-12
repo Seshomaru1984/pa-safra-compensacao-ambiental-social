@@ -14,14 +14,24 @@ function Fail {
     throw $Message
 }
 
+function Join-NativeOutput {
+    param([AllowNull()][object[]]$Lines)
+    if ($null -eq $Lines -or @($Lines).Count -eq 0) {
+        return ''
+    }
+    return ((@($Lines) | ForEach-Object { [string]$_ }) -join [Environment]::NewLine).Trim()
+}
+
 if (-not (Test-Path -LiteralPath (Join-Path $Raiz '.git') -PathType Container)) {
     Fail "CLONE LOCAL DO PA SAFRA NAO ENCONTRADO: $Raiz"
 }
 
 Set-Location $Raiz
 
-$remote = (& git.exe remote get-url origin).Trim()
-if ($LASTEXITCODE -ne 0 -or $remote -ne $RepositorioEsperado) {
+$remoteLines = @(& git.exe remote get-url origin)
+$remoteCode = $LASTEXITCODE
+$remote = Join-NativeOutput $remoteLines
+if ($remoteCode -ne 0 -or $remote -ne $RepositorioEsperado) {
     Fail "REMOTE NAO AUTORIZADO. EXECUCAO BLOQUEADA."
 }
 
@@ -29,10 +39,13 @@ Write-Host 'PA SAFRA - A19 R3 - CORRECAO PROCEDURAL DO DEPLOY PREVIEW' -Foregrou
 Write-Host 'Repositorio autorizado: OK' -ForegroundColor Green
 
 foreach ($name in $CanonicalWrangler) {
-    $statusArquivo = (& git.exe status --porcelain=v1 --untracked-files=all -- $name).Trim()
-    if ($LASTEXITCODE -ne 0) {
+    $statusLines = @(& git.exe status --porcelain=v1 --untracked-files=all -- $name)
+    $statusCode = $LASTEXITCODE
+    if ($statusCode -ne 0) {
         Fail "NAO FOI POSSIVEL AUDITAR $name."
     }
+
+    $statusArquivo = Join-NativeOutput $statusLines
 
     if ($statusArquivo -eq "?? $name") {
         Remove-Item -LiteralPath (Join-Path $Raiz $name) -Force
@@ -58,7 +71,7 @@ if ($LASTEXITCODE -ne 0) {
     Fail 'FETCH DA A19 FALHOU.'
 }
 
-$local = & git.exe show-ref --verify --quiet "refs/heads/$Branch"
+& git.exe show-ref --verify --quiet "refs/heads/$Branch"
 $localCode = $LASTEXITCODE
 if ($localCode -eq 0) {
     & git.exe switch $Branch
