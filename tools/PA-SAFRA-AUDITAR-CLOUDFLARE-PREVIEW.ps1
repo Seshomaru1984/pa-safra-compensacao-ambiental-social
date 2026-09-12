@@ -89,16 +89,18 @@ if (-not $whoami.loggedIn) {
 }
 Write-Host "Wrangler: autenticado ($($whoami.authType))" -ForegroundColor Green
 
-$projects = @(Invoke-WranglerJson -Arguments @('pages', 'project', 'list', '--json') -Label 'pages project list')
-$project = $projects | Where-Object {
-    $_.PSObject.Properties['Project Name'] -and $_.'Project Name' -eq $ProjetoPages
-} | Select-Object -First 1
+# O nome do projeto e validado diretamente no comando de deployments. Isso
+# evita depender das chaves de `pages project list --json`, que podem variar
+# entre versoes do Wrangler.
+$previewDeployments = @(Invoke-WranglerJson -Arguments @(
+    'pages', 'deployment', 'list',
+    '--project-name', $ProjetoPages,
+    '--environment', 'preview',
+    '--json'
+) -Label 'pages deployment list preview')
 
-if (-not $project) {
-    throw "Projeto Pages esperado nao encontrado: $ProjetoPages"
-}
 Write-Host "Pages: OK - $ProjetoPages" -ForegroundColor Green
-Write-Host "Dominio Pages: $($project.'Project Domains')"
+Write-Host "Dominio Pages esperado: https://$ProjetoPages.pages.dev"
 
 $databases = @(Invoke-WranglerJson -Arguments @('d1', 'list', '--json') -Label 'd1 list')
 Write-Host ''
@@ -109,7 +111,7 @@ foreach ($database in $databases) {
     Write-Host "  - $name | $uuid"
 }
 
-# Mantido apenas como verificação de legado da A17. A A18 não usa Workers KV.
+# Mantido apenas como verificacao de legado da A17. A A18 nao usa Workers KV.
 $namespaces = @(Invoke-WranglerJson -Arguments @('kv', 'namespace', 'list') -Label 'kv namespace list')
 Write-Host ''
 Write-Host "KV namespaces encontrados (legado A17; esperado 0): $($namespaces.Count)" -ForegroundColor Cyan
@@ -132,13 +134,6 @@ if ([string]::IsNullOrWhiteSpace($previewSecrets)) {
 else {
     Write-Host $previewSecrets
 }
-
-$previewDeployments = @(Invoke-WranglerJson -Arguments @(
-    'pages', 'deployment', 'list',
-    '--project-name', $ProjetoPages,
-    '--environment', 'preview',
-    '--json'
-) -Label 'pages deployment list preview')
 
 Write-Host ''
 Write-Host "Deploys de preview encontrados: $($previewDeployments.Count)"
