@@ -1,4 +1,5 @@
 $ErrorActionPreference = 'Stop'
+Set-StrictMode -Version Latest
 
 $RepositorioEsperado = 'https://github.com/Seshomaru1984/pa-safra-compensacao-ambiental-social.git'
 $BranchEsperada = 'ops/pa-v001-a19-preview-auth-e2e'
@@ -12,8 +13,10 @@ $Raiz = Join-Path $env:USERPROFILE 'PA SAFRA'
 $Timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $LogDir = Join-Path $env:USERPROFILE 'Downloads\PA-SAFRA-LOGS'
 $LogPath = Join-Path $LogDir "PA-A19-PREVIEW-AUTH-$Timestamp.log"
-$TempConfig = Join-Path $Raiz 'wrangler.a19.preview.jsonc'
 $TempCredentialJs = Join-Path $env:TEMP ("pa-safra-a19-credentials-$([guid]::NewGuid().ToString('N')).js")
+$BuildScript = Join-Path $Raiz 'tools\PA-SAFRA-BUILD-E-ARQUIVAR.ps1'
+$RootConfigNames = @('wrangler.toml', 'wrangler.json', 'wrangler.jsonc')
+$RootConfigPath = $null
 
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 
@@ -116,6 +119,112 @@ function Put-PreviewSecret {
         -SuppressOutput | Out-Null
 }
 
+function Get-RootWranglerFiles {
+    $found = @()
+    foreach ($name in $RootConfigNames) {
+        $candidate = Join-Path $Raiz $name
+        if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+            $found += $candidate
+        }
+    }
+    return @($found)
+}
+
+function Add-PreviewD1ToToml {
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    $raw = Get-Content -LiteralPath $Path -Raw
+    if ($raw -notmatch '(?m)^\s*pages_build_output_dir\s*=') {
+        throw 'CONFIG BAIXADA DO PAGES NAO CONTEM pages_build_output_dir.'
+    }
+
+    $productionBindingPattern = '(?ms)^\s*\[\[env\.production\.d1_databases\]\]\s*(?:(?!^\s*\[\[).)*?^\s*binding\s*=\s*["'']PA_SAFRA_AUTH_DB["'']'
+    if ($raw -match $productionBindingPattern) {
+        throw 'BINDING PA_SAFRA_AUTH_DB JA EXISTE EM PRODUCTION. EXECUCAO BLOQUEADA.'
+    }
+
+    if ($raw -match '(?m)^\s*binding\s*=\s*["'']PA_SAFRA_AUTH_DB["'']\s*$') {
+        if ($raw -notmatch [regex]::Escape($BancoD1Id)) {
+            throw 'BINDING PA_SAFRA_AUTH_DB JA EXISTE, MAS NAO APONTA PARA O D1 ESPERADO.'
+        }
+        Write-Log 'Binding D1 de Preview ja consta na configuracao baixada; nenhuma duplicata adicionada.'
+        return
+    }
+
+    $append = @"
+
+# PA SAFRA A19 - binding exclusivo do ambiente Preview
+[[env.preview.d1_databases]]
+binding = "$BindingD1"
+database_name = "$BancoD1"
+database_id = "$BancoD1Id"
+"@
+
+    Add-Content -LiteralPath $Path -Value $append -Encoding UTF8
+    Write-Log 'Binding D1 adicionado somente em env.preview da configuracao Pages baixada.'
+}
+
+function Add-PreviewD1ToJson {
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    $raw = Get-Content -LiteralPath $Path -Raw
+    try {
+        $cfg = $raw | ConvertFrom-Json
+    }
+    catch {
+        throw 'CONFIG JSON BAIXADA DO PAGES NAO PODE SER INTERPRETADA COM SEGURANCA.'
+    }
+
+    if (-not $cfg.pages_build_output_dir) {
+        throw 'CONFIG BAIXADA DO PAGES NAO CONTEM pages_build_output_dir.'
+    }
+
+    if (-not $cfg.PSObject.Properties['env']) {
+        $cfg | Add-Member -NotePropertyName env -NotePropertyValue ([pscustomobject]@{})
+    }
+    if (-not $cfg.env.PSObject.Properties['preview']) {
+        $cfg.env | Add-Member -NotePropertyName preview -NotePropertyValue ([pscustomobject]@{})
+    }
+
+    if ($cfg.env.PSObject.Properties['production'] -and $cfg.env.production.PSObject.Properties['d1_databases']) {
+        $prod = @($cfg.env.production.d1_databases | Where-Object { $_.binding -eq $BindingD1 })
+        if ($prod.Count -gt 0) {
+            throw 'BINDING PA_SAFRA_AUTH_DB JA EXISTE EM PRODUCTION. EXECUCAO BLOQUEADA.'
+        }
+    }
+
+    $previewD1 = @()
+    if ($cfg.env.preview.PSObject.Properties['d1_databases']) {
+        $previewD1 = @($cfg.env.preview.d1_databases)
+    }
+
+    $sameBinding = @($previewD1 | Where-Object { $_.binding -eq $BindingD1 })
+    if ($sameBinding.Count -gt 0) {
+        $bad = @($sameBinding | Where-Object { $_.database_id -ne $BancoD1Id })
+        if ($bad.Count -gt 0) {
+            throw 'BINDING PA_SAFRA_AUTH_DB JA EXISTE, MAS NAO APONTA PARA O D1 ESPERADO.'
+        }
+        Write-Log 'Binding D1 de Preview ja consta na configuracao baixada; nenhuma duplicata adicionada.'
+    }
+    else {
+        $entry = [pscustomobject]@{
+            binding = $BindingD1
+            database_name = $BancoD1
+            database_id = $BancoD1Id
+        }
+        $previewD1 = @($previewD1) + @($entry)
+        if ($cfg.env.preview.PSObject.Properties['d1_databases']) {
+            $cfg.env.preview.d1_databases = $previewD1
+        }
+        else {
+            $cfg.env.preview | Add-Member -NotePropertyName d1_databases -NotePropertyValue $previewD1
+        }
+        Write-Log 'Binding D1 adicionado somente em env.preview da configuracao Pages baixada.'
+    }
+
+    $cfg | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $Path -Encoding UTF8
+}
+
 $Pass1 = $null
 $Pass2 = $null
 $PlainPassword = $null
@@ -123,7 +232,7 @@ $PreviewUrl = $null
 
 try {
     Write-Host ''
-    Write-Host 'PA SAFRA - A19 - PREVIEW ADMINISTRATIVO' -ForegroundColor Cyan
+    Write-Host 'PA SAFRA - A19 R2 - PREVIEW ADMINISTRATIVO' -ForegroundColor Cyan
     Write-Host 'Escopo: somente Preview Cloudflare; producao e GitHub write permanecem bloqueados.' -ForegroundColor Cyan
     Write-Host ''
 
@@ -202,9 +311,49 @@ try {
     }
     Write-Log 'Schema D1 confirmado.'
 
+    if (-not (Test-Path -LiteralPath $BuildScript -PathType Leaf)) {
+        throw "SCRIPT DE BUILD PADRAO AUSENTE: $BuildScript"
+    }
+
+    Write-Host ''
+    Write-Host 'Executando build local pelo fluxo normativo do PA Safra...' -ForegroundColor Cyan
+    Invoke-Native -Command 'powershell.exe' -Arguments @(
+        '-NoProfile','-ExecutionPolicy','Bypass','-File',$BuildScript,'-NaoAbrirPasta'
+    ) -Label 'Build local auditado e arquivado' | Out-Null
+    Write-Log 'Build local, smoke, ZIP e SHA-256 concluidos pelo script normativo.'
+
+    $existingConfig = @(Get-RootWranglerFiles)
+    if ($existingConfig.Count -gt 0) {
+        throw "CONFIG WRANGLER JA EXISTE NO ROOT E NAO SERA SOBRESCRITA: $($existingConfig -join ', ')"
+    }
+
+    Write-Log 'Baixando configuracao atual do Pages como base para preservar o estado existente.'
+    Invoke-Wrangler -Arguments @('pages','download','config',$ProjetoPages) -Label 'Baixar configuracao atual do Pages' | Out-Null
+
+    $downloaded = @(Get-RootWranglerFiles)
+    if ($downloaded.Count -ne 1) {
+        throw "ESPERAVA EXATAMENTE UMA CONFIG WRANGLER BAIXADA; ENCONTRADAS=$($downloaded.Count)."
+    }
+    $RootConfigPath = $downloaded[0]
+    Write-Log "Configuracao Pages baixada: $(Split-Path $RootConfigPath -Leaf)"
+
+    $extension = [IO.Path]::GetExtension($RootConfigPath).ToLowerInvariant()
+    if ($extension -eq '.toml') {
+        Add-PreviewD1ToToml -Path $RootConfigPath
+    }
+    elseif ($extension -eq '.json') {
+        Add-PreviewD1ToJson -Path $RootConfigPath
+    }
+    elseif ($extension -eq '.jsonc') {
+        throw 'WRANGLER GEROU JSONC. R2 NAO ALTERA JSONC SEM PARSER DEDICADO; NENHUM DEPLOY SERA FEITO.'
+    }
+    else {
+        throw "FORMATO WRANGLER NAO SUPORTADO COM SEGURANCA: $extension"
+    }
+
     Write-Host ''
     Write-Host 'USUARIO DO PAINEL: admin' -ForegroundColor Green
-    Write-Host 'Defina agora somente a senha. Ela nao sera gravada em arquivo nem exibida.' -ForegroundColor Cyan
+    Write-Host 'Informe a senha do painel. Os secrets de Preview serao renovados de forma controlada.' -ForegroundColor Cyan
     $Pass1 = Read-Host 'Senha (minimo 12 caracteres)' -AsSecureString
     $Pass2 = Read-Host 'Repita a senha' -AsSecureString
 
@@ -255,44 +404,16 @@ process.stdin.on('end', () => {
     Put-PreviewSecret 'PA_SAFRA_CONTENT_BRANCH' $ContentBranch
     Write-Log 'GITHUB_CONTENT_TOKEN deliberadamente NAO configurado.'
 
-    Invoke-Native -Command 'npm.cmd' -Arguments @('ci') -Label 'Instalar dependencias' | Out-Null
-    Invoke-Native -Command 'npm.cmd' -Arguments @('run','build') -Label 'Gerar build Preview' | Out-Null
-
-    if (Test-Path -LiteralPath $TempConfig) {
-        throw "CONFIG TEMPORARIA JA EXISTE E NAO SERA SOBRESCRITA: $TempConfig"
-    }
-
-    $config = [ordered]@{
-        '$schema' = './node_modules/wrangler/config-schema.json'
-        name = $ProjetoPages
-        pages_build_output_dir = './dist'
-        compatibility_date = '2026-09-11'
-        env = [ordered]@{
-            preview = [ordered]@{
-                d1_databases = @(
-                    [ordered]@{
-                        binding = $BindingD1
-                        database_name = $BancoD1
-                        database_id = $BancoD1Id
-                    }
-                )
-            }
-        }
-    } | ConvertTo-Json -Depth 10
-
-    Set-Content -LiteralPath $TempConfig -Value $config -Encoding UTF8
-    Write-Log 'Configuracao temporaria criada somente para aplicar binding D1 no Preview.'
-
+    Write-Log 'Iniciando deploy Preview com configuracao Wrangler no root, conforme requisito do Pages.'
     $deploy = Invoke-Wrangler -Arguments @(
         'pages','deploy','dist',
         '--project-name',$ProjetoPages,
         '--branch',$BranchEsperada,
         '--env','preview',
-        '--config',$TempConfig,
         '--experimental-provision=false',
         '--experimental-auto-create=false',
         '--install-skills=false'
-    ) -Label 'Deploy Preview A19'
+    ) -Label 'Deploy Preview A19 R2'
 
     $urlMatches = [regex]::Matches($deploy.Text, 'https://[A-Za-z0-9.-]+\.pages\.dev')
     if ($urlMatches.Count -lt 1) {
@@ -301,8 +422,9 @@ process.stdin.on('end', () => {
     $PreviewUrl = $urlMatches[$urlMatches.Count - 1].Value.TrimEnd('/')
     Write-Log "Preview A19: $PreviewUrl"
 
-    Remove-Item -LiteralPath $TempConfig -Force -ErrorAction Stop
-    Write-Log 'Configuracao temporaria local removida.'
+    Remove-Item -LiteralPath $RootConfigPath -Force -ErrorAction Stop
+    $RootConfigPath = $null
+    Write-Log 'Configuracao Wrangler temporaria removida do worktree apos deploy.'
 
     Start-Sleep -Seconds 2
 
@@ -345,8 +467,20 @@ process.stdin.on('end', () => {
     if (-not $logout.ok) { throw 'LOGOUT NAO RETORNOU ok=true.' }
     Write-Log 'Sessao e logout: PASS.'
 
+    $statusAfter = (Invoke-Native -Command 'git.exe' -Arguments @('status','--porcelain=v1','--untracked-files=all') -Label 'Confirmar worktree final').Text
+    $finalRelevant = @()
+    if (-not [string]::IsNullOrWhiteSpace($statusAfter)) {
+        $finalRelevant = @(
+            $statusAfter -split "`r?`n" |
+            Where-Object { $_ -and $_ -notmatch '^\?\? \.wrangler[/\\]' }
+        )
+    }
+    if ($finalRelevant.Count -gt 0) {
+        throw "WORKTREE FINAL POSSUI ALTERACOES INESPERADAS: $($finalRelevant -join ' | ')"
+    }
+
     Write-Host ''
-    Write-Host 'PA SAFRA A19 PREVIEW AUTH: PASS' -ForegroundColor Green
+    Write-Host 'PA SAFRA A19 R2 PREVIEW AUTH: PASS' -ForegroundColor Green
     Write-Host "Preview: $PreviewUrl" -ForegroundColor Green
     Write-Host "Login PBKDF2 observado: ${elapsedMs} ms" -ForegroundColor Green
     Write-Host 'GITHUB_CONTENT_TOKEN: NAO CONFIGURADO' -ForegroundColor Yellow
@@ -356,14 +490,14 @@ process.stdin.on('end', () => {
 }
 catch {
     Write-Host ''
-    Write-Host 'PA SAFRA A19 PREVIEW AUTH: FALHA' -ForegroundColor Red
+    Write-Host 'PA SAFRA A19 R2 PREVIEW AUTH: FALHA' -ForegroundColor Red
     Write-Host $_.Exception.Message -ForegroundColor Red
     Write-Host "Log: $LogPath" -ForegroundColor Yellow
     exit 1
 }
 finally {
-    if (Test-Path -LiteralPath $TempConfig) {
-        Remove-Item -LiteralPath $TempConfig -Force -ErrorAction SilentlyContinue
+    if ($null -ne $RootConfigPath -and (Test-Path -LiteralPath $RootConfigPath)) {
+        Remove-Item -LiteralPath $RootConfigPath -Force -ErrorAction SilentlyContinue
     }
     if (Test-Path -LiteralPath $TempCredentialJs) {
         Remove-Item -LiteralPath $TempCredentialJs -Force -ErrorAction SilentlyContinue
