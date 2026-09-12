@@ -19,6 +19,7 @@ function ConvertFrom-SecureStringPlain {
 Write-Host ''
 Write-Host 'PA Safra - Gerador local de credenciais administrativas'
 Write-Host 'A senha nao sera exibida nem enviada pela rede.'
+Write-Host 'PBKDF2-SHA256: 100000 iteracoes, compativel com Cloudflare Workers.'
 Write-Host ''
 
 $senha1 = Read-Host 'Digite a senha administrativa' -AsSecureString
@@ -38,7 +39,7 @@ try {
         throw 'Senha longa demais.'
     }
 
-    $iterations = 310000
+    $iterations = 100000
     $salt = New-Object byte[] 16
     $sessionBytes = New-Object byte[] 32
     $rng = [Security.Cryptography.RandomNumberGenerator]::Create()
