@@ -86,8 +86,14 @@ function renderVideos() {
   const root = $('#videos-list');
   root.replaceChildren();
   const items = Array.isArray(state.videos) ? state.videos : [];
-  if (!items.length) root.append(videoCard());
-  else items.forEach((item) => root.append(videoCard(item)));
+  if (!items.length) {
+    const empty = document.createElement('p');
+    empty.className = 'empty-editor-state';
+    empty.textContent = 'Nenhuma palestra cadastrada. Use “+ Adicionar palestra” para incluir a primeira.';
+    root.append(empty);
+    return;
+  }
+  items.forEach((item) => root.append(videoCard(item)));
 }
 
 function collectVideos() {
@@ -258,7 +264,11 @@ async function boot() {
   $('#brand-tagline').addEventListener('input', refreshPreview);
   $('#hero-title').addEventListener('input', refreshPreview);
   $('#hero-lead').addEventListener('input', refreshPreview);
-  $('#add-video').addEventListener('click', () => $('#videos-list').append(videoCard()));
+  $('#add-video').addEventListener('click', () => {
+    const empty = $('#videos-list .empty-editor-state');
+    if (empty) empty.remove();
+    $('#videos-list').append(videoCard());
+  });
   $('#save-videos').addEventListener('click', saveVideos);
 
   try {
