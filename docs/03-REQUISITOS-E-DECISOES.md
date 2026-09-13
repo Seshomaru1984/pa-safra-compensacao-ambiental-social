@@ -18,7 +18,7 @@ A primeira entrega administrativa útil é: autenticação nativa, edição cont
 ### REQ-002 — Administração nativa para usuário leigo
 - **Esperado:** `/admin` com interface própria; o administrador comum não edita HTML, CSS, JavaScript, JSON, commits, branches ou configuração Cloudflare.
 - **Aceitação:** fluxo `Editar → Pré-visualizar → Publicar` funcional nos campos autorizados.
-- **Situação:** CONFIRMADO; backend funcional já comprovado; validação do fluxo de interface permanece no próximo gate.
+- **Situação:** PASS técnico na A22 em navegador headless para página inicial e palestras/vídeos.
 
 ### REQ-003 — Login nativo por usuário e senha
 - **Esperado:** usuário/senha próprios do PA Safra, sem exigir GitHub, Cloudflare ou e-mail do administrador final; senha nunca em texto puro; sessão assinada e cookie seguro.
@@ -40,8 +40,8 @@ A primeira entrega administrativa útil é: autenticação nativa, edição cont
 - **Situação:** CONFIRMADO.
 
 ### REQ-007 — Trava editorial de produção
-- **Esperado:** produção bloqueada enquanto houver pendências de redação jurídica, créditos/licenças de imagens, contato, afirmações históricas, revisão visual e admin nativo validado.
-- **Situação:** CONFIRMADO; bloqueio vigente.
+- **Esperado:** produção bloqueada enquanto houver qualquer validação obrigatória pendente.
+- **Situação:** CONFIRMADO; `admin_nativo_validado=true`, mas redação jurídica, créditos/licenças de imagens, contato, afirmações históricas e revisão visual continuam pendentes.
 
 ### REQ-008 — Isolamento de projeto e ambientes
 - **Esperado:** somente `Seshomaru1984/pa-safra-compensacao-ambiental-social`; nenhuma leitura/escrita em repositórios de outros projetos; Preview não autoriza produção.
@@ -66,7 +66,7 @@ Administrador final usa usuário e senha próprios do PA Safra; não depende de 
 Enquanto a administração estiver em validação, `PA_SAFRA_CONTENT_BRANCH` deve permanecer em `content/pa-v001-admin-preview`; `main` não é destino de teste editorial.
 
 ### DEC-005 — Produção protegida por gates reais
-CI/build/smoke aprovados não substituem F1. `admin_nativo_validado` só pode ser `true` após login, sessão, logout, rate limiter, escrita editorial e fluxo de interface `Editar → Pré-visualizar → Publicar` terem evidência funcional suficiente.
+CI/build/smoke aprovados não substituem F1. `admin_nativo_validado` só pode ser `true` após login, sessão, logout, rate limiter, escrita editorial e fluxo de interface `Editar → Pré-visualizar → Publicar` terem evidência funcional suficiente. Esse conjunto foi concluído por A19+A20+A21+A22.
 
 ### DEC-006 — Procedimento operacional após falhas recorrentes
 Scripts que dependam da máquina do usuário devem existir primeiro no repositório, passar parser e CI e ser entregues como um único executor canônico. Após duas tentativas sem avanço, revisar a abordagem; não criar variações sucessivas por tentativa e erro.
@@ -78,12 +78,13 @@ Não desativar autorização, rate limiter, same-origin ou validações para faz
 Nesta fase, PBKDF2-SHA256 fica fixado em 100000 iterações por compatibilidade com o runtime Workers observado.
 
 ### DEC-009 — Evidência válida é reutilizada
-Não repetir build, deploy, secrets ou gates já comprovados sem mudança que invalide a evidência existente. A21 R3 reutilizou com sucesso o deploy/token já comprovados na R2 e limitou-se ao trecho ainda não validado.
+Não repetir build, deploy, secrets ou gates já comprovados sem mudança que invalide a evidência existente.
 
 ## 4. Mapeamento de controles atuais
 
 | Requisito | Controle/evidência atual | Estado |
 |---|---|---|
+| REQ-002 interface | `admin:ui-test`; A22 Chrome headless | PASS técnico |
 | REQ-003 login/sessão | `admin:auth-test`; A19 R4 no Preview real | PASS |
 | REQ-004 rate limiter | D1 `admin_login_rate`; A20 live | PASS |
 | REQ-005 escrita | guard de branch + A21 R3 live | PASS para backend/branch editorial |
@@ -98,9 +99,8 @@ Não repetir build, deploy, secrets ou gates já comprovados sem mudança que in
 - `dados_contato_confirmados=false`.
 - `afirmacoes_historicas_confirmadas=false`.
 - `revisao_visual_confirmada=false`.
-- `admin_nativo_validado=false`.
-- Fluxo de interface `Editar → Pré-visualizar → Publicar` ainda não possui gate próprio de navegador/DOM.
-- A primeira fase administrativa ainda cobre somente página inicial e palestras/vídeos; notícias, links úteis, galeria, créditos, contatos e demais recursos do ADR permanecem fases posteriores.
+- `admin_nativo_validado=true` apenas conclui o gate técnico do painel; não equivale a revisão visual/editorial.
+- A primeira fase administrativa cobre página inicial e palestras/vídeos; notícias, links úteis, galeria, créditos, contatos e demais recursos do ADR permanecem fases posteriores.
 - Produção, domínio e DNS continuam fora do escopo atual.
 
 ## 6. Estado corrente
@@ -109,8 +109,12 @@ A19 R4: login/sessão/logout live PASS.
 
 A20: rate limiter D1 live PASS, incluindo 401, 429, `Retry-After`, bloqueio de credencial correta durante lock, limpeza controlada e retorno do login normal.
 
-A21 R3: escrita editorial live PASS no Preview. O teste criou o commit temporário `186857bc4435aaa6d6ee6cc4cb02b0af30d3c16e`, confirmou a alteração em `content/pa-v001-admin-preview`, restaurou o conteúdo no commit `8434fc384256b46ce08a458d66314f9deae3a55e` e comprovou igualdade final com o original. O `GITHUB_CONTENT_TOKEN` permanece somente no Preview e a escrita exige sessão válida.
+A21 R3: escrita editorial live PASS no Preview, com mutação temporária, confirmação GitHub, restauração integral e logout.
 
-Evidência A21: `docs/evidencias/PA-V001-A21-R3-CONTENT-WRITE-PASS-20260913.md`.
+A22: fluxo técnico da interface PASS em Chrome headless. A primeira execução detectou um problema real de UX quando `videos.json=[]`: a UI criava silenciosamente um cartão vazio. A correção tornou o estado vazio explícito e o run `34757801759` passou login, edição, pré-visualização, publicação de site/vídeos e logout.
 
-O próximo gate é A22: validar tecnicamente o fluxo da interface administrativa, sem liberar produção nem marcar `revisao_visual_confirmada`.
+Evidências:
+- `docs/evidencias/PA-V001-A21-R3-CONTENT-WRITE-PASS-20260913.md`
+- `docs/evidencias/PA-V001-A22-ADMIN-UI-FLOW-PASS-20260913.md`
+
+O gate técnico do painel administrativo está concluído. O próximo trabalho deve atacar as pendências editoriais/jurídicas sem alterar produção até que todas tenham evidência própria.
