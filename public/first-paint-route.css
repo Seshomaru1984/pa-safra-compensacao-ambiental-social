@@ -5,3 +5,8 @@ html[data-pa-boot="loading"] {
 html[data-pa-boot="loading"] body {
   visibility: hidden !important;
 }
+
+/* Aviso editorial interno da Galeria não deve aparecer no site público. */
+[data-view="galeria"] .status-banner.editorial-warning {
+  display: none !important;
+}
