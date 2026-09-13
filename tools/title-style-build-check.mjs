@@ -9,6 +9,8 @@ const publicHtml = read('dist/index.html');
 const adminHtml = read('dist/admin/index.html');
 const site = JSON.parse(read('public/content/site.json'));
 const hero = site?.hero || {};
+const firstPaintJs = read('dist/first-paint-route.js');
+const firstPaintCss = read('dist/first-paint-route.css');
 
 if (!publicHtml.includes('<script type="module" src="/title-style-assist.js"></script>')) fail('runtime público de títulos não foi injetado');
 if (!adminHtml.includes('<script type="module" src="/admin/title-style-assist.js"></script>')) fail('runtime administrativo de títulos não foi injetado');
@@ -26,6 +28,14 @@ for (const file of [
 ]) {
   if (!fs.existsSync(path.join(root, file))) fail(`arquivo ausente no build: ${file}`);
 }
+
+if (!firstPaintJs.includes("root.dataset.paBoot = 'loading'")) fail('gate global de boot não é ativado antes da montagem pública');
+if (!firstPaintJs.includes('criticalContentPaths')) fail('gate global não acompanha os conteúdos editoriais críticos');
+if (!firstPaintJs.includes('pendingTrackedFetches')) fail('gate global não acompanha requisições críticas em andamento');
+if (!firstPaintJs.includes('waitForCriticalImages')) fail('gate global não aguarda imagens críticas da view ativa');
+if (!firstPaintJs.includes('delete root.dataset.paBoot')) fail('gate global não libera a interface após estabilização');
+if (!firstPaintCss.includes('html[data-pa-boot="loading"] body')) fail('CSS não protege o corpo durante o boot');
+if (!firstPaintCss.includes('visibility: hidden')) fail('interface pública precisa permanecer invisível durante o boot');
 
 const expectedClasses = ['hero-copy'];
 if (hero.title_alignment === 'right') expectedClasses.push('align-right');
@@ -54,3 +64,4 @@ console.log('- título assistido presente no build');
 console.log('- hero sincronizada no HTML inicial');
 console.log('- imagem principal sem troca tardia de src e com preload prioritário');
 console.log('- rota inicial protegida dentro do head antes do primeiro paint');
+console.log('- interface pública inteira protegida até conteúdo, layout, títulos e imagens críticas estabilizarem');
