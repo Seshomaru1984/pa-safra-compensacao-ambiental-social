@@ -323,7 +323,7 @@ try {
     for ($attempt = 2; $attempt -le 4; $attempt += 1) {
         $response = Invoke-Http -Method POST -Uri "$PreviewUrl/api/admin/login" -Headers @{ Origin = $PreviewUrl } -Body $wrongBody
         Assert-Status -Response $response -Expected 401 -Label "Falha $attempt"
-        Write-Log "Falha $attempt: HTTP 401 confirmado."
+        Write-Log "Falha ${attempt}: HTTP 401 confirmado."
     }
 
     $fifth = Invoke-Http -Method POST -Uri "$PreviewUrl/api/admin/login" -Headers @{ Origin = $PreviewUrl } -Body $wrongBody
