@@ -111,7 +111,7 @@ async function saveLayout(key, card) {
     const result = await response.json().catch(() => ({}));
     if (!response.ok || !result.ok) throw new Error(result.error || `Falha ao salvar (${response.status}).`);
     layoutState = normalizeLayout(result.data || next);
-    status.textContent = 'Disposição salva. A publicação automática pode levar alguns instantes.';
+    status.textContent = 'Disposição salva. Ao abrir ou atualizar o site deste Preview, esta configuração será aplicada.';
   } catch (error) {
     status.textContent = error.message || 'Não foi possível salvar a disposição.';
   } finally {
