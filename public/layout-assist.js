@@ -44,6 +44,9 @@ function installStyles() {
   style.id = 'pa-safra-assisted-layout-styles';
   style.textContent = `
 @media (min-width: 981px) {
+  .hero-grid[data-assisted-layout="image-left"] {
+    grid-template-columns: minmax(420px, .98fr) minmax(0, 1.02fr);
+  }
   .hero-grid[data-assisted-layout="image-left"] > .hero-copy {
     grid-column: 2;
     grid-row: 1;
@@ -52,6 +55,10 @@ function installStyles() {
     grid-column: 1;
     grid-row: 1;
   }
+
+  [data-view="sobre"] .page-hero-grid[data-assisted-layout="image-left"] {
+    grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
+  }
   [data-view="sobre"] .page-hero-grid[data-assisted-layout="image-left"] > div {
     grid-column: 2;
     grid-row: 1;
@@ -59,6 +66,10 @@ function installStyles() {
   [data-view="sobre"] .page-hero-grid[data-assisted-layout="image-left"] > img {
     grid-column: 1;
     grid-row: 1;
+  }
+
+  [data-view="legado"] .legacy-grid[data-assisted-layout="image-left"] {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr);
   }
   [data-view="legado"] .legacy-grid[data-assisted-layout="image-left"] > div {
     grid-column: 2;
@@ -81,6 +92,14 @@ function applyLayout(layout) {
 }
 
 async function loadLayout() {
+  try {
+    const remote = await fetch('/api/layout', { cache: 'no-store', credentials: 'same-origin' });
+    if (remote.ok) {
+      const result = await remote.json();
+      if (result?.ok && result.data) return normalizeLayout(result.data);
+    }
+  } catch {}
+
   try {
     const response = await fetch('/content/layout.json', { cache: 'no-store', credentials: 'same-origin' });
     if (!response.ok) throw new Error(`layout ${response.status}`);
