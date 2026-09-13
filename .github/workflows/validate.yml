@@ -30,6 +30,9 @@ jobs:
       - name: Validar estrutura editorial e integridade de imagens
         run: npm run check
 
+      - name: Auditar bloqueios editoriais
+        run: npm run editorial:audit
+
       - name: Validar contrato do admin nativo
         run: npm run admin:test
 
@@ -74,6 +77,7 @@ jobs:
           node --check tools/admin-content-guard-test.mjs
           node --check tools/admin-preview-runtime-diagnostic.mjs
           node --check tools/admin-ui-browser-test.mjs
+          node --check tools/editorial-blockers-audit.mjs
           node --check tools/smoke-remote.mjs
           node --check tools/admin-contract.mjs
 
@@ -138,6 +142,7 @@ jobs:
           echo "- Commit: \`$GITHUB_SHA\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- imagens do solicitante: reconstruidas e integridade WebP confirmada" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run check: OK" >> "$GITHUB_STEP_SUMMARY"
+          echo "- npm run editorial:audit: OK (bloqueios editoriais objetivos mapeados; nenhuma autoaprovacao)" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run admin:test: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run admin:auth-test: OK (PBKDF2 100000, 401/429/Retry-After/cookie/fail-closed)" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run admin:content-guard-test: OK (somente content/pa-v001-admin-preview pode receber escrita)" >> "$GITHUB_STEP_SUMMARY"
@@ -153,4 +158,4 @@ jobs:
           echo "- npm run smoke: OK, inclusive assinatura/tamanho de imagens" >> "$GITHUB_STEP_SUMMARY"
           echo "- artefato dist: gerado por 14 dias" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Esta rotina valida o painel administrativo nativo, a compatibilidade PBKDF2 com Cloudflare Workers, o rate limiter D1, o guard de branch editorial, o fluxo da interface em navegador headless, a preparacao Cloudflare, as imagens e confirma que a producao continua bloqueada enquanto as pendencias editoriais existirem. Ela nao faz merge nem publica em producao." >> "$GITHUB_STEP_SUMMARY"
+          echo "Esta rotina valida o painel administrativo nativo e mapeia os bloqueios editoriais sem promover gates pendentes. Produção continua bloqueada enquanto qualquer aprovação obrigatória permanecer falsa." >> "$GITHUB_STEP_SUMMARY"
