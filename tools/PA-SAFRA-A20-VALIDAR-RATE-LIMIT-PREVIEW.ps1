@@ -107,8 +107,8 @@ function Invoke-Http {
         foreach ($key in $Headers.Keys) {
             [void]$request.Headers.TryAddWithoutValidation([string]$key, [string]$Headers[$key])
         }
-        if ($null -ne $Body) {
-            $request.Content = [System.Net.Http.StringContent]::new($Body, [Text.Encoding]::UTF8, 'application/json')
+        if ($Method -eq 'POST') {
+            $request.Content = [System.Net.Http.StringContent]::new([string]$Body, [Text.Encoding]::UTF8, 'application/json')
         }
 
         $response = $client.SendAsync($request).GetAwaiter().GetResult()
