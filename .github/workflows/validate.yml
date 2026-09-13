@@ -90,7 +90,8 @@ jobs:
             'tools/PA-SAFRA-A19-R4-CORRIGIR-PBKDF2-PREVIEW.ps1',
             'tools/PA-SAFRA-A19-DIAGNOSTICAR-LOGIN-500.ps1',
             'tools/PA-SAFRA-A20-VALIDAR-RATE-LIMIT-PREVIEW.ps1',
-            'tools/PA-SAFRA-A20-EXECUTAR-VALIDADO.ps1'
+            'tools/PA-SAFRA-A20-EXECUTAR-VALIDADO.ps1',
+            'tools/PA-SAFRA-A21-VALIDAR-ESCRITA-PREVIEW.ps1'
           )
           foreach ($rel in $arquivos) {
             $tokens = $null
@@ -135,7 +136,7 @@ jobs:
           echo "- npm run admin:content-guard-test: OK (somente content/pa-v001-admin-preview pode receber escrita)" >> "$GITHUB_STEP_SUMMARY"
           echo "- hash PBKDF2 incompatível: resposta controlada 503, sem Worker exception" >> "$GITHUB_STEP_SUMMARY"
           echo "- autenticacao nativa usuario/senha e sessao assinada: sintaxe OK" >> "$GITHUB_STEP_SUMMARY"
-          echo "- scripts PowerShell, inclusive A19 R4, A20 live e executor pinado A20: parser OK" >> "$GITHUB_STEP_SUMMARY"
+          echo "- scripts PowerShell, inclusive A19 R4, A20 live/executor e gate A21 de escrita controlada: parser OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run cloudflare:test: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm run cloudflare:env-test: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- trava editorial pendente: bloqueio confirmado" >> "$GITHUB_STEP_SUMMARY"
