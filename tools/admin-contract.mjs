@@ -17,6 +17,7 @@ for (const rel of [
   'functions/api/admin/content.js',
   'tools/admin-credentials.mjs',
   'tools/admin-auth-test.mjs',
+  'tools/admin-ui-browser-test.mjs',
   'tools/PA-SAFRA-GERAR-CREDENCIAIS-ADMIN.ps1',
   'migrations/0001_admin_login_rate.sql',
   'docs/ADR-0002-ADMIN-NATIVO.md',
@@ -118,7 +119,7 @@ if (exists(publicationPath)) {
   try {
     const publication = JSON.parse(read(publicationPath));
     if ('pages_cms_testado' in (publication.checks || {})) fail('Gate legado pages_cms_testado ainda presente.');
-    if (publication.checks?.admin_nativo_validado !== false) fail('admin_nativo_validado deve iniciar como false.');
+    if (typeof publication.checks?.admin_nativo_validado !== 'boolean') fail('admin_nativo_validado deve ser booleano.');
   } catch (error) {
     fail(`Admin nativo: publicacao.json inválido: ${error.message}`);
   }
@@ -140,4 +141,4 @@ console.log('- migration D1 do rate limiter presente');
 console.log('- geradores de credenciais Node e PowerShell presentes');
 console.log('- escrita depende de sessão válida + secret GitHub');
 console.log('- escopo inicial limitado a site e vídeos');
-console.log('- gate admin_nativo_validado permanece pendente');
+console.log('- gate de interface em navegador presente; estado de admin_nativo_validado é controlado por publicacao.json');
