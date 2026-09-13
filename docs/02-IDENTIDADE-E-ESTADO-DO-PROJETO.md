@@ -15,10 +15,10 @@ Aplicação específica da BASE-PROJETOS-WEB-V2 ao projeto PA Safra. Atualizado 
 | Remote autorizado | `https://github.com/Seshomaru1984/pa-safra-compensacao-ambiental-social.git` — VERIFICADO |
 | Branch de integração | `develop` — preservada |
 | Branch de produção | `main` — preservada; produção bloqueada enquanto gates/editorial estiverem pendentes |
-| Candidato concluído | `ops/pa-v001-a21-preview-content-write-e2e` |
+| Candidato atual | `ops/pa-v001-a22-admin-ui-flow` |
 | Branch editorial de Preview | `content/pa-v001-admin-preview` |
 | Projeto Cloudflare Pages | `pa-safra-compensacao-ambiental-social` — VERIFICADO |
-| Preview administrativo atual | alias `content-pa-v001-admin-previe.pa-safra-compensacao-ambiental-social.pages.dev`; deployment A21 `ada896a1...pages.dev` |
+| Preview administrativo | `content-pa-v001-admin-previe.pa-safra-compensacao-ambiental-social.pages.dev`; deployment A21 `ada896a1...pages.dev` |
 | Produção/domínio/DNS | Fora do escopo até conclusão dos gates aplicáveis |
 | Outro repositório fora do escopo | Qualquer outro repositório, inclusive SIGUEG, não pertence a este projeto |
 
@@ -48,18 +48,19 @@ Aplicação específica da BASE-PROJETOS-WEB-V2 ao projeto PA Safra. Atualizado 
 | Campo | Estado atual |
 |---|---|
 | Revisado em | 13/09/2026 |
-| Último gate concluído | PA-V001-A21 — escrita editorial controlada no Preview |
+| Último gate concluído | PA-V001-A22 — fluxo técnico da interface administrativa |
 | A19 | PASS — login, sessão e logout reais no Cloudflare Preview |
 | A20 | PASS — rate limiter D1 live ponta a ponta |
 | A21 | PASS — escrita, confirmação GitHub, restauração e logout live |
+| A22 | PASS — login, edição, pré-visualização, publicação site/vídeos e logout em Chrome headless |
+| Correção A22 | coleção vazia de palestras agora é estado explícito; não cria cartão vazio silencioso |
 | Commit temporário A21 | `186857bc4435aaa6d6ee6cc4cb02b0af30d3c16e` |
 | Commit restaurador A21 | `8434fc384256b46ce08a458d66314f9deae3a55e` |
-| Conteúdo após A21 | restaurado integralmente; árvore final igual à anterior |
 | `GITHUB_CONTENT_TOKEN` | presente somente no Preview; escrita continua exigindo sessão válida |
 | Produção/`main`/`develop`/domínio/DNS | preservados |
-| `admin_nativo_validado` | `false` — falta gate técnico do fluxo de interface `Editar → Pré-visualizar → Publicar` |
+| `admin_nativo_validado` | `true` — evidências combinadas A19+A20+A21+A22 suficientes para o gate técnico |
 | `revisao_visual_confirmada` | `false` — gate editorial/visual separado |
-| Próximo gate | A22 — validação técnica da interface administrativa e do fluxo de uso |
+| Produção | ainda BLOQUEADA pelas demais pendências editoriais/jurídicas |
 
 ## 4. Evidências essenciais
 
@@ -67,9 +68,10 @@ Aplicação específica da BASE-PROJETOS-WEB-V2 ao projeto PA Safra. Atualizado 
 - A19 R4 comprovou login, sessão e logout no runtime real após correção PBKDF2/Workers.
 - A20 comprovou quatro 401, quinta tentativa 429 + `Retry-After`, lock, limpeza e retorno do login normal.
 - A21 R3 comprovou escrita temporária exclusivamente em `content/pa-v001-admin-preview`, confirmação pelo GitHub, restauração integral e logout.
-- Evidência A19: `docs/evidencias/PA-V001-A19-R4-PREVIEW-AUTH-PASS-20260912.md`.
+- A22 comprovou o fluxo da interface em Chrome headless; o primeiro teste detectou uma falha real no estado vazio de palestras, corrigida sem relaxar o teste; o run `34757801759` concluiu SUCCESS.
 - Evidência A21: `docs/evidencias/PA-V001-A21-R3-CONTENT-WRITE-PASS-20260913.md`.
+- Evidência A22: `docs/evidencias/PA-V001-A22-ADMIN-UI-FLOW-PASS-20260913.md`.
 
 ## 5. Regra de continuidade
 
-Não repetir A18, A19 R4, A20 ou A21 R3 sem mudança que invalide a evidência já obtida. O próximo trabalho deve validar a interface administrativa propriamente dita, reaproveitando backend, token, D1 e deploy já comprovados sempre que tecnicamente possível. Produção continua bloqueada e `admin_nativo_validado` não deve ser alterado antes desse gate.
+Não repetir A18, A19 R4, A20, A21 R3 ou A22 sem mudança que invalide as evidências. O painel administrativo técnico está validado para a primeira fase (página inicial e palestras/vídeos). As pendências seguintes são independentes: redação jurídica, créditos/licenças das imagens, dados de contato, afirmações históricas e revisão visual. Produção continua bloqueada enquanto qualquer uma permanecer pendente.
