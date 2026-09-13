@@ -12,11 +12,17 @@ const hero = site?.hero || {};
 
 if (!publicHtml.includes('<script type="module" src="/title-style-assist.js"></script>')) fail('runtime público de títulos não foi injetado');
 if (!adminHtml.includes('<script type="module" src="/admin/title-style-assist.js"></script>')) fail('runtime administrativo de títulos não foi injetado');
+if (!publicHtml.includes('<link rel="stylesheet" href="/first-paint-route.css" />')) fail('CSS de rota inicial não foi injetado');
+if (!publicHtml.includes('<script src="/first-paint-route.js"></script>')) fail('script de rota inicial não foi injetado');
+if (publicHtml.indexOf('/first-paint-route.css') > publicHtml.indexOf('</head>')) fail('CSS de rota inicial precisa estar no head');
+if (publicHtml.indexOf('/first-paint-route.js') > publicHtml.indexOf('</head>')) fail('script de rota inicial precisa estar no head');
 
 for (const file of [
   'dist/title-style-assist.js',
   'dist/admin/title-style-assist.js',
   'dist/content/title-styles.json',
+  'dist/first-paint-route.css',
+  'dist/first-paint-route.js',
 ]) {
   if (!fs.existsSync(path.join(root, file))) fail(`arquivo ausente no build: ${file}`);
 }
@@ -47,3 +53,4 @@ console.log('TITLE STYLE BUILD CHECK: PASS');
 console.log('- título assistido presente no build');
 console.log('- hero sincronizada no HTML inicial');
 console.log('- imagem principal sem troca tardia de src e com preload prioritário');
+console.log('- rota inicial protegida dentro do head antes do primeiro paint');
