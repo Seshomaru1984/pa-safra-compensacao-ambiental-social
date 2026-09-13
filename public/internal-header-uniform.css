@@ -1,5 +1,6 @@
 /* PA-V001-A28 R2 — cabeçalho interno realmente padronizado.
-   A Home permanece fora deste escopo. */
+   A Home permanece fora deste escopo.
+   A moldura de mídia é uniforme, mas a proporção original da imagem é preservada. */
 
 :root {
   --pa-internal-header-bg-start: #173f35;
@@ -50,7 +51,9 @@
   height: var(--pa-internal-header-image-height);
   max-height: none;
   justify-self: end;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
+  background: rgba(8, 20, 17, .18);
   border-radius: var(--radius-md);
   box-shadow: 0 18px 50px rgba(0,0,0,.22);
 }
@@ -67,7 +70,7 @@
   align-self: center;
   overflow: hidden;
   border-radius: var(--radius-md);
-  background: #101816;
+  background: rgba(8, 20, 17, .18);
   box-shadow: 0 18px 50px rgba(0,0,0,.22);
 }
 
@@ -75,7 +78,8 @@
   width: 100%;
   height: 186px;
   max-height: none;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
 }
 
 [data-view="sobre"] > .page-hero p:not(.eyebrow),
