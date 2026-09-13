@@ -8,6 +8,7 @@ const PUBLIC_TITLE_TAG = '<script type="module" src="/title-style-assist.js"></s
 const ADMIN_TITLE_TAG = '<script type="module" src="/admin/title-style-assist.js"></script>';
 const PUBLIC_ROUTE_STYLE_TAG = '<link rel="stylesheet" href="/first-paint-route.css" />';
 const PUBLIC_ROUTE_SCRIPT_TAG = '<script src="/first-paint-route.js"></script>';
+const PUBLIC_INTERNAL_HEADER_STYLE_TAG = '<link rel="stylesheet" href="/internal-header-uniform.css" />';
 const SITE_CONFIG_PATH = path.resolve('public', 'content', 'site.json');
 
 function injectBeforeBody(html, tag) {
@@ -89,6 +90,7 @@ function syncPublicHero(html) {
 
 function installFirstPaintRoute(html) {
   let next = injectBeforeHeadEnd(html, PUBLIC_ROUTE_STYLE_TAG);
+  next = injectBeforeHeadEnd(next, PUBLIC_INTERNAL_HEADER_STYLE_TAG);
   next = injectBeforeHeadEnd(next, PUBLIC_ROUTE_SCRIPT_TAG);
   return next;
 }
