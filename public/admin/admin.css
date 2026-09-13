@@ -188,6 +188,14 @@ textarea { resize: vertical; }
 .preview-card small, .preview-card p { color: rgba(255,255,255,.75); }
 .preview-card h3 { margin: 12px 0 16px; font-size: clamp(1.6rem, 3vw, 2.5rem); }
 .video-editor-list { display: grid; gap: 14px; }
+.empty-editor-state {
+  margin: 0;
+  padding: 20px;
+  border: 1px dashed rgba(24,33,30,.22);
+  border-radius: 14px;
+  background: rgba(255,255,255,.62);
+  color: var(--ink-600);
+}
 .video-editor-card { position: relative; }
 .video-card-head { display: flex; justify-content: space-between; gap: 16px; align-items: center; margin-bottom: 16px; }
 .link-button { border: 0; background: none; color: var(--danger); cursor: pointer; text-decoration: underline; }
