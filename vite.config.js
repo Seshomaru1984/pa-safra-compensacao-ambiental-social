@@ -6,6 +6,8 @@ const PUBLIC_LAYOUT_TAG = '<script type="module" src="/layout-assist.js"></scrip
 const ADMIN_LAYOUT_TAG = '<script type="module" src="/admin/layout-assist.js"></script>';
 const PUBLIC_TITLE_TAG = '<script type="module" src="/title-style-assist.js"></script>';
 const ADMIN_TITLE_TAG = '<script type="module" src="/admin/title-style-assist.js"></script>';
+const PUBLIC_ROUTE_STYLE_TAG = '<link rel="stylesheet" href="/first-paint-route.css" />';
+const PUBLIC_ROUTE_SCRIPT_TAG = '<script src="/first-paint-route.js"></script>';
 const SITE_CONFIG_PATH = path.resolve('public', 'content', 'site.json');
 
 function injectBeforeBody(html, tag) {
@@ -85,13 +87,20 @@ function syncPublicHero(html) {
   return next;
 }
 
+function installFirstPaintRoute(html) {
+  let next = injectBeforeHeadEnd(html, PUBLIC_ROUTE_STYLE_TAG);
+  next = injectBeforeHeadEnd(next, PUBLIC_ROUTE_SCRIPT_TAG);
+  return next;
+}
+
 export default defineConfig({
   plugins: [
     {
       name: 'pa-safra-edicao-assistida',
       enforce: 'post',
       transformIndexHtml(html) {
-        return injectAll(syncPublicHero(html), [PUBLIC_LAYOUT_TAG, PUBLIC_TITLE_TAG]);
+        const publicHtml = installFirstPaintRoute(syncPublicHero(html));
+        return injectAll(publicHtml, [PUBLIC_LAYOUT_TAG, PUBLIC_TITLE_TAG]);
       },
       closeBundle() {
         const adminPath = path.resolve('dist', 'admin', 'index.html');
