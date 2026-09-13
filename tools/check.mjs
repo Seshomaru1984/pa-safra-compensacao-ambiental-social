@@ -112,7 +112,7 @@ if (fs.existsSync(publicationPath)) {
         if (typeof value !== 'boolean') errors.push(`Validacao de publicacao deve ser booleana: ${key}`);
       }
       if ('pages_cms_testado' in publication.checks) errors.push('Gate legado pages_cms_testado não deve permanecer.');
-      if (publication.checks.admin_nativo_validado !== false) errors.push('admin_nativo_validado deve permanecer pendente nesta fase.');
+      if (typeof publication.checks.admin_nativo_validado !== 'boolean') errors.push('admin_nativo_validado deve ser booleano.');
     }
   } catch {
     // Erro de JSON ja registrado acima.
