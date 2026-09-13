@@ -9,6 +9,7 @@
     "check": "npm run images:prepare && node tools/check.mjs",
     "admin:test": "node tools/admin-contract.mjs",
     "admin:auth-test": "node tools/admin-auth-test.mjs",
+    "admin:content-guard-test": "node tools/admin-content-guard-test.mjs",
     "admin:credentials": "node tools/admin-credentials.mjs",
     "cloudflare:test": "node tools/cloudflare-readiness.mjs",
     "cloudflare:env-test": "node tools/cloudflare-env-contract.mjs",
