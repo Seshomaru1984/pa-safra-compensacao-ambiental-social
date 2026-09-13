@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "headers": {
+    "about": { "color": "#285f52", "size": "normal" },
+    "lectures": { "color": "#725a3d", "size": "compact" },
+    "gallery": { "color": "#315f69", "size": "normal" },
+    "resources": { "color": "#234d63", "size": "compact" },
+    "legacy": { "color": "#3f524a", "size": "wide" },
+    "extra_pages": { "color": "#49665d", "size": "normal" }
+  }
+}
