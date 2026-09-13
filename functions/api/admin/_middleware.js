@@ -10,9 +10,10 @@ const json = (data, status = 200) => new Response(JSON.stringify(data), {
 
 export async function onRequest(context) {
   const url = new URL(context.request.url);
-  const isContentWrite = context.request.method === 'PUT' && url.pathname === '/api/admin/content';
+  const protectedWrite = context.request.method === 'PUT'
+    && ['/api/admin/content', '/api/admin/layout'].includes(url.pathname);
 
-  if (isContentWrite) {
+  if (protectedWrite) {
     const branch = String(context.env.PA_SAFRA_CONTENT_BRANCH || '').trim();
     if (branch !== ALLOWED_CONTENT_BRANCH) {
       return json({
