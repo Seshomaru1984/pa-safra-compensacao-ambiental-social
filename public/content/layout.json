@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "blocks": {
+    "home_hero": "image-left",
+    "about_hero": "text-left",
+    "legacy_hero": "text-left"
+  }
+}
