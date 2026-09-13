@@ -40,6 +40,22 @@ const SIZE_MOBILE = Object.freeze({
 const LINE_HEIGHT = Object.freeze({ small: '1.12', medium: '1.10', large: '1.08', display: '1.04' });
 const WEIGHT = Object.freeze({ regular: '500', semibold: '650', bold: '800' });
 
+const LAYOUT_KEYS = Object.freeze(['home_hero', 'about_hero', 'legacy_hero']);
+const ALLOWED_LAYOUTS = new Set(['text-left', 'image-left']);
+const DEFAULT_LAYOUT = Object.freeze({
+  version: 1,
+  blocks: Object.freeze({
+    home_hero: 'text-left',
+    about_hero: 'text-left',
+    legacy_hero: 'text-left',
+  }),
+});
+const LAYOUT_PARAMS = Object.freeze({
+  home_hero: 'layout_home',
+  about_hero: 'layout_about',
+  legacy_hero: 'layout_legacy',
+});
+
 function validColor(value) {
   return value === 'default' || (typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value));
 }
@@ -78,6 +94,25 @@ function withPreviewOverride(styles, requestUrl) {
   return next;
 }
 
+function normalizeLayout(raw) {
+  const blocks = raw && typeof raw === 'object' && raw.blocks && typeof raw.blocks === 'object' ? raw.blocks : {};
+  const normalized = { version: 1, blocks: {} };
+  for (const key of LAYOUT_KEYS) {
+    normalized.blocks[key] = ALLOWED_LAYOUTS.has(blocks[key]) ? blocks[key] : DEFAULT_LAYOUT.blocks[key];
+  }
+  return normalized;
+}
+
+function withLayoutPreviewOverride(layout, requestUrl) {
+  const url = new URL(requestUrl);
+  const next = structuredClone(layout);
+  for (const [key, param] of Object.entries(LAYOUT_PARAMS)) {
+    const value = url.searchParams.get(param);
+    if (ALLOWED_LAYOUTS.has(value)) next.blocks[key] = value;
+  }
+  return next;
+}
+
 function declarations(entry, mobile = false) {
   const rules = [];
   const sizes = mobile ? SIZE_MOBILE : SIZE_DESKTOP;
@@ -92,7 +127,7 @@ function declarations(entry, mobile = false) {
   return rules.join(';');
 }
 
-function buildCriticalCss(styles) {
+function buildTitleCriticalCss(styles) {
   const desktop = [];
   const mobile = [];
   for (const [key, selector] of Object.entries(TARGETS)) {
@@ -103,6 +138,26 @@ function buildCriticalCss(styles) {
     if (mobileRules) mobile.push(`${selector}{${mobileRules}}`);
   }
   return `${desktop.join('')}${mobile.length ? `@media(max-width:680px){${mobile.join('')}}` : ''}`;
+}
+
+function buildLayoutCriticalCss(layout) {
+  const rules = [];
+  if (layout.blocks.home_hero === 'image-left') {
+    rules.push('.hero-grid{grid-template-columns:minmax(420px,.98fr) minmax(0,1.02fr)}');
+    rules.push('.hero-grid>.hero-copy{grid-column:2;grid-row:1}');
+    rules.push('.hero-grid>.hero-media{grid-column:1;grid-row:1}');
+  }
+  if (layout.blocks.about_hero === 'image-left') {
+    rules.push('[data-view="sobre"] .page-hero-grid{grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr)}');
+    rules.push('[data-view="sobre"] .page-hero-grid>div{grid-column:2;grid-row:1}');
+    rules.push('[data-view="sobre"] .page-hero-grid>img{grid-column:1;grid-row:1}');
+  }
+  if (layout.blocks.legacy_hero === 'image-left') {
+    rules.push('[data-view="legado"] .legacy-grid{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr)}');
+    rules.push('[data-view="legado"] .legacy-grid>div{grid-column:2;grid-row:1}');
+    rules.push('[data-view="legado"] .legacy-grid>.legacy-photo{grid-column:1;grid-row:1;justify-self:start}');
+  }
+  return rules.length ? `@media(min-width:981px){${rules.join('')}}` : '';
 }
 
 async function readJson(url) {
@@ -129,10 +184,21 @@ async function loadStyles(request, env) {
   return normalizeStyles(local || {});
 }
 
-function injectCriticalStyle(html, css) {
-  if (!css || html.includes('id="pa-safra-title-first-paint"')) return html;
+async function loadLayout(request, env) {
+  const branch = String(env.PA_SAFRA_CONTENT_BRANCH || '').trim();
+  if (branch === ALLOWED_CONTENT_BRANCH) {
+    const remote = await readJson(new URL('/api/layout', request.url));
+    if (remote?.ok && remote.data) return normalizeLayout(remote.data);
+  }
+
+  const local = await readJson(new URL('/content/layout.json', request.url));
+  return normalizeLayout(local || DEFAULT_LAYOUT);
+}
+
+function injectCriticalStyle(html, id, css) {
+  if (!css || html.includes(`id="${id}"`)) return html;
   if (!html.includes('</head>')) return html;
-  return html.replace('</head>', `<style id="pa-safra-title-first-paint">${css}</style>\n</head>`);
+  return html.replace('</head>', `<style id="${id}">${css}</style>\n</head>`);
 }
 
 export async function onRequest(context) {
@@ -145,11 +211,19 @@ export async function onRequest(context) {
   const contentType = response.headers.get('content-type') || '';
   if (!response.ok || !contentType.toLowerCase().includes('text/html')) return response;
 
-  const styles = withPreviewOverride(await loadStyles(request, context.env || {}), request.url);
-  const css = buildCriticalCss(styles);
-  if (!css) return response;
+  const [stylesRaw, layoutRaw] = await Promise.all([
+    loadStyles(request, context.env || {}),
+    loadLayout(request, context.env || {}),
+  ]);
+  const styles = withPreviewOverride(stylesRaw, request.url);
+  const layout = withLayoutPreviewOverride(layoutRaw, request.url);
+  const titleCss = buildTitleCriticalCss(styles);
+  const layoutCss = buildLayoutCriticalCss(layout);
 
-  const html = injectCriticalStyle(await response.text(), css);
+  let html = await response.text();
+  html = injectCriticalStyle(html, 'pa-safra-title-first-paint', titleCss);
+  html = injectCriticalStyle(html, 'pa-safra-layout-first-paint', layoutCss);
+
   const headers = new Headers(response.headers);
   headers.delete('content-length');
   headers.delete('content-encoding');
