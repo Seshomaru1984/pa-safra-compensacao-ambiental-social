@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "titles": {
+    "home_hero": {
+      "size": "medium",
+      "align": "default",
+      "color": "default",
+      "weight": "default",
+      "italic": false
+    },
+    "home_intro": {
+      "size": "default",
+      "align": "default",
+      "color": "default",
+      "weight": "default",
+      "italic": false
+    },
+    "about_hero": {
+      "size": "default",
+      "align": "default",
+      "color": "default",
+      "weight": "default",
+      "italic": false
+    },
+    "lectures_hero": {
+      "size": "default",
+      "align": "default",
+      "color": "default",
+      "weight": "default",
+      "italic": false
+    },
+    "gallery_hero": {
+      "size": "default",
+      "align": "default",
+      "color": "default",
+      "weight": "default",
+      "italic": false
+    },
+    "resources_hero": {
+      "size": "default",
+      "align": "default",
+      "color": "default",
+      "weight": "default",
+      "italic": false
+    },
+    "legacy_hero": {
+      "size": "default",
+      "align": "default",
+      "color": "default",
+      "weight": "default",
+      "italic": false
+    },
+    "extra_pages": {
+      "size": "default",
+      "align": "default",
+      "color": "default",
+      "weight": "default",
+      "italic": false
+    }
+  }
+}
