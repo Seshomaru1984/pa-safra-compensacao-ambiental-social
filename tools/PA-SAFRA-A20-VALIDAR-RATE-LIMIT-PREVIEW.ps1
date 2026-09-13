@@ -180,7 +180,7 @@ function Assert-Status {
         [Parameter(Mandatory = $true)][string]$Label
     )
     if ([int]$Response.Status -ne $Expected) {
-        throw "$Label: esperado HTTP $Expected, recebido HTTP $($Response.Status). Corpo=$($Response.Body)"
+        throw "${Label}: esperado HTTP $Expected, recebido HTTP $($Response.Status). Corpo=$($Response.Body)"
     }
 }
 
