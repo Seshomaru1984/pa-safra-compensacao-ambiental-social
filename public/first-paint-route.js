@@ -22,6 +22,8 @@
     '/content/layout.json',
     '/api/title-styles',
     '/content/title-styles.json',
+    '/api/page-headers',
+    '/content/page-headers.json',
   ]);
 
   root.dataset.paInitialView = initialView;
@@ -81,7 +83,9 @@
     if (document.querySelector('[data-nav="noticias"]')) return false;
     if (!document.querySelector('.hero-grid[data-assisted-layout]')) return false;
     if (!document.querySelector('#titulo-inicio[data-title-assist]')) return false;
-    if (!document.querySelector('.view.is-active:not([hidden])')) return false;
+    const activeView = document.querySelector('.view.is-active:not([hidden])');
+    if (!activeView) return false;
+    if (activeView.dataset.view !== 'inicio' && !activeView.querySelector('.page-hero[data-page-header]')) return false;
     return true;
   }
 
@@ -142,7 +146,10 @@
       subtree: true,
       childList: true,
       attributes: true,
-      attributeFilter: ['hidden', 'class', 'data-assisted-layout', 'data-title-assist', 'data-title-size', 'data-title-align'],
+      attributeFilter: [
+        'hidden', 'class', 'data-assisted-layout', 'data-title-assist', 'data-title-size', 'data-title-align',
+        'data-page-header', 'data-page-header-size',
+      ],
     });
     scheduleCheck();
   }, { once: true });
