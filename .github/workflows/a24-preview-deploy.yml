@@ -1,0 +1,81 @@
+name: a24-preview-deploy
+
+on:
+  push:
+    branches:
+      - ops/pa-v001-a24-admin-editor-expandido
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-preview:
+    if: contains(github.event.head_commit.message, '[deploy-preview]')
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      PA_SAFRA_PREVIEW_URL: https://content-pa-v001-admin-previe.pa-safra-compensacao-ambiental-social.pages.dev
+    steps:
+      - name: Checkout A24
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Validar credenciais Cloudflare do Actions
+        shell: bash
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo 'CLOUDFLARE_API_TOKEN ausente no GitHub Actions.'; exit 2; }
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo 'CLOUDFLARE_ACCOUNT_ID ausente no GitHub Actions.'; exit 2; }
+          echo 'Credenciais Cloudflare do Actions presentes.'
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Validar e gerar build A24
+        run: |
+          npm run check
+          npm run editorial:audit
+          npm run admin:test
+          npm run build
+          npm run smoke
+
+      - name: Publicar somente no Preview editorial
+        shell: bash
+        run: |
+          npx --yes wrangler@latest pages deploy dist \
+            --project-name pa-safra-compensacao-ambiental-social \
+            --branch content/pa-v001-admin-preview
+
+      - name: Validar Preview remoto
+        run: npm run smoke:remote
+
+      - name: Validar painel A24 remoto
+        shell: bash
+        run: |
+          admin="$(curl -fsSL --retry 5 --retry-delay 3 "$PA_SAFRA_PREVIEW_URL/admin")"
+          printf '%s' "$admin" | grep -q 'Memória e legado'
+          printf '%s' "$admin" | grep -q 'Links úteis'
+          if printf '%s' "$admin" | grep -q '>Notícias<'; then
+            echo 'ERRO: Notícias reapareceu no painel A24.'
+            exit 1
+          fi
+          status="$(curl -fsSL --retry 5 --retry-delay 3 "$PA_SAFRA_PREVIEW_URL/api/admin/status")"
+          printf '%s' "$status" | grep -q '"enabled":true'
+          printf '%s' "$status" | grep -q '"branch":"content/pa-v001-admin-preview"'
+          echo 'Preview A24 e painel administrativo responderam conforme esperado.'
+
+      - name: Registrar resultado
+        if: success()
+        run: |
+          echo '## PA Safra — A24 Preview publicado' >> "$GITHUB_STEP_SUMMARY"
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Ambiente: Preview editorial' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Branch Cloudflare: `content/pa-v001-admin-preview`' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Produção/main/develop: não alterados' >> "$GITHUB_STEP_SUMMARY"
+          echo '- URL: `https://content-pa-v001-admin-previe.pa-safra-compensacao-ambiental-social.pages.dev`' >> "$GITHUB_STEP_SUMMARY"
+          echo '- `/admin`: A24 presente, Notícias ausente' >> "$GITHUB_STEP_SUMMARY"
