@@ -6,6 +6,7 @@ const PUBLIC_LAYOUT_TAG = '<script type="module" src="/layout-assist.js"></scrip
 const ADMIN_LAYOUT_TAG = '<script type="module" src="/admin/layout-assist.js"></script>';
 const PUBLIC_TITLE_TAG = '<script type="module" src="/title-style-assist.js"></script>';
 const ADMIN_TITLE_TAG = '<script type="module" src="/admin/title-style-assist.js"></script>';
+const PREVIEW_CONTENT_BRIDGE_TAG = '<script src="/content-preview-bridge.js"></script>';
 const PUBLIC_ROUTE_STYLE_TAG = '<link rel="stylesheet" href="/first-paint-route.css" />';
 const PUBLIC_ROUTE_SCRIPT_TAG = '<script src="/first-paint-route.js"></script>';
 const PUBLIC_INTERNAL_HEADER_STYLE_TAG = '<link rel="stylesheet" href="/internal-header-uniform.css" />';
@@ -89,7 +90,8 @@ function syncPublicHero(html) {
 }
 
 function installFirstPaintRoute(html) {
-  let next = injectBeforeHeadEnd(html, PUBLIC_ROUTE_STYLE_TAG);
+  let next = injectBeforeHeadEnd(html, PREVIEW_CONTENT_BRIDGE_TAG);
+  next = injectBeforeHeadEnd(next, PUBLIC_ROUTE_STYLE_TAG);
   next = injectBeforeHeadEnd(next, PUBLIC_INTERNAL_HEADER_STYLE_TAG);
   next = injectBeforeHeadEnd(next, PUBLIC_ROUTE_SCRIPT_TAG);
   return next;
@@ -108,7 +110,8 @@ export default defineConfig({
         const adminPath = path.resolve('dist', 'admin', 'index.html');
         if (!fs.existsSync(adminPath)) throw new Error('Build do admin não encontrado para injeção assistida.');
         const html = fs.readFileSync(adminPath, 'utf8');
-        fs.writeFileSync(adminPath, injectAll(html, [ADMIN_LAYOUT_TAG, ADMIN_TITLE_TAG]), 'utf8');
+        const bridgedAdmin = injectBeforeHeadEnd(html, PREVIEW_CONTENT_BRIDGE_TAG);
+        fs.writeFileSync(adminPath, injectAll(bridgedAdmin, [ADMIN_LAYOUT_TAG, ADMIN_TITLE_TAG]), 'utf8');
       },
     },
   ],
