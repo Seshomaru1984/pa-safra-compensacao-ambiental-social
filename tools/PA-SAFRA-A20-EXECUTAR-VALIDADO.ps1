@@ -4,7 +4,7 @@ Set-StrictMode -Version Latest
 $Raiz = Join-Path $env:USERPROFILE 'PA SAFRA'
 $RepositorioEsperado = 'https://github.com/Seshomaru1984/pa-safra-compensacao-ambiental-social.git'
 $Branch = 'ops/pa-v001-a20-preview-rate-limit-e2e'
-$CommitValidado = '76ff50a8fcee0e47cece7fd53f2b6014290aa86f'
+$CommitValidado = 'e25abc96a5def3afa5c6c0e83425946da85a8817'
 $ScriptRel = 'tools/PA-SAFRA-A20-VALIDAR-RATE-LIMIT-PREVIEW.ps1'
 $Temp = Join-Path $env:TEMP ("PA-SAFRA-A20-$([guid]::NewGuid().ToString('N')).ps1")
 
