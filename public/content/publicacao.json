@@ -7,7 +7,7 @@
     "dados_contato_confirmados": false,
     "afirmacoes_historicas_confirmadas": false,
     "revisao_visual_confirmada": false,
-    "admin_nativo_validado": false
+    "admin_nativo_validado": true
   },
-  "notes": "A publicação em produção deve permanecer bloqueada enquanto qualquer validação obrigatória estiver pendente. O painel administrativo nativo deve ser validado com autenticação e escrita controlada antes da liberação definitiva."
+  "notes": "A publicação em produção deve permanecer bloqueada enquanto qualquer validação obrigatória estiver pendente. O painel administrativo nativo foi validado tecnicamente; os cinco gates editoriais continuam independentes e pendentes até evidência suficiente."
 }
