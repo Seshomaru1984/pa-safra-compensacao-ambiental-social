@@ -166,7 +166,7 @@ if (fs.existsSync(publicationPath)) {
     if (publication.production_branch !== 'main') errors.push('content/publicacao.json no build deve manter production_branch como main.');
     if (!publication.checks || typeof publication.checks !== 'object') errors.push('content/publicacao.json no build deve conter o objeto checks.');
     if ('pages_cms_testado' in (publication.checks || {})) errors.push('Gate legado pages_cms_testado não deve existir no build.');
-    if (publication.checks?.admin_nativo_validado !== false) errors.push('admin_nativo_validado deve permanecer pendente nesta fase.');
+    if (typeof publication.checks?.admin_nativo_validado !== 'boolean') errors.push('admin_nativo_validado deve ser booleano no build.');
   } catch {
     // JSON ja e validado acima.
   }
