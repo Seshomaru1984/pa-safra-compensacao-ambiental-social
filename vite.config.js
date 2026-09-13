@@ -6,6 +6,7 @@ const PUBLIC_LAYOUT_TAG = '<script type="module" src="/layout-assist.js"></scrip
 const ADMIN_LAYOUT_TAG = '<script type="module" src="/admin/layout-assist.js"></script>';
 const PUBLIC_TITLE_TAG = '<script type="module" src="/title-style-assist.js"></script>';
 const ADMIN_TITLE_TAG = '<script type="module" src="/admin/title-style-assist.js"></script>';
+const SITE_CONFIG_PATH = path.resolve('public', 'content', 'site.json');
 
 function injectBeforeBody(html, tag) {
   if (html.includes(tag)) return html;
@@ -13,8 +14,75 @@ function injectBeforeBody(html, tag) {
   return html.replace('</body>', `  ${tag}\n</body>`);
 }
 
+function injectBeforeHeadEnd(html, tag) {
+  if (html.includes(tag)) return html;
+  if (!html.includes('</head>')) throw new Error('HTML sem fechamento de head para sincronização do primeiro paint.');
+  return html.replace('</head>', `  ${tag}\n</head>`);
+}
+
 function injectAll(html, tags) {
   return tags.reduce((current, tag) => injectBeforeBody(current, tag), html);
+}
+
+function escapeAttribute(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('"', '&quot;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;');
+}
+
+function setAttribute(tag, name, value) {
+  const escaped = escapeAttribute(value);
+  const pattern = new RegExp(`\\s${name}=(?:"[^"]*"|'[^']*')`, 'i');
+  if (pattern.test(tag)) return tag.replace(pattern, ` ${name}="${escaped}"`);
+  return tag.replace(/\s*\/$|>$/, (ending) => ` ${name}="${escaped}"${ending}`);
+}
+
+function readSiteConfig() {
+  if (!fs.existsSync(SITE_CONFIG_PATH)) return {};
+  try {
+    return JSON.parse(fs.readFileSync(SITE_CONFIG_PATH, 'utf8'));
+  } catch (error) {
+    throw new Error(`site.json inválido para sincronização do primeiro paint: ${error.message}`);
+  }
+}
+
+function syncPublicHero(html) {
+  const site = readSiteConfig();
+  const hero = site?.hero && typeof site.hero === 'object' ? site.hero : {};
+
+  const heroClasses = ['hero-copy'];
+  if (hero.title_alignment === 'right') heroClasses.push('align-right');
+  if (hero.title_alignment === 'center') heroClasses.push('align-center');
+  if (hero.title_size === 'compact') heroClasses.push('title-compact');
+  if (hero.title_size === 'small') heroClasses.push('title-small');
+
+  let next = html.replace(/class="hero-copy(?:\s+[^"]*)?"/, `class="${heroClasses.join(' ')}"`);
+
+  const imagePath = typeof hero.image === 'string' && /^\/assets\//.test(hero.image.trim())
+    ? hero.image.trim()
+    : '';
+  const imageAlt = typeof hero.image_alt === 'string' ? hero.image_alt.trim() : '';
+
+  next = next.replace(/<img\b[^>]*\bid="hero-image"[^>]*>/i, (tag) => {
+    let updated = tag;
+    if (imagePath) updated = setAttribute(updated, 'src', imagePath);
+    if (imageAlt) updated = setAttribute(updated, 'alt', imageAlt);
+    updated = setAttribute(updated, 'loading', 'eager');
+    updated = setAttribute(updated, 'fetchpriority', 'high');
+    updated = setAttribute(updated, 'decoding', 'sync');
+    return updated;
+  });
+
+  if (imagePath) {
+    next = injectBeforeHeadEnd(
+      next,
+      `<link rel="preload" as="image" href="${escapeAttribute(imagePath)}" fetchpriority="high" />`,
+    );
+  }
+
+  return next;
 }
 
 export default defineConfig({
@@ -23,7 +91,7 @@ export default defineConfig({
       name: 'pa-safra-edicao-assistida',
       enforce: 'post',
       transformIndexHtml(html) {
-        return injectAll(html, [PUBLIC_LAYOUT_TAG, PUBLIC_TITLE_TAG]);
+        return injectAll(syncPublicHero(html), [PUBLIC_LAYOUT_TAG, PUBLIC_TITLE_TAG]);
       },
       closeBundle() {
         const adminPath = path.resolve('dist', 'admin', 'index.html');
