@@ -6,6 +6,8 @@ const PUBLIC_LAYOUT_TAG = '<script type="module" src="/layout-assist.js"></scrip
 const ADMIN_LAYOUT_TAG = '<script type="module" src="/admin/layout-assist.js"></script>';
 const PUBLIC_TITLE_TAG = '<script type="module" src="/title-style-assist.js"></script>';
 const ADMIN_TITLE_TAG = '<script type="module" src="/admin/title-style-assist.js"></script>';
+const PUBLIC_HEADER_TAG = '<script type="module" src="/page-header-assist.js"></script>';
+const ADMIN_HEADER_TAG = '<script type="module" src="/admin/page-header-assist.js"></script>';
 const PUBLIC_ROUTE_STYLE_TAG = '<link rel="stylesheet" href="/first-paint-route.css" />';
 const PUBLIC_ROUTE_SCRIPT_TAG = '<script src="/first-paint-route.js"></script>';
 const SITE_CONFIG_PATH = path.resolve('public', 'content', 'site.json');
@@ -100,13 +102,13 @@ export default defineConfig({
       enforce: 'post',
       transformIndexHtml(html) {
         const publicHtml = installFirstPaintRoute(syncPublicHero(html));
-        return injectAll(publicHtml, [PUBLIC_LAYOUT_TAG, PUBLIC_TITLE_TAG]);
+        return injectAll(publicHtml, [PUBLIC_LAYOUT_TAG, PUBLIC_TITLE_TAG, PUBLIC_HEADER_TAG]);
       },
       closeBundle() {
         const adminPath = path.resolve('dist', 'admin', 'index.html');
         if (!fs.existsSync(adminPath)) throw new Error('Build do admin não encontrado para injeção assistida.');
         const html = fs.readFileSync(adminPath, 'utf8');
-        fs.writeFileSync(adminPath, injectAll(html, [ADMIN_LAYOUT_TAG, ADMIN_TITLE_TAG]), 'utf8');
+        fs.writeFileSync(adminPath, injectAll(html, [ADMIN_LAYOUT_TAG, ADMIN_TITLE_TAG, ADMIN_HEADER_TAG]), 'utf8');
       },
     },
   ],
