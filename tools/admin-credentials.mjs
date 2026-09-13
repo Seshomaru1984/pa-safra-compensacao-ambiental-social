@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 
-const ITERATIONS = 310_000;
+const ITERATIONS = 100_000;
 const KEY_LENGTH = 32;
 const SALT_LENGTH = 16;
 
@@ -61,6 +61,7 @@ async function hiddenPrompt(label) {
 async function main() {
   console.log('PA Safra — geração local de credenciais administrativas');
   console.log('A senha não será exibida nem enviada pela rede.');
+  console.log('PBKDF2-SHA256: 100000 iterações, compatível com o runtime Cloudflare Workers.');
 
   const password = await hiddenPrompt('Senha: ');
   const confirmation = await hiddenPrompt('Confirme a senha: ');

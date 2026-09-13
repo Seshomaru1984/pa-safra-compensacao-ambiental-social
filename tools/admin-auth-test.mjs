@@ -96,10 +96,10 @@ function base64Url(buffer) {
   return Buffer.from(buffer).toString('base64url');
 }
 
-function passwordHash(password) {
+function passwordHash(password, iterations = ITERATIONS) {
   const salt = Buffer.alloc(16, 7);
-  const derived = crypto.pbkdf2Sync(password, salt, ITERATIONS, 32, 'sha256');
-  return `pbkdf2-sha256$${ITERATIONS}$${base64Url(salt)}$${base64Url(derived)}`;
+  const derived = crypto.pbkdf2Sync(password, salt, iterations, 32, 'sha256');
+  return `pbkdf2-sha256$${iterations}$${base64Url(salt)}$${base64Url(derived)}`;
 }
 
 function environment(overrides = {}) {
@@ -161,7 +161,16 @@ async function main() {
   const disabled = await attempt(environment({ PA_SAFRA_ADMIN_ENABLED: 'false' }), { ip: '203.0.113.13' });
   assert(disabled.status === 503, `Admin desativado deve responder 503; recebeu ${disabled.status}.`);
 
+  const incompatibleHash = passwordHash(TEST_PASSWORD, 310_000);
+  const incompatible = await attempt(
+    environment({ PA_SAFRA_ADMIN_PASSWORD_HASH: incompatibleHash }),
+    { ip: '203.0.113.14' },
+  );
+  assert(incompatible.status === 503, `Hash PBKDF2 acima do limite suportado deve falhar fechado com 503; recebeu ${incompatible.status}.`);
+  assert((incompatible.headers.get('content-type') || '').includes('application/json'), 'Falha de hash incompatível deve permanecer resposta JSON controlada.');
+
   console.log('ADMIN AUTH TEST: OK');
+  console.log('- PBKDF2-SHA256 fixado em 100000 iterações para compatibilidade com Workers');
   console.log('- 4 falhas iniciais: 401');
   console.log('- 5ª falha: 429 + Retry-After');
   console.log('- bloqueio permanece mesmo com senha correta no mesmo cliente');
@@ -169,6 +178,7 @@ async function main() {
   console.log('- cookie de sessão: HttpOnly + Secure + SameSite=Strict');
   console.log('- ausência do D1: fail-closed 503');
   console.log('- administração desativada: 503');
+  console.log('- hash PBKDF2 incompatível (>100000): fail-closed 503, sem Worker exception');
 }
 
 main().catch((error) => {
