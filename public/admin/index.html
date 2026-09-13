@@ -13,7 +13,7 @@
       <div>
         <p class="eyebrow">PA Safra</p>
         <h1>Administração de conteúdo</h1>
-        <p class="subtitle">Atualize informações do site sem editar código.</p>
+        <p class="subtitle">Atualize textos, imagens, links e páginas sem editar código.</p>
       </div>
       <div class="header-actions">
         <a class="site-link" href="/" target="_blank" rel="noopener">Abrir site</a>
@@ -27,14 +27,8 @@
         <h2 id="login-title">Entrar no painel</h2>
         <p class="login-help">Use o usuário e a senha definidos para a administração do PA Safra.</p>
         <form id="login-form" class="login-form">
-          <label>
-            Usuário
-            <input id="login-user" name="username" autocomplete="username" maxlength="80" required>
-          </label>
-          <label>
-            Senha
-            <input id="login-password" name="password" type="password" autocomplete="current-password" maxlength="256" required>
-          </label>
+          <label>Usuário<input id="login-user" name="username" autocomplete="username" maxlength="80" required></label>
+          <label>Senha<input id="login-password" name="password" type="password" autocomplete="current-password" maxlength="256" required></label>
           <button id="login-button" class="button primary" type="submit">Entrar</button>
         </form>
         <p id="login-message" class="login-message" role="status" aria-live="polite"></p>
@@ -52,91 +46,72 @@
 
       <nav class="admin-tabs" aria-label="Áreas administrativas">
         <button class="tab is-active" type="button" data-tab="inicio">Página inicial</button>
+        <button class="tab" type="button" data-tab="sobre">Sobre o Projeto</button>
+        <button class="tab" type="button" data-tab="destaques">Destaques</button>
         <button class="tab" type="button" data-tab="videos">Palestras e vídeos</button>
+        <button class="tab" type="button" data-tab="galeria">Galeria</button>
+        <button class="tab" type="button" data-tab="links">Links úteis</button>
+        <button class="tab" type="button" data-tab="legado">Memória e legado</button>
+        <button class="tab" type="button" data-tab="paginas">Páginas extras</button>
+        <button class="tab" type="button" data-tab="aparencia">Aparência e rodapé</button>
       </nav>
 
       <section id="panel-inicio" class="panel is-active" data-panel="inicio">
-        <div class="panel-heading">
-          <div>
-            <p class="eyebrow">Conteúdo principal</p>
-            <h2>Página inicial</h2>
-          </div>
-        </div>
+        <div class="panel-heading"><div><p class="eyebrow">Conteúdo principal</p><h2>Página inicial</h2><p>Título, apresentação, imagem principal e texto de abertura.</p></div></div>
+        <form id="home-form" class="editor-stack"></form>
+      </section>
 
-        <form id="site-form" class="editor-grid">
-          <div class="form-card">
-            <label>
-              Complemento no cabeçalho
-              <input id="brand-tagline" name="brand_tagline" maxlength="160" autocomplete="off">
-            </label>
-            <label>
-              Título principal
-              <textarea id="hero-title" name="hero_title" rows="3" maxlength="220" required></textarea>
-            </label>
-            <label>
-              Texto de apoio
-              <textarea id="hero-lead" name="hero_lead" rows="5" maxlength="800"></textarea>
-            </label>
-            <div class="form-actions">
-              <button id="preview-site" class="button secondary" type="button">Pré-visualizar</button>
-              <button id="save-site" class="button primary" type="submit" disabled>Publicar alterações</button>
-            </div>
-          </div>
+      <section id="panel-sobre" class="panel" data-panel="sobre" hidden>
+        <div class="panel-heading"><div><p class="eyebrow">Institucional</p><h2>Sobre o Projeto</h2><p>Edite o texto institucional mantendo a estrutura do site.</p></div></div>
+        <form id="about-form" class="editor-stack"></form>
+      </section>
 
-          <aside class="preview-card" aria-label="Pré-visualização da página inicial">
-            <span class="preview-label">Pré-visualização</span>
-            <small id="preview-brand">Compensação Ambiental e Social</small>
-            <h3 id="preview-title">Projeto de Compensação Ambiental e Social - PA Safra</h3>
-            <p id="preview-lead"></p>
-          </aside>
-        </form>
+      <section id="panel-destaques" class="panel" data-panel="destaques" hidden>
+        <div class="panel-heading"><div><p class="eyebrow">Página inicial</p><h2>Destaques</h2><p>Cartões de acesso e eixos exibidos na página inicial.</p></div><button id="add-highlight" class="button secondary" type="button">+ Adicionar destaque</button></div>
+        <div id="highlights-editor" class="editor-list"></div>
+        <div class="form-actions align-end"><button id="save-highlights" class="button primary write-action" type="button" disabled>Publicar alterações</button></div>
       </section>
 
       <section id="panel-videos" class="panel" data-panel="videos" hidden>
-        <div class="panel-heading">
-          <div>
-            <p class="eyebrow">Atualizações periódicas</p>
-            <h2>Palestras e vídeos</h2>
-            <p>Adicione links do YouTube; o site cuida da apresentação automaticamente.</p>
-          </div>
-          <button id="add-video" class="button secondary" type="button">+ Adicionar palestra</button>
-        </div>
+        <div class="panel-heading"><div><p class="eyebrow">Educação ambiental</p><h2>Palestras e vídeos</h2><p>Adicione links do YouTube e descrições.</p></div><button id="add-video" class="button secondary" type="button">+ Adicionar palestra</button></div>
+        <div id="videos-editor" class="editor-list"></div>
+        <div class="form-actions align-end"><button id="save-videos" class="button primary write-action" type="button" disabled>Publicar alterações</button></div>
+      </section>
 
-        <div id="videos-list" class="video-editor-list"></div>
-        <div class="form-actions align-end">
-          <button id="save-videos" class="button primary" type="button" disabled>Publicar alterações</button>
-        </div>
+      <section id="panel-galeria" class="panel" data-panel="galeria" hidden>
+        <div class="panel-heading"><div><p class="eyebrow">Imagens</p><h2>Galeria</h2><p>Gerencie imagens, descrições acessíveis, legendas e créditos.</p></div><button id="add-gallery" class="button secondary" type="button">+ Adicionar imagem</button></div>
+        <div id="gallery-editor" class="editor-list"></div>
+        <div class="form-actions align-end"><button id="save-gallery" class="button primary write-action" type="button" disabled>Publicar alterações</button></div>
+      </section>
+
+      <section id="panel-links" class="panel" data-panel="links" hidden>
+        <div class="panel-heading"><div><p class="eyebrow">Referências</p><h2>Links úteis</h2><p>Mantenha órgãos oficiais e fontes públicas consultadas.</p></div></div>
+        <div class="subsection-heading"><h3>Órgãos e serviços</h3><button id="add-official-link" class="button secondary" type="button">+ Adicionar link</button></div>
+        <div id="official-links-editor" class="editor-list"></div>
+        <div class="subsection-heading"><h3>Fontes públicas</h3><button id="add-source-link" class="button secondary" type="button">+ Adicionar fonte</button></div>
+        <div id="source-links-editor" class="editor-list"></div>
+        <div class="form-actions align-end"><button id="save-links" class="button primary write-action" type="button" disabled>Publicar alterações</button></div>
+      </section>
+
+      <section id="panel-legado" class="panel" data-panel="legado" hidden>
+        <div class="panel-heading"><div><p class="eyebrow">Memória</p><h2>Memória e legado</h2><p>Os textos atuais foram preservados integralmente como ponto de partida.</p></div></div>
+        <form id="legacy-form" class="editor-stack"></form>
+      </section>
+
+      <section id="panel-paginas" class="panel" data-panel="paginas" hidden>
+        <div class="panel-heading"><div><p class="eyebrow">Conteúdo adicional</p><h2>Páginas extras</h2><p>Crie páginas complementares que aparecem no menu do portal.</p></div><button id="add-page" class="button secondary" type="button">+ Adicionar página</button></div>
+        <div id="pages-editor" class="editor-list"></div>
+        <div class="form-actions align-end"><button id="save-pages" class="button primary write-action" type="button" disabled>Publicar alterações</button></div>
+      </section>
+
+      <section id="panel-aparencia" class="panel" data-panel="aparencia" hidden>
+        <div class="panel-heading"><div><p class="eyebrow">Identidade visual</p><h2>Aparência e rodapé</h2><p>Cores, identidade do portal e textos do rodapé.</p></div></div>
+        <form id="appearance-form" class="editor-stack"></form>
       </section>
     </section>
 
     <div id="admin-message" class="toast" role="status" aria-live="polite" hidden></div>
   </main>
-
-  <template id="video-editor-template">
-    <article class="video-editor-card">
-      <div class="video-card-head">
-        <strong>Palestra</strong>
-        <button class="link-button remove-video" type="button">Remover da lista</button>
-      </div>
-      <label>
-        Título
-        <input class="video-title" maxlength="220" required>
-      </label>
-      <label>
-        Link do YouTube
-        <input class="video-url" type="url" maxlength="500" placeholder="https://www.youtube.com/watch?v=..." required>
-      </label>
-      <label>
-        Descrição curta
-        <textarea class="video-description" rows="3" maxlength="1800"></textarea>
-      </label>
-      <label class="checkbox-row">
-        <input class="video-published" type="checkbox" checked>
-        Mostrar no site
-      </label>
-    </article>
-  </template>
-
   <script type="module" src="/admin/admin.js"></script>
 </body>
 </html>
