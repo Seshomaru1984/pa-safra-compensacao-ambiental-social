@@ -1,4 +1,4 @@
-name: a24-preview-deploy
+name: a24-preview-verify
 
 on:
   push:
@@ -9,13 +9,11 @@ permissions:
   contents: read
 
 jobs:
-  deploy-preview:
-    if: contains(github.event.head_commit.message, '[deploy-preview]')
+  verify-preview:
+    if: contains(github.event.head_commit.message, '[verify-preview]')
     runs-on: ubuntu-latest
     env:
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      PA_SAFRA_PREVIEW_URL: https://content-pa-v001-admin-previe.pa-safra-compensacao-ambiental-social.pages.dev
+      PA_SAFRA_PREVIEW_URL: https://ops-pa-v001-a24-admin-editor.pa-safra-compensacao-ambiental-social.pages.dev
     steps:
       - name: Checkout A24
         uses: actions/checkout@v4
@@ -26,40 +24,38 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Validar credenciais Cloudflare do Actions
-        shell: bash
-        run: |
-          test -n "$CLOUDFLARE_API_TOKEN" || { echo 'CLOUDFLARE_API_TOKEN ausente no GitHub Actions.'; exit 2; }
-          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo 'CLOUDFLARE_ACCOUNT_ID ausente no GitHub Actions.'; exit 2; }
-          echo 'Credenciais Cloudflare do Actions presentes.'
-
       - name: Instalar dependências
         run: npm ci
 
-      - name: Validar e gerar build A24
-        run: |
-          npm run check
-          npm run editorial:audit
-          npm run admin:test
-          npm run build
-          npm run smoke
-
-      - name: Publicar somente no Preview editorial
+      - name: Aguardar Preview da branch responder
         shell: bash
         run: |
-          npx --yes wrangler@latest pages deploy dist \
-            --project-name pa-safra-compensacao-ambiental-social \
-            --branch content/pa-v001-admin-preview
+          ok=0
+          for attempt in $(seq 1 30); do
+            if curl -fsSL --max-time 15 "$PA_SAFRA_PREVIEW_URL/admin" | grep -q 'Memória e legado'; then
+              ok=1
+              break
+            fi
+            sleep 3
+          done
+          test "$ok" -eq 1 || { echo 'Preview A24 não ficou disponível com o painel esperado.'; exit 1; }
 
       - name: Validar Preview remoto
         run: npm run smoke:remote
 
-      - name: Validar painel A24 remoto
+      - name: Validar painel e runtime A24
         shell: bash
         run: |
           admin="$(curl -fsSL --retry 5 --retry-delay 3 "$PA_SAFRA_PREVIEW_URL/admin")"
-          printf '%s' "$admin" | grep -q 'Memória e legado'
+          printf '%s' "$admin" | grep -q 'Página inicial'
+          printf '%s' "$admin" | grep -q 'Sobre o Projeto'
+          printf '%s' "$admin" | grep -q 'Destaques'
+          printf '%s' "$admin" | grep -q 'Palestras e vídeos'
+          printf '%s' "$admin" | grep -q 'Galeria'
           printf '%s' "$admin" | grep -q 'Links úteis'
+          printf '%s' "$admin" | grep -q 'Memória e legado'
+          printf '%s' "$admin" | grep -q 'Páginas extras'
+          printf '%s' "$admin" | grep -q 'Aparência e rodapé'
           if printf '%s' "$admin" | grep -q '>Notícias<'; then
             echo 'ERRO: Notícias reapareceu no painel A24.'
             exit 1
@@ -67,15 +63,15 @@ jobs:
           status="$(curl -fsSL --retry 5 --retry-delay 3 "$PA_SAFRA_PREVIEW_URL/api/admin/status")"
           printf '%s' "$status" | grep -q '"enabled":true'
           printf '%s' "$status" | grep -q '"branch":"content/pa-v001-admin-preview"'
-          echo 'Preview A24 e painel administrativo responderam conforme esperado.'
+          echo 'Preview A24 e runtime administrativo responderam conforme esperado.'
 
       - name: Registrar resultado
         if: success()
         run: |
-          echo '## PA Safra — A24 Preview publicado' >> "$GITHUB_STEP_SUMMARY"
+          echo '## PA Safra — A24 Preview validado' >> "$GITHUB_STEP_SUMMARY"
           echo '' >> "$GITHUB_STEP_SUMMARY"
-          echo '- Ambiente: Preview editorial' >> "$GITHUB_STEP_SUMMARY"
-          echo '- Branch Cloudflare: `content/pa-v001-admin-preview`' >> "$GITHUB_STEP_SUMMARY"
-          echo '- Produção/main/develop: não alterados' >> "$GITHUB_STEP_SUMMARY"
-          echo '- URL: `https://content-pa-v001-admin-previe.pa-safra-compensacao-ambiental-social.pages.dev`' >> "$GITHUB_STEP_SUMMARY"
-          echo '- `/admin`: A24 presente, Notícias ausente' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Cloudflare Git integration: ativa' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Preview da branch: `https://ops-pa-v001-a24-admin-editor.pa-safra-compensacao-ambiental-social.pages.dev`' >> "$GITHUB_STEP_SUMMARY"
+          echo '- `/admin`: 9 áreas presentes; Notícias ausente' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Runtime Preview: administração habilitada e destino editorial preservado' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Produção/main/develop/domínio/DNS: não alterados' >> "$GITHUB_STEP_SUMMARY"
