@@ -1,0 +1,13 @@
+html[data-pa-initial-view] main .view {
+  display: none !important;
+}
+
+html[data-pa-initial-view="inicio"] main .view[data-view="inicio"],
+html[data-pa-initial-view="sobre"] main .view[data-view="sobre"],
+html[data-pa-initial-view="legado"] main .view[data-view="legado"] {
+  display: block !important;
+}
+
+html[data-pa-initial-view="pending"] main {
+  min-height: 70vh;
+}
