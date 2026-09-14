@@ -6,6 +6,7 @@ const VIDEO_TITLE_OPTIONS = [18, 20, 22, 24, 26, 28, 30, 32, 36, 40, 44, 48, 52,
 let currentVideoStyle = { version: 1, title_size_px: DEFAULT_VIDEO_TITLE };
 let writeEnabled = false;
 let loading = null;
+let unifiedSaveInProgress = false;
 
 function normalizeVideoStyle(raw) {
   const size = Number(raw?.title_size_px);
@@ -89,34 +90,90 @@ function previewUrl(size) {
   return url;
 }
 
-async function saveVideoTitleSize(card) {
-  const select = card.querySelector('[data-video-title-size]');
-  const status = card.querySelector('.video-title-size-status');
-  const button = card.querySelector('[data-video-title-save]');
-  const size = Number(select.value);
+function selectedVideoTitleSize(card) {
+  const select = card?.querySelector('[data-video-title-size]');
+  const size = Number(select?.value);
   if (!Number.isInteger(size) || size < MIN_VIDEO_TITLE || size > MAX_VIDEO_TITLE) {
-    status.textContent = `Escolha um tamanho entre ${MIN_VIDEO_TITLE} e ${MAX_VIDEO_TITLE} px.`;
+    throw new Error(`Escolha um tamanho entre ${MIN_VIDEO_TITLE} e ${MAX_VIDEO_TITLE} px.`);
+  }
+  return size;
+}
+
+function collectVideoPayload() {
+  const cards = [...document.querySelectorAll('#videos-editor .editor-card')];
+  const videos = cards.map((card, index) => {
+    const title = card.querySelector('[data-role="title"]')?.value?.trim() || '';
+    const youtubeUrl = card.querySelector('[data-role="url"]')?.value?.trim() || '';
+    const description = card.querySelector('[data-role="description"]')?.innerHTML?.trim() || '';
+    const published = Boolean(card.querySelector('[data-role="published"]')?.checked);
+    if (!title || !youtubeUrl) throw new Error(`Preencha título e link na palestra ${index + 1}.`);
+    return { title, youtube_url: youtubeUrl, description, published };
+  });
+  return videos;
+}
+
+async function putJson(url, body) {
+  const response = await fetch(url, {
+    method: 'PUT',
+    credentials: 'same-origin',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || !result.ok) {
+    if (response.status === 401) throw new Error('Sua sessão expirou. Entre novamente no painel.');
+    throw new Error(result.error || `Falha ao salvar (${response.status}).`);
+  }
+  return result;
+}
+
+function signalPublicPreviewRefresh() {
+  try {
+    localStorage.setItem('pa-safra-editorial-updated', String(Date.now()));
+  } catch {}
+}
+
+async function saveAllVideoChanges(card, triggerButton = null) {
+  if (unifiedSaveInProgress) return;
+  const status = card?.querySelector('.video-title-size-status');
+  const topButton = card?.querySelector('[data-video-title-save]');
+  const bottomButton = document.getElementById('save-videos');
+
+  if (!writeEnabled) {
+    if (status) status.textContent = 'A publicação está bloqueada neste ambiente.';
     return;
   }
 
-  const next = { version: 1, title_size_px: size };
-  button.disabled = true;
-  status.textContent = 'Salvando tamanho…';
+  let size;
+  let videos;
   try {
-    const response = await fetch('/api/admin/video-styles', {
-      method: 'PUT',
-      credentials: 'same-origin',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ data: next }),
-    });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok || !result.ok) throw new Error(result.error || `Falha ao salvar (${response.status}).`);
-    currentVideoStyle = normalizeVideoStyle(result.data || next);
-    status.textContent = `Tamanho salvo: ${currentVideoStyle.title_size_px} px.`;
+    size = selectedVideoTitleSize(card);
+    videos = collectVideoPayload();
   } catch (error) {
-    status.textContent = error.message || 'Não foi possível salvar o tamanho.';
+    if (status) status.textContent = error.message;
+    return;
+  }
+
+  unifiedSaveInProgress = true;
+  [topButton, bottomButton, triggerButton].filter(Boolean).forEach((button) => { button.disabled = true; });
+  if (status) status.textContent = 'Salvando títulos, textos e tamanho…';
+
+  try {
+    const [styleResult, videosResult] = await Promise.all([
+      putJson('/api/admin/video-styles', { data: { version: 1, title_size_px: size } }),
+      putJson('/api/admin/content', { resource: 'videos', data: videos }),
+    ]);
+    currentVideoStyle = normalizeVideoStyle(styleResult.data || { title_size_px: size });
+    signalPublicPreviewRefresh();
+    if (status) {
+      const videoCommit = videosResult.commit ? ` Conteúdo: ${String(videosResult.commit).slice(0, 7)}.` : '';
+      status.textContent = `Alterações publicadas: ${videos.length} vídeo(s), títulos, textos e tamanho ${currentVideoStyle.title_size_px} px.${videoCommit}`;
+    }
+  } catch (error) {
+    if (status) status.textContent = error.message || 'Não foi possível publicar as alterações.';
   } finally {
-    button.disabled = !writeEnabled;
+    unifiedSaveInProgress = false;
+    [topButton, bottomButton, triggerButton].filter(Boolean).forEach((button) => { button.disabled = !writeEnabled; });
   }
 }
 
@@ -133,24 +190,44 @@ function injectVideoTitleControl() {
   const options = VIDEO_TITLE_OPTIONS.map((size) => `<option value="${size}"${size === currentVideoStyle.title_size_px ? ' selected' : ''}>${size} px</option>`).join('');
   card.innerHTML = `
     <h3>Tamanho dos títulos dos vídeos</h3>
-    <p>Escolha o tamanho numérico usado nos títulos de todos os vídeos publicados nesta página.</p>
+    <p>Esta configuração vale para todos os vídeos atuais e futuros. O botão abaixo publica também os títulos, descrições e links editados nos cartões.</p>
     <div class="video-title-size-row">
       <label>Tamanho da fonte
         <select data-video-title-size>${options}</select>
       </label>
       <div class="video-title-size-actions">
-        <button class="button secondary" type="button" data-video-title-preview>Pré-visualizar</button>
-        <button class="button primary write-action" type="button" data-video-title-save${writeEnabled ? '' : ' disabled'}>Salvar tamanho</button>
+        <button class="button secondary" type="button" data-video-title-preview>Pré-visualizar tamanho</button>
+        <button class="button primary write-action" type="button" data-video-title-save${writeEnabled ? '' : ' disabled'}>Publicar tudo</button>
       </div>
     </div>
     <p class="video-title-size-status" role="status" aria-live="polite"></p>`;
 
   card.querySelector('[data-video-title-preview]').addEventListener('click', () => {
-    const size = Number(card.querySelector('[data-video-title-size]').value);
-    if (Number.isInteger(size)) window.open(previewUrl(size).toString(), '_blank', 'noopener');
+    try {
+      const size = selectedVideoTitleSize(card);
+      window.open(previewUrl(size).toString(), '_blank', 'noopener');
+    } catch (error) {
+      card.querySelector('.video-title-size-status').textContent = error.message;
+    }
   });
-  card.querySelector('[data-video-title-save]').addEventListener('click', () => saveVideoTitleSize(card));
+  card.querySelector('[data-video-title-save]').addEventListener('click', (event) => {
+    void saveAllVideoChanges(card, event.currentTarget);
+  });
   heading.insertAdjacentElement('afterend', card);
+}
+
+function installUnifiedBottomSave() {
+  if (document.documentElement.dataset.paVideoUnifiedSave === 'true') return;
+  document.documentElement.dataset.paVideoUnifiedSave = 'true';
+  document.addEventListener('click', (event) => {
+    const button = event.target instanceof Element ? event.target.closest('#save-videos') : null;
+    if (!button) return;
+    const card = document.querySelector('[data-video-title-control]');
+    if (!card) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    void saveAllVideoChanges(card, button);
+  }, true);
 }
 
 async function ensureControls() {
@@ -162,6 +239,7 @@ async function ensureControls() {
   await loadState();
   relabelNumericSizes();
   injectVideoTitleControl();
+  installUnifiedBottomSave();
 }
 
 installStyles();
