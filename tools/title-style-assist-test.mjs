@@ -11,6 +11,7 @@ const publicJs = read('public/title-style-assist.js');
 const adminJs = read('public/admin/title-style-assist.js');
 const adminMain = read('public/admin/admin.js');
 const numericAdmin = read('public/admin/numeric-font-assist.js');
+const pageActions = read('public/admin/page-actions.js');
 const middleware = read('functions/api/admin/_middleware.js');
 const viteConfig = read('vite.config.js');
 
@@ -52,8 +53,15 @@ let italicRejected = false;
 try { validateTitleStyles(badItalic); } catch { italicRejected = true; }
 assert(italicRejected, 'itálico não booleano deve ser rejeitado');
 
-for (const token of ['Pequeno', 'Médio', 'Grande', 'Destaque', 'Centralizado', 'Usar cor padrão', 'Seminegrito', 'Itálico', 'Pré-visualizar', 'Salvar formatação']) {
+for (const token of ['Pequeno', 'Médio', 'Grande', 'Destaque', 'Centralizado', 'Usar cor padrão', 'Seminegrito', 'Itálico']) {
   assert(adminJs.includes(token), `controle administrativo ausente: ${token}`);
+}
+assert(!adminJs.includes('data-title-preview'), 'cartões de título não podem ter botão próprio de pré-visualização');
+assert(!adminJs.includes('data-title-save'), 'cartões de título não podem ter botão próprio de salvamento');
+assert(pageActions.includes("preview.textContent = 'Pré-visualizar'"), 'ação única de pré-visualização por página ausente');
+assert(pageActions.includes("save.textContent = 'Salvar'"), 'ação única de salvamento por página ausente');
+for (const saveId of ['save-home', 'save-about', 'save-highlights', 'save-videos', 'save-gallery', 'save-links', 'save-legacy', 'save-pages', 'save-appearance']) {
+  assert(pageActions.includes(`saveId: '${saveId}'`), `página sem barra única de ações: ${saveId}`);
 }
 
 assert(adminJs.includes('window.PASafraTitleStyles = Object.freeze({ saveKeys })'), 'API interna de salvamento unificado de títulos não foi exposta');
@@ -66,19 +74,20 @@ for (const token of [
   "publishTitleStyles(['legacy_hero'])",
   "publishTitleStyles(['extra_pages'])",
 ]) assert(adminMain.includes(token), `publicação conjunta conteúdo+título ausente: ${token}`);
-assert(numericAdmin.includes("saveKeys(['lectures_hero'], { silent: true })"), 'Publicar tudo dos vídeos não inclui a formatação do título da página');
+assert(numericAdmin.includes("saveKeys(['lectures_hero'], { silent: true })"), 'salvamento dos vídeos não inclui a formatação do título da página');
 
 assert(publicJs.includes('/api/title-styles'), 'site público não consulta formatação editorial salva');
 assert(publicJs.includes('clamp('), 'tamanhos responsivos não usam clamp');
 assert(publicJs.includes('#titulo-inicio') && publicJs.includes('#titulo-sobre') && publicJs.includes('#titulo-legado'), 'títulos principais não estão cobertos');
 assert(publicJs.includes('#cms-pages-root [data-view] .page-hero h1'), 'páginas extras não estão cobertas');
 assert(middleware.includes("'/api/admin/title-styles'"), 'guard de branch não cobre escrita de formatação de títulos');
-assert(viteConfig.includes('/title-style-assist.js') && viteConfig.includes('/admin/title-style-assist.js'), 'injeção dos runtimes de título está incompleta');
+assert(viteConfig.includes('/title-style-assist.js') && viteConfig.includes('/admin/title-style-assist.js') && viteConfig.includes('/admin/page-actions.js'), 'injeção dos runtimes administrativos está incompleta');
 assert(!adminJs.toLowerCase().includes('dragstart'), 'formatação de títulos não deve habilitar drag-and-drop');
 
 for (const file of [
   'public/title-style-assist.js',
   'public/admin/title-style-assist.js',
+  'public/admin/page-actions.js',
   'functions/api/title-styles.js',
   'functions/api/admin/title-styles.js',
 ]) {
@@ -91,8 +100,8 @@ for (const file of [
 
 console.log('TITLE STYLE ASSIST TEST: PASS');
 console.log('- tamanho, alinhamento, cor, peso e itálico são controlados por lista branca');
-console.log('- publicar alterações salva conteúdo e formatação do título da mesma área');
-console.log('- publicar tudo dos vídeos inclui conteúdo, tamanho dos títulos dos vídeos e título da página');
+console.log('- cada página administrativa expõe somente Salvar e Pré-visualizar no rodapé');
+console.log('- conteúdo e formatação do título são salvos pelo mesmo fluxo da página');
 console.log('- tamanhos usam faixas responsivas com clamp()');
 console.log('- títulos principais e páginas extras possuem formatação assistida');
 console.log('- HTML semântico dos títulos não é substituído');
