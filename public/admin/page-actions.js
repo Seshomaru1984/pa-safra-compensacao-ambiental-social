@@ -1,3 +1,5 @@
+import './image-upload.js';
+
 const ACTIONS = Object.freeze([
   { saveId: 'save-home', hash: 'inicio' },
   { saveId: 'save-about', hash: 'sobre' },
@@ -93,12 +95,6 @@ function scheduleNormalizeActions() {
   });
 }
 
-/*
- * O painel recria alguns formulários após salvar. O observer serve apenas para
- * reaplicar os dois botões finais nesses novos nós. Ele é desligado durante a
- * própria normalização para impedir um ciclo de MutationObserver que bloqueie
- * a thread principal e congele o Admin.
- */
 observer = new MutationObserver(scheduleNormalizeActions);
 normalizeActions();
 observe();
