@@ -6,6 +6,7 @@
   --pa-internal-header-bg-start: #173f35;
   --pa-internal-header-bg-end: #285f52;
   --pa-internal-header-height: 184px;
+  --pa-internal-content-gap: 34px;
 }
 
 [data-view="sobre"] > .page-hero,
@@ -76,6 +77,26 @@
   margin-bottom: 0;
 }
 
+/* Aproxima o corpo do cabeçalho em todas as páginas internas.
+   A Home mantém seu espaçamento próprio. */
+[data-view="sobre"] > .prose-layout,
+[data-view="legado"] > .legacy-content {
+  padding-top: var(--pa-internal-content-gap) !important;
+  padding-bottom: 64px;
+}
+
+[data-view="palestras"] > .section-stack,
+[data-view="galeria"] > .section-stack,
+[data-view="recursos"] > .section-stack {
+  padding-top: var(--pa-internal-content-gap) !important;
+  padding-bottom: 64px;
+}
+
+#cms-pages-root [data-view] > .dynamic-page-content {
+  padding-top: var(--pa-internal-content-gap) !important;
+  padding-bottom: 72px;
+}
+
 /* Foto histórica: sai do cabeçalho e vira elemento editorial do corpo do texto. */
 [data-view="legado"] .legacy-content .legacy-inline-photo {
   float: right;
@@ -119,7 +140,10 @@
 }
 
 @media (max-width: 980px) {
-  :root { --pa-internal-header-height: 168px; }
+  :root {
+    --pa-internal-header-height: 168px;
+    --pa-internal-content-gap: 28px;
+  }
 
   [data-view="sobre"] > .page-hero,
   [data-view="palestras"] > .page-hero,
@@ -131,6 +155,15 @@
     padding: 24px 0 !important;
   }
 
+  [data-view="sobre"] > .prose-layout,
+  [data-view="legado"] > .legacy-content,
+  [data-view="palestras"] > .section-stack,
+  [data-view="galeria"] > .section-stack,
+  [data-view="recursos"] > .section-stack,
+  #cms-pages-root [data-view] > .dynamic-page-content {
+    padding-top: var(--pa-internal-content-gap) !important;
+  }
+
   [data-view="legado"] .legacy-content .legacy-inline-photo {
     width: min(46%, 340px);
     margin-left: 26px;
@@ -138,7 +171,10 @@
 }
 
 @media (max-width: 700px) {
-  :root { --pa-internal-header-height: 150px; }
+  :root {
+    --pa-internal-header-height: 150px;
+    --pa-internal-content-gap: 22px;
+  }
 
   [data-view="sobre"] > .page-hero,
   [data-view="palestras"] > .page-hero,
@@ -148,6 +184,15 @@
   #cms-pages-root [data-view] > .page-hero {
     min-height: var(--pa-internal-header-height) !important;
     padding: 22px 0 !important;
+  }
+
+  [data-view="sobre"] > .prose-layout,
+  [data-view="legado"] > .legacy-content,
+  [data-view="palestras"] > .section-stack,
+  [data-view="galeria"] > .section-stack,
+  [data-view="recursos"] > .section-stack,
+  #cms-pages-root [data-view] > .dynamic-page-content {
+    padding-top: var(--pa-internal-content-gap) !important;
   }
 
   [data-view="legado"] .legacy-content .legacy-inline-photo {
