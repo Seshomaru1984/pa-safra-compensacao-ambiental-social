@@ -2,16 +2,12 @@ const DEFAULT_LAYOUT = Object.freeze({
   version: 1,
   blocks: Object.freeze({
     home_hero: 'text-left',
-    about_hero: 'text-left',
-    legacy_hero: 'text-left',
   }),
 });
 
 const ALLOWED_LAYOUTS = new Set(['text-left', 'image-left']);
 const PARAMS = {
   home_hero: 'layout_home',
-  about_hero: 'layout_about',
-  legacy_hero: 'layout_legacy',
 };
 
 function normalizeLayout(raw) {
@@ -55,31 +51,6 @@ function installStyles() {
     grid-column: 1;
     grid-row: 1;
   }
-
-  [data-view="sobre"] .page-hero-grid[data-assisted-layout="image-left"] {
-    grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
-  }
-  [data-view="sobre"] .page-hero-grid[data-assisted-layout="image-left"] > div {
-    grid-column: 2;
-    grid-row: 1;
-  }
-  [data-view="sobre"] .page-hero-grid[data-assisted-layout="image-left"] > img {
-    grid-column: 1;
-    grid-row: 1;
-  }
-
-  [data-view="legado"] .legacy-grid[data-assisted-layout="image-left"] {
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr);
-  }
-  [data-view="legado"] .legacy-grid[data-assisted-layout="image-left"] > div {
-    grid-column: 2;
-    grid-row: 1;
-  }
-  [data-view="legado"] .legacy-grid[data-assisted-layout="image-left"] > .legacy-photo {
-    grid-column: 1;
-    grid-row: 1;
-    justify-self: start;
-  }
 }`;
   document.head.appendChild(style);
 }
@@ -87,8 +58,6 @@ function installStyles() {
 function applyLayout(layout) {
   installStyles();
   applyBlock('.hero-grid', layout.blocks.home_hero);
-  applyBlock('[data-view="sobre"] .page-hero-grid', layout.blocks.about_hero);
-  applyBlock('[data-view="legado"] .legacy-grid', layout.blocks.legacy_hero);
 }
 
 async function loadLayout() {
