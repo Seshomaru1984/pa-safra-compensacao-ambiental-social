@@ -30,6 +30,10 @@ function targetHash(definition) {
 function previewUrl(definition) {
   const url = new URL('/', window.location.origin);
   url.searchParams.set('_pa_preview', String(Date.now()));
+  if (definition.saveId === 'save-home') {
+    const layout = document.querySelector('input[name="layout-home_hero"]:checked')?.value;
+    if (layout === 'text-left' || layout === 'image-left') url.searchParams.set('layout_home', layout);
+  }
   url.hash = targetHash(definition);
   return url.toString();
 }
@@ -40,8 +44,8 @@ function ensurePageAction(definition) {
   const actions = save.closest('.form-actions');
   if (!actions) return;
 
-  if (save.textContent !== 'Salvar') save.textContent = 'Salvar';
-  if (save.dataset.pageSave !== 'true') save.dataset.pageSave = 'true';
+  save.textContent = 'Salvar';
+  save.dataset.pageSave = 'true';
 
   let preview = actions.querySelector(`[data-page-preview-for="${definition.saveId}"]`);
   if (!preview) {
@@ -50,21 +54,22 @@ function ensurePageAction(definition) {
     preview.className = 'button secondary';
     preview.textContent = 'Pré-visualizar';
     preview.dataset.pagePreviewFor = definition.saveId;
-    preview.title = 'Abrir a versão atualmente salva desta página em uma nova aba';
-    preview.addEventListener('click', () => {
-      window.open(previewUrl(definition), '_blank', 'noopener');
-    });
+    preview.title = 'Abrir esta página do Preview em uma nova aba';
+    preview.addEventListener('click', () => window.open(previewUrl(definition), '_blank', 'noopener'));
     actions.insertBefore(preview, save);
   }
 
   [...actions.querySelectorAll('[data-page-preview-for]')].forEach((button) => {
     if (button !== preview) button.remove();
   });
+  [...actions.querySelectorAll('[data-page-save]')].forEach((button) => {
+    if (button !== save) button.remove();
+  });
 }
 
 function removeDuplicateActionButtons() {
-  document.querySelectorAll('[data-title-preview], [data-title-save], [data-video-title-preview], [data-video-title-save]').forEach((button) => button.remove());
-  document.querySelectorAll('.title-assist-actions, .video-title-size-actions').forEach((node) => {
+  document.querySelectorAll('[data-title-preview], [data-title-save], [data-video-title-preview], [data-video-title-save], [data-layout-preview], [data-layout-save]').forEach((button) => button.remove());
+  document.querySelectorAll('.title-assist-actions, .video-title-size-actions, .layout-assist-actions').forEach((node) => {
     if (!node.querySelector('button')) node.remove();
   });
 }
