@@ -5,7 +5,7 @@ import vm from 'node:vm';
 const source = fs.readFileSync('public/admin/write-queue.js', 'utf8');
 const viteSource = fs.readFileSync('vite.config.js', 'utf8');
 
-for (const endpoint of ['/api/admin/content', '/api/admin/title-styles', '/api/admin/video-styles']) {
+for (const endpoint of ['/api/admin/content', '/api/admin/layout', '/api/admin/title-styles', '/api/admin/video-styles']) {
   assert.match(source, new RegExp(endpoint.replaceAll('/', '\\/')));
 }
 assert.match(source, /response\.status !== 502/);
@@ -49,6 +49,7 @@ vm.runInContext(source, context, { filename: 'write-queue.js' });
 
 const saveRound = async () => Promise.all([
   fakeWindow.fetch('/api/admin/content', { method: 'PUT', body: '{}', headers: { 'content-type': 'application/json' } }),
+  fakeWindow.fetch('/api/admin/layout', { method: 'PUT', body: '{}', headers: { 'content-type': 'application/json' } }),
   fakeWindow.fetch('/api/admin/title-styles', { method: 'PUT', body: '{}', headers: { 'content-type': 'application/json' } }),
   fakeWindow.fetch('/api/admin/video-styles', { method: 'PUT', body: '{}', headers: { 'content-type': 'application/json' } }),
 ]);
@@ -59,9 +60,9 @@ const second = await saveRound();
 assert(first.every((response) => response.status === 200), 'primeiro salvamento deve se recuperar de 502 transitório');
 assert(second.every((response) => response.status === 200), 'segundo salvamento consecutivo deve continuar funcionando');
 assert.equal(maxActive, 1, 'gravações editoriais devem ser estritamente serializadas');
-assert(nativeCalls >= 7, 'deve haver ao menos uma repetição após 502');
+assert(nativeCalls >= 9, 'deve haver ao menos uma repetição após 502');
 
 console.log('ADMIN WRITE QUEUE TEST: PASS');
-console.log('- content, title-styles e video-styles nunca gravam em paralelo');
+console.log('- content, layout, title-styles e video-styles nunca gravam em paralelo');
 console.log('- 502 transitório é repetido automaticamente');
 console.log('- dois salvamentos consecutivos permanecem operacionais');
