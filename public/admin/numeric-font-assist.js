@@ -16,19 +16,19 @@ function normalizeVideoStyle(raw) {
   };
 }
 
+function setOptionLabel(option, label) {
+  if (label && option.textContent !== label) option.textContent = label;
+}
+
 function relabelNumericSizes() {
   document.querySelectorAll('.rich-toolbar select[title="Tamanho do texto"]').forEach((select) => {
     const labels = { '2': '13 px', '3': '16 px', '4': '18 px', '5': '24 px' };
-    [...select.options].forEach((option) => {
-      if (labels[option.value]) option.textContent = labels[option.value];
-    });
+    [...select.options].forEach((option) => setOptionLabel(option, labels[option.value]));
   });
 
   document.querySelectorAll('[data-title-control] select[data-title-role="size"]').forEach((select) => {
     const labels = { default: 'Padrão', small: '30 px', medium: '42 px', large: '54 px', display: '67 px' };
-    [...select.options].forEach((option) => {
-      if (labels[option.value]) option.textContent = labels[option.value];
-    });
+    [...select.options].forEach((option) => setOptionLabel(option, labels[option.value]));
   });
 }
 
