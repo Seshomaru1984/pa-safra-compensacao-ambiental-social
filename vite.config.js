@@ -9,6 +9,8 @@ const PUBLIC_VIDEO_TITLE_TAG = '<script type="module" src="/video-title-style.js
 const ADMIN_NUMERIC_FONT_TAG = '<script type="module" src="/admin/numeric-font-assist.js"></script>';
 const ADMIN_PAGE_ACTIONS_TAG = '<script type="module" src="/admin/page-actions.js"></script>';
 const ADMIN_WRITE_QUEUE_TAG = '<script src="/admin/write-queue.js"></script>';
+const ADMIN_MEDIA_UPLOAD_TAG = '<script src="/admin/media-upload.js"></script>';
+const ADMIN_MEDIA_UPLOAD_STYLE_TAG = '<link rel="stylesheet" href="/admin/media-upload.css" />';
 const ADMIN_HOME_EDITOR_TAG = '<script src="/admin/home-editor.js"></script>';
 const ADMIN_HOME_PREVIEW_TAG = '<script src="/admin/home-preview.js"></script>';
 const ADMIN_HOME_EDITOR_STYLE_TAG = '<link rel="stylesheet" href="/admin/home-editor.css" />';
@@ -139,8 +141,10 @@ export default defineConfig({
         const html = fs.readFileSync(adminPath, 'utf8');
         let bridgedAdmin = injectBeforeHeadEnd(html, PREVIEW_CONTENT_BRIDGE_TAG);
         bridgedAdmin = injectBeforeHeadEnd(bridgedAdmin, ADMIN_HOME_EDITOR_STYLE_TAG);
+        bridgedAdmin = injectBeforeHeadEnd(bridgedAdmin, ADMIN_MEDIA_UPLOAD_STYLE_TAG);
         fs.writeFileSync(adminPath, injectAll(bridgedAdmin, [
           ADMIN_WRITE_QUEUE_TAG,
+          ADMIN_MEDIA_UPLOAD_TAG,
           ADMIN_HOME_EDITOR_TAG,
           ADMIN_HOME_PREVIEW_TAG,
           ADMIN_TITLE_TAG,
