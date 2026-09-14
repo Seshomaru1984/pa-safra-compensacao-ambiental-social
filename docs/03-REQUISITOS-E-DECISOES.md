@@ -16,7 +16,7 @@ A entrega administrativa útil é: autenticação nativa, edição controlada de
 - Esperado: apresentar conteúdo institucional, palestras, galeria, links úteis, páginas complementares e memória/legado conforme conteúdo aprovado.
 - Notícias não integra o escopo operacional.
 - Aceitação: build válido, navegação e conteúdo corretos no ambiente correspondente; publicação somente após gates aplicáveis.
-- Situação: CONFIRMADO; implementação pública existente, revisão final ainda pendente.
+- Situação: CONFIRMADO; implementação integrada em `develop`, produção ainda não autorizada.
 
 ### REQ-002 - Administração nativa para usuário leigo
 - Esperado: `/admin` com interface própria; o administrador comum não edita HTML, CSS, JavaScript, JSON, commits, branches ou configuração Cloudflare.
@@ -24,21 +24,21 @@ A entrega administrativa útil é: autenticação nativa, edição controlada de
 - Ferramentas de texto: negrito, itálico, sublinhado, listas, alinhamento esquerdo/centro/direito/justificado, tamanho, cor, links e limpeza de formatação.
 - Upload: imagens JPG, PNG ou WebP, com validação server-side e integração direta aos campos existentes de Home, Legado e Galeria.
 - Ações finais: cada área deve exibir exatamente um `Salvar` e um `Pré-visualizar`.
-- Situação: PASS técnico na reconstrução limpa.
+- Situação: PASS técnico e integrado em `develop`.
 
 ### REQ-003 - Login nativo por usuário e senha
 - Esperado: usuário/senha próprios do PA Safra, sem exigir GitHub, Cloudflare ou e-mail do administrador final; senha nunca em texto puro; sessão assinada e cookie seguro.
-- Situação: PASS funcional no Cloudflare Preview desde A19 R4.
+- Situação: PASS funcional no Cloudflare Preview desde A19 R4 e regressão técnica verde no candidato integrado.
 
 ### REQ-004 - Rate limiter de autenticação em D1
 - Esperado: até 5 falhas em janela de 15 min; bloqueio de 15 min ao atingir limite; 429 com `Retry-After`; identificador derivado antes de persistência; fail-closed se proteção indisponível.
-- Situação: PASS funcional live na A20.
+- Situação: PASS funcional live na A20 e regressão técnica verde no candidato integrado.
 
 ### REQ-005 - Escrita editorial controlada
 - Esperado: Pages Function escreve somente arquivos/campos em lista branca, usando token GitHub server-side de privilégio mínimo e branch editorial de Preview durante validação.
 - Lista branca: `site`, `videos`, `pages`, `highlights`, `gallery` e `links`. Notícias não é recurso gravável.
 - Escritas complementares de `title-styles`, `video-styles` e `layout` permanecem em endpoints próprios e são serializadas com as gravações de conteúdo.
-- Situação: PASS para backend/branch editorial; fila de escrita e repetição de 502 transitório validadas.
+- Situação: PASS para backend/branch editorial; fila de escrita e repetição de 502 transitório validadas e integradas em `develop`.
 
 ### REQ-006 - Conteúdo continua nos JSONs versionados
 - Esperado: `public/content/*.json` permanece fonte editorial; D1 não substitui conteúdo público.
@@ -62,13 +62,13 @@ A entrega administrativa útil é: autenticação nativa, edição controlada de
 - Regra editorial: informar que os acessos finais rurais podem depender de vias vicinais, pontes e trechos não pavimentados e que a rota local deve ser confirmada antes do deslocamento.
 - Limite factual: sem fonte adicional, não afirmar como fato que a BR-158 é o principal eixo de acesso nem que a MT-251 constitui diretamente uma ligação Nova Xavantina/Campinápolis.
 - Implementação: página extra `acesso-localizacao`, publicada e editável no Admin.
-- Situação: INCORPORADO em 14/09/2026, revisado contra fontes e protegido por teste automático.
+- Situação: PASS no candidato final e integrada em `develop`.
 
 ### REQ-011 - Contato, manifestações e correções
 - Esperado: disponibilizar canal de contato para manifestações, esclarecimentos, imprecisões e possíveis correções, sem repetição visual desnecessária do endereço.
 - Contato confirmado: `gustavomzfranco@hotmail.com`.
 - Implementação: página extra `contato`, publicada e editável no Admin; o endereço aparece uma única vez no texto visível e o restante da redação referencia apenas `este canal de contato`.
-- Situação: INCORPORADO em 14/09/2026. `dados_contato_confirmados=true`.
+- Situação: PASS no candidato final e integrada em `develop`. `dados_contato_confirmados=true`.
 
 ## 3. Decisões duráveis
 
@@ -99,11 +99,11 @@ Notícias não será mantido como módulo público/administrativo na fase atual.
 ### DEC-009 - Formatação visual controlada
 O painel pode oferecer formatação básica de texto sem se transformar em construtor de páginas ou editor de código.
 
-### DEC-010 - Reconstrução limpa é a única base válida
-A continuação técnica ocorre somente em `rebuild/pa-v001-clean` até a integração em `develop`. A branch experimental arquivada serve apenas como fonte seletiva de artefatos conhecidos e não deve ser reintegrada integralmente.
+### DEC-010 - Reconstrução limpa foi a base válida da integração
+A reconstrução técnica ocorreu em `rebuild/pa-v001-clean` e foi integrada em `develop` pelo PR #39. A branch experimental arquivada serve apenas como referência histórica e não deve ser reintegrada integralmente.
 
 ### DEC-011 - Conteúdo editorial atual é sincronizado, não reinventado
-A branch `content/pa-v001-admin-preview` e a reconstrução devem manter o mesmo conteúdo editorial corrente quando uma demanda editorial for incorporada fora do Admin.
+A branch `content/pa-v001-admin-preview` e a integração devem manter o mesmo conteúdo editorial corrente quando uma demanda editorial for incorporada fora do Admin, enquanto essa branch continuar sendo o destino administrativo de Preview.
 
 ### DEC-012 - Upload de imagem é integrado
 Não criar galeria de mídia ou editor paralelo nesta fase. O upload deve complementar os campos de imagem já existentes.
@@ -118,21 +118,21 @@ Título, disposição de Home e tamanho de títulos de vídeo integram o salvame
 Conteúdos complementares como Acesso e Contato devem usar o mecanismo existente de páginas extras quando não exigirem estrutura própria. Isso mantém edição pelo Admin e evita duplicação arquitetural.
 
 ### DEC-016 - Integração por um único PR e autorização explícita
-A reconstrução deve ser integrada por somente um PR de `rebuild/pa-v001-clean` para `develop`, identificado como PR #39. Não havia autorização para merge automático. Em 14/09/2026 o usuário autorizou explicitamente o merge do PR #39 em `develop`, exigindo observância das regras anexas. Essa autorização é específica para a branch de integração e não autoriza promoção para `main`, domínio ou publicação em produção.
+A reconstrução foi integrada por um único PR de `rebuild/pa-v001-clean` para `develop`, o PR #39. Em 14/09/2026 o usuário autorizou explicitamente esse merge, exigindo observância das regras anexas. O merge foi executado com precondição no HEAD validado e resultou no commit `5b5c60983875341b3d9f6b5bfe6c684a68d08d5e`. Essa autorização foi consumida nessa integração e não autoriza promoção para `main`, domínio ou publicação em produção.
 
 ## 4. Mapeamento de controles atuais
 
 | Requisito | Controle/evidência atual | Estado |
 |---|---|---|
-| REQ-002 interface | `admin:ui-test`, testes da reconstrução limpa | PASS técnico |
+| REQ-002 interface | `admin:ui-test`, testes da reconstrução limpa | PASS |
 | REQ-003 login/sessão | `admin:auth-test`, A19 R4 | PASS |
 | REQ-004 rate limiter | D1 `admin_login_rate`, A20 | PASS |
 | REQ-005 escrita | guard de branch, fila de escrita, A21 R3 | PASS |
 | REQ-007 trava editorial | `prepublish:check` + `publicacao.json` | PASS para bloqueio enquanto pendente |
 | REQ-008 isolamento | repo/branches exatos | VERIFICADO |
 | REQ-009 PBKDF2 | diagnóstico runtime + 100000 + R4 | PASS |
-| REQ-010 acesso/localização | `tools/editorial-demand-test.mjs` | PASS no HEAD funcional anterior; revalidar após ajuste documental |
-| REQ-011 contato/correções | `tools/editorial-demand-test.mjs` + `publicacao.json` | PASS no HEAD funcional anterior; revalidar após ajuste documental |
+| REQ-010 acesso/localização | `tools/editorial-demand-test.mjs` + runs 1071/1072 | PASS |
+| REQ-011 contato/correções | `tools/editorial-demand-test.mjs` + `publicacao.json` + runs 1071/1072 | PASS |
 | Notícias fora do escopo | `admin-contract`, `check.mjs`, browser tests | PASS |
 
 ## 5. Gates editoriais atuais
@@ -146,11 +146,11 @@ A reconstrução deve ser integrada por somente um PR de `rebuild/pa-v001-clean`
 
 O contato confirmado não libera produção. Revisão técnica/headless não equivale a revisão visual humana.
 
-## 6. Estado corrente e próxima ação
+## 6. Estado corrente e continuidade
 
-A reconstrução limpa preserva as evidências A19 a A24 e adiciona sincronização editorial, upload simples, foto de Wolnei, ações finais unificadas, controles integrados, três salvamentos consecutivos e teste headless responsivo. Em 14/09/2026 foram acrescentadas as demandas de Acesso e Contato, com teste automático no `npm run check`, e a redação territorial foi refinada para não extrapolar as fontes disponíveis.
+A reconstrução limpa preservou as evidências A19 a A24 e adicionou sincronização editorial, upload simples, foto de Wolnei, ações finais unificadas, controles integrados, três salvamentos consecutivos e teste headless responsivo. Em 14/09/2026 foram acrescentadas as demandas de Acesso e Contato, com teste automático no `npm run check`, e a redação territorial foi refinada para não extrapolar as fontes disponíveis.
 
-O PR #39 está aberto de `rebuild/pa-v001-clean` para `develop`. Antes do ajuste documental, o HEAD funcional `b5e4799d583226c1d3100d2fdbb0107ff18f5945` passou integralmente no workflow `validate`, run 1067, estava 0 commits atrás de `develop`, mergeável e sem comentários/revisões pendentes. A atualização dos documentos 02/03 muda o HEAD e exige nova validação antes do merge.
+O PR #39 foi mesclado em `develop` em 14/09/2026. O HEAD final do candidato `a7e5c5d11241ac8fa46dd29fea7cab3c438e81c7` passou integralmente no workflow `validate`, run 1071. O commit de integração `5b5c60983875341b3d9f6b5bfe6c684a68d08d5e` passou novamente no workflow `validate` pós-merge, run 1072.
 
 Evidências históricas preservadas:
 - `docs/evidencias/PA-V001-A21-R3-CONTENT-WRITE-PASS-20260913.md`
@@ -158,4 +158,4 @@ Evidências históricas preservadas:
 - `docs/evidencias/PA-V001-A23-AUDITORIA-BLOQUEIOS-EDITORIAIS-20260913.md`
 - `docs/evidencias/PA-V001-A24-ADMIN-EDITOR-EXPANDIDO-PASS-20260913.md`
 
-Próxima ação: validar o HEAD final do PR #39. Com CI verde, confirmar 0 commits atrás de `develop` e `mergeable=true`; então executar o merge autorizado em `develop` com precondição no HEAD validado. Depois, verificar o commit integrado e o workflow de `develop`. Produção permanece bloqueada.
+A próxima fase não é promoção automática para produção. A continuidade deve resolver os quatro gates editoriais restantes e manter `main` intacta até nova autorização específica e evidência suficiente.
