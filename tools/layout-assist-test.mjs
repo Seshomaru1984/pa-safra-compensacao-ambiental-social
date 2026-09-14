@@ -10,6 +10,7 @@ const adminJs = read('public/admin/layout-assist.js');
 const pageActions = read('public/admin/page-actions.js');
 const writeQueue = read('public/admin/write-queue.js');
 const publicApi = read('functions/api/layout.js');
+const adminApi = read('functions/api/admin/layout.js');
 const middleware = read('functions/api/admin/_middleware.js');
 const viteConfig = read('vite.config.js');
 
@@ -48,7 +49,9 @@ assert(publicJs.includes("fetch('/api/layout'"), 'site público deve consultar l
 assert(publicJs.includes('minmax(420px, .98fr) minmax(0, 1.02fr)'), 'capa invertida deve preservar proporção das colunas');
 assert(publicApi.includes("content/pa-v001-admin-preview"), 'API pública de layout deve ler somente a branch editorial de Preview');
 assert(publicApi.includes("public/content/layout.json"), 'API pública de layout deve ler apenas o arquivo de layout');
+assert(publicApi.includes('_pa_fresh') && publicApi.includes("'cache-control': 'no-cache, no-store, max-age=0'"), 'API pública de layout deve impedir leitura stale da branch editorial');
 assert(!publicApi.includes('onRequestPut'), 'API pública de layout não pode permitir escrita');
+assert(adminApi.includes('_pa_fresh') && adminApi.includes("'cache-control': 'no-cache, no-store, max-age=0'"), 'API administrativa de layout deve ler SHA atual sem cache');
 assert(adminJs.includes('Texto à esquerda') && adminJs.includes('Imagem à esquerda'), 'opções seguras da Home não aparecem no admin');
 assert(adminJs.includes('saveSelected') && adminJs.includes('PASafraLayout'), 'layout não expõe integração com o salvamento único da página');
 assert(!adminJs.includes('data-layout-preview') && !adminJs.includes('data-layout-save'), 'editor de layout voltou a criar botões próprios de preview/salvar');
@@ -71,6 +74,7 @@ console.log('LAYOUT ASSIST TEST: PASS');
 console.log('- somente text-left/image-left são aceitos para a Home');
 console.log('- disposição da capa é salva pelo mesmo botão Salvar da Página inicial');
 console.log('- botão Salvar é reabilitado antes de retomar o submit normal da Home');
+console.log('- leitura pública e leitura do SHA administrativo ignoram cache stale');
 console.log('- editor de disposição não possui botões próprios duplicados');
 console.log('- Pré-visualizar único inclui a disposição atualmente selecionada');
 console.log('- layout participa da fila serial de gravações do Admin');
