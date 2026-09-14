@@ -4,6 +4,7 @@ import vm from 'node:vm';
 
 const source = fs.readFileSync('public/admin/write-queue.js', 'utf8');
 const viteSource = fs.readFileSync('vite.config.js', 'utf8');
+const adminHtml = fs.readFileSync('public/admin/index.html', 'utf8');
 
 for (const endpoint of ['/api/admin/content', '/api/admin/title-styles', '/api/admin/video-styles']) {
   assert.match(source, new RegExp(endpoint.replaceAll('/', '\\/')));
@@ -11,7 +12,7 @@ for (const endpoint of ['/api/admin/content', '/api/admin/title-styles', '/api/a
 assert.match(source, /response\.status !== 502/);
 assert.match(source, /writeTail\.then\(execute, execute\)/);
 assert.match(viteSource, /ADMIN_WRITE_QUEUE_TAG/);
-assert.match(viteSource, /\/admin\/write-queue\.js/);
+assert.match(adminHtml, /\/admin\/write-queue\.js/);
 
 let active = 0;
 let maxActive = 0;
@@ -55,13 +56,15 @@ const saveRound = async () => Promise.all([
 
 const first = await saveRound();
 const second = await saveRound();
+const third = await saveRound();
 
 assert(first.every((response) => response.status === 200), 'primeiro salvamento deve se recuperar de 502 transitório');
 assert(second.every((response) => response.status === 200), 'segundo salvamento consecutivo deve continuar funcionando');
+assert(third.every((response) => response.status === 200), 'terceiro salvamento consecutivo deve continuar funcionando');
 assert.equal(maxActive, 1, 'gravações editoriais devem ser estritamente serializadas');
-assert(nativeCalls >= 7, 'deve haver ao menos uma repetição após 502');
+assert(nativeCalls >= 10, 'três rodadas devem executar nove gravações e ao menos uma repetição após 502');
 
 console.log('ADMIN WRITE QUEUE TEST: PASS');
 console.log('- content, title-styles e video-styles nunca gravam em paralelo');
 console.log('- 502 transitório é repetido automaticamente');
-console.log('- dois salvamentos consecutivos permanecem operacionais');
+console.log('- primeiro, segundo e terceiro salvamentos consecutivos permanecem operacionais');
