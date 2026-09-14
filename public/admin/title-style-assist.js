@@ -27,6 +27,7 @@ let titleState = {
 };
 let loading = null;
 let writeEnabled = false;
+let saveInProgress = false;
 
 function validColor(value) {
   return value === 'default' || (typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value));
@@ -184,13 +185,32 @@ function previewUrl(definition, entry) {
   return url;
 }
 
-async function saveStyle(definition, card) {
-  const status = card.querySelector('.title-assist-status');
-  const save = card.querySelector('[data-title-save]');
+function setStatuses(keys, message) {
+  keys.forEach((key) => {
+    const status = document.querySelector(`[data-title-control="${key}"] .title-assist-status`);
+    if (status) status.textContent = message;
+  });
+}
+
+async function saveKeys(keys, options = {}) {
+  const requested = [...new Set(Array.isArray(keys) ? keys : [keys])].filter((key) => TARGETS.some((target) => target.key === key));
+  if (!requested.length) return titleState;
+  if (saveInProgress) throw new Error('A formatação dos títulos já está sendo salva.');
+  if (!writeEnabled) throw new Error('A publicação da formatação está bloqueada neste ambiente.');
+
+  await loadState();
   const next = structuredClone(titleState);
-  next.titles[definition.key] = readCard(card);
-  save.disabled = true;
-  status.textContent = 'Salvando formatação…';
+  const found = [];
+  for (const key of requested) {
+    const card = document.querySelector(`[data-title-control="${key}"]`);
+    if (!card) continue;
+    next.titles[key] = readCard(card);
+    found.push(key);
+  }
+  if (!found.length) return titleState;
+
+  saveInProgress = true;
+  if (!options.silent) setStatuses(found, 'Salvando formatação…');
   try {
     const response = await fetch('/api/admin/title-styles', {
       method: 'PUT',
@@ -201,9 +221,23 @@ async function saveStyle(definition, card) {
     const result = await response.json().catch(() => ({}));
     if (!response.ok || !result.ok) throw new Error(result.error || `Falha ao salvar (${response.status}).`);
     titleState = normalizeStyles(result.data || next);
-    status.textContent = 'Formatação salva. Ao abrir o site de Preview, o título já usará essa configuração.';
+    if (!options.silent) setStatuses(found, 'Formatação salva. O Preview já usará essa configuração.');
+    return titleState;
   } catch (error) {
-    status.textContent = error.message || 'Não foi possível salvar a formatação.';
+    setStatuses(found, error.message || 'Não foi possível salvar a formatação.');
+    throw error;
+  } finally {
+    saveInProgress = false;
+  }
+}
+
+async function saveStyle(definition, card) {
+  const save = card.querySelector('[data-title-save]');
+  save.disabled = true;
+  try {
+    await saveKeys([definition.key]);
+  } catch {
+    // A mensagem detalhada já é exibida no próprio cartão.
   } finally {
     save.disabled = !writeEnabled;
   }
@@ -257,6 +291,8 @@ async function ensureControls() {
   await loadState();
   TARGETS.forEach(injectControl);
 }
+
+window.PASafraTitleStyles = Object.freeze({ saveKeys });
 
 installStyles();
 const app = document.getElementById('admin-app');
