@@ -28,8 +28,13 @@ function targetHash(definition) {
 function previewUrl(definition) {
   let url = new URL('/', window.location.origin);
 
-  if (definition.saveId === 'save-home' && window.PASafraHomePreview?.createUrl) {
-    return window.PASafraHomePreview.createUrl(url).toString();
+  if (definition.saveId === 'save-home') {
+    if (window.PASafraHomePreview?.createUrl) {
+      return window.PASafraHomePreview.createUrl(url).toString();
+    }
+    if (window.PASafraHomeEditor?.applyPreviewParams) {
+      url = window.PASafraHomeEditor.applyPreviewParams(url);
+    }
   }
 
   url.searchParams.set('_pa_preview', String(Date.now()));
