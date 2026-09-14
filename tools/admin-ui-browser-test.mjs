@@ -8,7 +8,11 @@ const files = {
   html: path.join(root, 'public', 'admin', 'index.html'),
   js: path.join(root, 'public', 'admin', 'admin.js'),
   css: path.join(root, 'public', 'admin', 'admin.css'),
+  layoutAdmin: path.join(root, 'public', 'admin', 'layout-assist.js'),
+  pageActions: path.join(root, 'public', 'admin', 'page-actions.js'),
+  writeQueue: path.join(root, 'public', 'admin', 'write-queue.js'),
   site: path.join(root, 'public', 'content', 'site.json'),
+  layout: path.join(root, 'public', 'content', 'layout.json'),
   videos: path.join(root, 'public', 'content', 'videos.json'),
   pages: path.join(root, 'public', 'content', 'paginas.json'),
   highlights: path.join(root, 'public', 'content', 'destaques.json'),
@@ -42,6 +46,7 @@ const bootstrap = String.raw`<script>
 (() => {
   const nativeFetch = window.fetch.bind(window);
   let authenticated = false;
+  let currentLayout = { version: 1, blocks: { home_hero: 'text-left' } };
   window.__A24_CALLS__ = [];
   const reply = (data, status = 200) => Promise.resolve(new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json; charset=utf-8' } }));
   window.fetch = async (input, init = {}) => {
@@ -61,6 +66,13 @@ const bootstrap = String.raw`<script>
     }
     if (url.pathname === '/api/admin/logout') {
       window.__A24_CALLS__.push({ endpoint: 'logout', method }); authenticated = false; return reply({ ok: true });
+    }
+    if (url.pathname === '/api/admin/layout') {
+      const body = method === 'PUT' ? JSON.parse(String(init.body || '{}')) : null;
+      window.__A24_CALLS__.push({ endpoint: 'layout', method, body });
+      if (!authenticated) return reply({ ok: false, error: 'Sessão inválida.' }, 401);
+      if (method === 'PUT') currentLayout = structuredClone(body.data);
+      return reply({ ok: true, data: currentLayout, branch: 'content/pa-v001-admin-preview' });
     }
     if (url.pathname === '/api/admin/content') {
       const body = JSON.parse(String(init.body || '{}'));
@@ -102,19 +114,45 @@ try {
     assert(document.querySelector('[data-tab="' + id + '"]'), 'Aba ausente: ' + id);
   }
   assert(!document.querySelector('#save-home').disabled, 'Publicação da página inicial deve estar habilitada após login.');
+  await wait(() => document.querySelector('[data-layout-control="home_hero"]'), 'controle de disposição da capa');
 
   const title = document.querySelector('#home-hero-title');
   const originalTitle = title.value;
-  title.value = originalTitle + ' — A24';
+  title.value = originalTitle + ' — A24 PRIMEIRO';
   const rich = document.querySelector('#home-hero-lead');
   rich.focus();
   document.execCommand('selectAll', false, null);
   document.execCommand('justifyFull', false, null);
-  document.querySelector('#home-form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
-  await wait(() => window.__A24_CALLS__.some((call) => call.endpoint === 'content' && call.body?.resource === 'site'), 'publicação da página inicial');
-  const siteWrite = window.__A24_CALLS__.find((call) => call.endpoint === 'content' && call.body?.resource === 'site');
-  assert(siteWrite.body.data.hero.title.endsWith('— A24'), 'Payload do site perdeu o título editado.');
-  assert(siteWrite.body.data.legacy?.body?.includes('Wolnei Divino Franco'), 'Salvar página inicial não pode apagar Memória e legado.');
+  const firstImageLeft = document.querySelector('input[name="layout-home_hero"][value="image-left"]');
+  firstImageLeft.checked = true;
+  firstImageLeft.dispatchEvent(new Event('change', { bubbles: true }));
+  document.querySelector('#save-home').click();
+
+  await wait(() => window.__A24_CALLS__.filter((call) => call.endpoint === 'content' && call.body?.resource === 'site').length >= 1, 'primeira publicação da página inicial');
+  await wait(() => window.__A24_CALLS__.filter((call) => call.endpoint === 'layout' && call.method === 'PUT').length >= 1, 'primeira publicação do layout');
+  await wait(() => !document.querySelector('#save-home').disabled, 'reativação do Salvar após primeira publicação');
+
+  const firstSiteWrite = window.__A24_CALLS__.filter((call) => call.endpoint === 'content' && call.body?.resource === 'site').at(-1);
+  const firstLayoutWrite = window.__A24_CALLS__.filter((call) => call.endpoint === 'layout' && call.method === 'PUT').at(-1);
+  assert(firstSiteWrite.body.data.hero.title.endsWith('— A24 PRIMEIRO'), 'Primeiro salvamento perdeu o título editado.');
+  assert(firstSiteWrite.body.data.legacy?.body?.includes('Wolnei Divino Franco'), 'Salvar página inicial não pode apagar Memória e legado.');
+  assert(firstLayoutWrite.body.data.blocks.home_hero === 'image-left', 'Primeiro salvamento perdeu Imagem à esquerda.');
+
+  await wait(() => document.querySelector('[data-layout-control="home_hero"]'), 'controle recriado após primeiro salvamento');
+  document.querySelector('#home-hero-title').value = originalTitle + ' — A24 SEGUNDO';
+  const secondTextLeft = document.querySelector('input[name="layout-home_hero"][value="text-left"]');
+  secondTextLeft.checked = true;
+  secondTextLeft.dispatchEvent(new Event('change', { bubbles: true }));
+  document.querySelector('#save-home').click();
+
+  await wait(() => window.__A24_CALLS__.filter((call) => call.endpoint === 'content' && call.body?.resource === 'site').length >= 2, 'segunda publicação da página inicial');
+  await wait(() => window.__A24_CALLS__.filter((call) => call.endpoint === 'layout' && call.method === 'PUT').length >= 2, 'segunda publicação do layout');
+  await wait(() => !document.querySelector('#save-home').disabled, 'reativação do Salvar após segunda publicação');
+
+  const secondSiteWrite = window.__A24_CALLS__.filter((call) => call.endpoint === 'content' && call.body?.resource === 'site').at(-1);
+  const secondLayoutWrite = window.__A24_CALLS__.filter((call) => call.endpoint === 'layout' && call.method === 'PUT').at(-1);
+  assert(secondSiteWrite.body.data.hero.title.endsWith('— A24 SEGUNDO'), 'Segundo salvamento perdeu o título editado.');
+  assert(secondLayoutWrite.body.data.blocks.home_hero === 'text-left', 'Segundo salvamento perdeu Texto à esquerda.');
 
   document.querySelector('[data-tab="legado"]').click();
   await wait(() => !document.querySelector('#panel-legado').hidden, 'aba legado');
@@ -172,18 +210,23 @@ if (!originalHtml.includes(marker)) {
   console.error('ADMIN UI BROWSER TEST: marcador do admin.js não encontrado no HTML.');
   process.exit(1);
 }
-const testHtml = originalHtml.replace(marker, `${bootstrap}\n${marker}\n<script type="module" src="/__a24_test.js"></script>`);
+const injectedScripts = `${bootstrap}\n<script src="/admin/write-queue.js"></script>\n${marker}\n<script type="module" src="/admin/layout-assist.js"></script>\n<script type="module" src="/admin/page-actions.js"></script>\n<script type="module" src="/__a24_test.js"></script>`;
+const testHtml = originalHtml.replace(marker, injectedScripts);
 
 const staticMap = new Map([
-  ['/content/site.json', files.site], ['/content/videos.json', files.videos], ['/content/paginas.json', files.pages],
+  ['/content/site.json', files.site], ['/content/layout.json', files.layout], ['/content/videos.json', files.videos], ['/content/paginas.json', files.pages],
   ['/content/destaques.json', files.highlights], ['/content/galeria.json', files.gallery], ['/content/links.json', files.links],
+]);
+
+const scriptMap = new Map([
+  ['/admin/admin.js', files.js], ['/admin/layout-assist.js', files.layoutAdmin], ['/admin/page-actions.js', files.pageActions], ['/admin/write-queue.js', files.writeQueue],
 ]);
 
 const server = http.createServer((request, response) => {
   const url = new URL(request.url || '/', 'http://127.0.0.1');
   const send = (status, type, body) => { response.writeHead(status, { 'content-type': type, 'cache-control': 'no-store' }); response.end(body); };
   if (url.pathname === '/admin' || url.pathname === '/admin/') return send(200, 'text/html; charset=utf-8', testHtml);
-  if (url.pathname === '/admin/admin.js') return send(200, 'text/javascript; charset=utf-8', fs.readFileSync(files.js));
+  if (scriptMap.has(url.pathname)) return send(200, 'text/javascript; charset=utf-8', fs.readFileSync(scriptMap.get(url.pathname)));
   if (url.pathname === '/admin/admin.css') return send(200, 'text/css; charset=utf-8', fs.readFileSync(files.css));
   if (staticMap.has(url.pathname)) return send(200, 'application/json; charset=utf-8', fs.readFileSync(staticMap.get(url.pathname)));
   if (url.pathname === '/__a24_test.js') return send(200, 'text/javascript; charset=utf-8', browserTestModule);
@@ -198,15 +241,15 @@ const port = typeof address === 'object' && address ? address.port : null;
 if (!port) { server.close(); console.error('ADMIN UI BROWSER TEST: porta local não determinada.'); process.exit(1); }
 
 const url = `http://127.0.0.1:${port}/admin/`;
-const args = ['--headless=new', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage', '--disable-background-networking', '--disable-default-apps', '--no-first-run', '--virtual-time-budget=10000', '--dump-dom', url];
+const args = ['--headless=new', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage', '--disable-background-networking', '--disable-default-apps', '--no-first-run', '--virtual-time-budget=12000', '--dump-dom', url];
 let stdout = ''; let stderr = ''; let timedOut = false;
 const child = spawn(chrome, args, { stdio: ['ignore', 'pipe', 'pipe'] });
 child.stdout.setEncoding('utf8'); child.stderr.setEncoding('utf8');
 child.stdout.on('data', (chunk) => { stdout += chunk; }); child.stderr.on('data', (chunk) => { stderr += chunk; });
-const timeout = setTimeout(() => { timedOut = true; child.kill('SIGKILL'); }, 25000);
+const timeout = setTimeout(() => { timedOut = true; child.kill('SIGKILL'); }, 30000);
 const exitCode = await new Promise((resolve) => child.once('close', resolve));
 clearTimeout(timeout); await new Promise((resolve) => server.close(resolve));
-if (timedOut) { console.error('ADMIN UI BROWSER TEST: Chrome excedeu 25 segundos.'); process.exit(1); }
+if (timedOut) { console.error('ADMIN UI BROWSER TEST: Chrome excedeu 30 segundos.'); process.exit(1); }
 if (exitCode !== 0) { console.error(`ADMIN UI BROWSER TEST: Chrome terminou com código ${exitCode}.`); if (stderr.trim()) console.error(stderr.trim()); process.exit(1); }
 if (!/data-a24-result="PASS"/.test(stdout) || !stdout.includes('A24 ADMIN UI BROWSER TEST: PASS')) {
   console.error('ADMIN UI BROWSER TEST: fluxo ampliado não concluiu com PASS.');
@@ -216,6 +259,7 @@ if (!/data-a24-result="PASS"/.test(stdout) || !stdout.includes('A24 ADMIN UI BRO
 }
 console.log('ADMIN UI BROWSER TEST: PASS');
 console.log('- login e logout preservados');
+console.log('- Página inicial salva conteúdo e disposição em dois ciclos consecutivos sem travar o botão');
 console.log('- nove áreas editoriais presentes; Notícias ausente');
 console.log('- Memória e legado original preservada ao editar outro módulo');
 console.log('- publicação de site, vídeos e links gera payload coerente');
