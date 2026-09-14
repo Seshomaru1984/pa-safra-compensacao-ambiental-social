@@ -8,6 +8,7 @@ const exists = (rel) => fs.existsSync(path.join(root, rel));
 const required = [
   'public/content/publicacao.json',
   'public/content/site.json',
+  'public/content/paginas.json',
   'public/content/galeria.json',
   'index.html',
   'docs/evidencias/PA-V001-A21-R3-CONTENT-WRITE-PASS-20260913.md',
@@ -27,6 +28,7 @@ if (errors.length) {
 
 const publication = JSON.parse(read('public/content/publicacao.json'));
 const site = JSON.parse(read('public/content/site.json'));
+const pages = JSON.parse(read('public/content/paginas.json'));
 const gallery = JSON.parse(read('public/content/galeria.json'));
 const index = read('index.html');
 
@@ -38,8 +40,9 @@ const add = (key, message) => {
 };
 
 const siteText = JSON.stringify(site);
+const pagesText = JSON.stringify(pages);
 const galleryText = JSON.stringify(gallery);
-const combined = `${siteText}\n${galleryText}\n${index}`;
+const combined = `${siteText}\n${pagesText}\n${galleryText}\n${index}`;
 
 if (/redação jurídica definitiva[^.]*após validação/i.test(site.footer?.institutional_note || '')) {
   add('redacao_juridica_confirmada', 'A nota institucional declara explicitamente que a redação jurídica definitiva ainda depende de validação.');
@@ -101,14 +104,14 @@ for (const [key, items] of blockers.entries()) {
   }
 }
 
-const pendingExpected = [
+const editorialGates = [
   'redacao_juridica_confirmada',
   'creditos_imagens_confirmados',
   'dados_contato_confirmados',
   'afirmacoes_historicas_confirmadas',
   'revisao_visual_confirmada',
 ];
-for (const key of pendingExpected) {
+for (const key of editorialGates) {
   if (typeof checks[key] !== 'boolean') errors.push(`Gate editorial ausente ou não booleano: ${key}.`);
 }
 
@@ -124,10 +127,11 @@ if (errors.length) {
 
 console.log('EDITORIAL BLOCKERS AUDIT: OK');
 console.log(`- admin_nativo_validado=${checks.admin_nativo_validado}`);
-for (const key of pendingExpected) {
+for (const key of editorialGates) {
   const items = blockers.get(key) || [];
   console.log(`- ${key}=${checks[key]} | bloqueios observáveis=${items.length}`);
   items.forEach((item) => console.log(`  · ${item}`));
 }
-console.log('- nenhum gate editorial pendente foi promovido automaticamente.');
-console.log('- produção permanece dependente da resolução e aprovação explícita dos cinco gates editoriais restantes.');
+console.log('- nenhum gate editorial foi promovido automaticamente.');
+const remaining = editorialGates.filter((key) => checks[key] !== true);
+console.log(`- produção permanece bloqueada enquanto houver gates pendentes: ${remaining.join(', ') || 'nenhum'}.`);
