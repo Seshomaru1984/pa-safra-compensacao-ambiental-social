@@ -9,5 +9,5 @@
     "revisao_visual_confirmada": false,
     "admin_nativo_validado": true
   },
-  "notes": "A publicação em produção deve permanecer bloqueada enquanto qualquer validação obrigatória estiver pendente. O painel administrativo nativo foi validado tecnicamente por evidências combinadas de autenticação, rate limiter, escrita/restauração no Preview e fluxo da interface em navegador; a revisão visual/editorial permanece independente."
+  "notes": "A publicação em produção deve permanecer bloqueada enquanto qualquer validação obrigatória estiver pendente. O painel administrativo nativo foi validado tecnicamente; os cinco gates editoriais continuam independentes e pendentes até evidência suficiente."
 }
