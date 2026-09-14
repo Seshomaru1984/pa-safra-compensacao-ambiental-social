@@ -27,10 +27,12 @@ function targetHash(definition) {
 
 function previewUrl(definition) {
   let url = new URL('/', window.location.origin);
-  url.searchParams.set('_pa_preview', String(Date.now()));
-  if (definition.saveId === 'save-home' && window.PASafraHomeEditor?.applyPreviewParams) {
-    url = window.PASafraHomeEditor.applyPreviewParams(url);
+
+  if (definition.saveId === 'save-home' && window.PASafraHomePreview?.createUrl) {
+    return window.PASafraHomePreview.createUrl(url).toString();
   }
+
+  url.searchParams.set('_pa_preview', String(Date.now()));
   url.hash = targetHash(definition);
   return url.toString();
 }
@@ -53,7 +55,16 @@ function ensurePageAction(definition) {
     preview.dataset.pagePreviewFor = definition.saveId;
     preview.title = 'Abrir esta página em uma nova aba';
     preview.addEventListener('click', () => {
-      window.open(previewUrl(definition), '_blank', 'noopener');
+      try {
+        window.open(previewUrl(definition), '_blank', 'noopener');
+      } catch (error) {
+        const message = document.querySelector('#admin-message');
+        if (message) {
+          message.textContent = error.message || 'Não foi possível abrir a pré-visualização.';
+          message.classList.add('error');
+          message.hidden = false;
+        }
+      }
     });
     actions.insertBefore(preview, save);
   }
