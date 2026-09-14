@@ -16,6 +16,8 @@ const json = (data, status = 200) => new Response(JSON.stringify(data), {
   headers: {
     'content-type': 'application/json; charset=utf-8',
     'cache-control': 'no-store, max-age=0',
+    pragma: 'no-cache',
+    expires: '0',
   },
 });
 
@@ -36,13 +38,17 @@ function normalizeLayout(data) {
 }
 
 async function githubRequest(path, token) {
+  const url = new URL(`https://api.github.com/repos/${REPOSITORY}${path}`);
+  url.searchParams.set('_pa_fresh', `${Date.now()}-${Math.random().toString(36).slice(2)}`);
   const headers = {
     accept: 'application/vnd.github+json',
     'x-github-api-version': '2026-03-10',
-    'user-agent': 'pa-safra-layout-public-preview/1.0',
+    'user-agent': 'pa-safra-layout-public-preview/2.0',
+    'cache-control': 'no-cache, no-store, max-age=0',
+    pragma: 'no-cache',
   };
   if (token) headers.authorization = `Bearer ${token}`;
-  return fetch(`https://api.github.com/repos/${REPOSITORY}${path}`, { headers });
+  return fetch(url.toString(), { method: 'GET', cache: 'no-store', headers });
 }
 
 export async function onRequestGet({ env }) {
