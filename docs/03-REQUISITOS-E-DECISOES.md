@@ -57,11 +57,12 @@ A entrega administrativa útil é: autenticação nativa, edição controlada de
 - Situação: PASS.
 
 ### REQ-010 - Acesso e localização
-- Esperado: disponibilizar informações úteis de acesso às comunidades e às principais rodovias da região, sem inventar rotas vicinais não documentadas.
-- Conteúdo confirmado: PA Safra no município de Nova Xavantina; BR-158 como eixo principal de acesso; MT-251 como ligação regional Nova Xavantina/Campinápolis; MT-110 e MT-251 como rodovias principais de Campinápolis segundo fonte pública municipal.
+- Esperado: disponibilizar informações úteis de acesso às comunidades e às principais rodovias relacionadas à região, sem inventar rotas vicinais ou relações rodoviárias não documentadas.
+- Conteúdo sustentado pelas fontes incorporadas: registros municipais situam o P.A. Safra em Nova Xavantina; há referência municipal ao entroncamento BR-158/MT-251 em Nova Xavantina; documento público municipal de Campinápolis indica MT-110 e MT-251 como principais rodovias daquele município.
 - Regra editorial: informar que os acessos finais rurais podem depender de vias vicinais, pontes e trechos não pavimentados e que a rota local deve ser confirmada antes do deslocamento.
+- Limite factual: sem fonte adicional, não afirmar como fato que a BR-158 é o principal eixo de acesso nem que a MT-251 constitui diretamente uma ligação Nova Xavantina/Campinápolis.
 - Implementação: página extra `acesso-localizacao`, publicada e editável no Admin.
-- Situação: INCORPORADO em 14/09/2026 e protegido por teste automático.
+- Situação: INCORPORADO em 14/09/2026, revisado contra fontes e protegido por teste automático.
 
 ### REQ-011 - Contato, manifestações e correções
 - Esperado: disponibilizar canal de contato para manifestações, esclarecimentos, imprecisões e possíveis correções, sem repetição visual desnecessária do endereço.
@@ -99,7 +100,7 @@ Notícias não será mantido como módulo público/administrativo na fase atual.
 O painel pode oferecer formatação básica de texto sem se transformar em construtor de páginas ou editor de código.
 
 ### DEC-010 - Reconstrução limpa é a única base válida
-A continuação técnica ocorre somente em `rebuild/pa-v001-clean`. A branch experimental arquivada serve apenas como fonte seletiva de artefatos conhecidos e não deve ser reintegrada integralmente.
+A continuação técnica ocorre somente em `rebuild/pa-v001-clean` até a integração em `develop`. A branch experimental arquivada serve apenas como fonte seletiva de artefatos conhecidos e não deve ser reintegrada integralmente.
 
 ### DEC-011 - Conteúdo editorial atual é sincronizado, não reinventado
 A branch `content/pa-v001-admin-preview` e a reconstrução devem manter o mesmo conteúdo editorial corrente quando uma demanda editorial for incorporada fora do Admin.
@@ -116,8 +117,8 @@ Título, disposição de Home e tamanho de títulos de vídeo integram o salvame
 ### DEC-015 - Páginas extras recebem novas demandas textuais complementares
 Conteúdos complementares como Acesso e Contato devem usar o mecanismo existente de páginas extras quando não exigirem estrutura própria. Isso mantém edição pelo Admin e evita duplicação arquitetural.
 
-### DEC-016 - Integração por um único PR
-Após validação completa, criar somente um PR de `rebuild/pa-v001-clean` para `develop`. Não mesclar automaticamente e não promover para `main` enquanto gates editoriais estiverem pendentes.
+### DEC-016 - Integração por um único PR e autorização explícita
+A reconstrução deve ser integrada por somente um PR de `rebuild/pa-v001-clean` para `develop`, identificado como PR #39. Não havia autorização para merge automático. Em 14/09/2026 o usuário autorizou explicitamente o merge do PR #39 em `develop`, exigindo observância das regras anexas. Essa autorização é específica para a branch de integração e não autoriza promoção para `main`, domínio ou publicação em produção.
 
 ## 4. Mapeamento de controles atuais
 
@@ -130,8 +131,8 @@ Após validação completa, criar somente um PR de `rebuild/pa-v001-clean` para 
 | REQ-007 trava editorial | `prepublish:check` + `publicacao.json` | PASS para bloqueio enquanto pendente |
 | REQ-008 isolamento | repo/branches exatos | VERIFICADO |
 | REQ-009 PBKDF2 | diagnóstico runtime + 100000 + R4 | PASS |
-| REQ-010 acesso/localização | `tools/editorial-demand-test.mjs` | INCORPORADO |
-| REQ-011 contato/correções | `tools/editorial-demand-test.mjs` + `publicacao.json` | INCORPORADO |
+| REQ-010 acesso/localização | `tools/editorial-demand-test.mjs` | PASS no HEAD funcional anterior; revalidar após ajuste documental |
+| REQ-011 contato/correções | `tools/editorial-demand-test.mjs` + `publicacao.json` | PASS no HEAD funcional anterior; revalidar após ajuste documental |
 | Notícias fora do escopo | `admin-contract`, `check.mjs`, browser tests | PASS |
 
 ## 5. Gates editoriais atuais
@@ -147,7 +148,9 @@ O contato confirmado não libera produção. Revisão técnica/headless não equ
 
 ## 6. Estado corrente e próxima ação
 
-A reconstrução limpa já preserva as evidências A19 a A24 e adiciona sincronização editorial, upload simples, foto de Wolnei, ações finais unificadas, controles integrados, três salvamentos consecutivos e teste headless responsivo. Em 14/09/2026 foram acrescentadas as demandas de Acesso e Contato, com teste automático no `npm run check`.
+A reconstrução limpa preserva as evidências A19 a A24 e adiciona sincronização editorial, upload simples, foto de Wolnei, ações finais unificadas, controles integrados, três salvamentos consecutivos e teste headless responsivo. Em 14/09/2026 foram acrescentadas as demandas de Acesso e Contato, com teste automático no `npm run check`, e a redação territorial foi refinada para não extrapolar as fontes disponíveis.
+
+O PR #39 está aberto de `rebuild/pa-v001-clean` para `develop`. Antes do ajuste documental, o HEAD funcional `b5e4799d583226c1d3100d2fdbb0107ff18f5945` passou integralmente no workflow `validate`, run 1067, estava 0 commits atrás de `develop`, mergeável e sem comentários/revisões pendentes. A atualização dos documentos 02/03 muda o HEAD e exige nova validação antes do merge.
 
 Evidências históricas preservadas:
 - `docs/evidencias/PA-V001-A21-R3-CONTENT-WRITE-PASS-20260913.md`
@@ -155,4 +158,4 @@ Evidências históricas preservadas:
 - `docs/evidencias/PA-V001-A23-AUDITORIA-BLOQUEIOS-EDITORIAIS-20260913.md`
 - `docs/evidencias/PA-V001-A24-ADMIN-EDITOR-EXPANDIDO-PASS-20260913.md`
 
-Próxima ação: aguardar e verificar o workflow `validate` do HEAD atual. Com CI verde, confirmar 0 commits atrás de `develop` e ausência de PR concorrente; então criar um único PR de `rebuild/pa-v001-clean` para `develop`. Produção permanece bloqueada.
+Próxima ação: validar o HEAD final do PR #39. Com CI verde, confirmar 0 commits atrás de `develop` e `mergeable=true`; então executar o merge autorizado em `develop` com precondição no HEAD validado. Depois, verificar o commit integrado e o workflow de `develop`. Produção permanece bloqueada.
