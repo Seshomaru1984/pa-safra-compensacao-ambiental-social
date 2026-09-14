@@ -1,24 +1,20 @@
 const DEFAULT_LAYOUT = {
   version: 1,
   blocks: {
-    home_hero: 'text-left',
+    home_hero: 'image-left',
   },
 };
 
 const ALLOWED_LAYOUTS = new Set(['text-left', 'image-left']);
-const BLOCKS = [
-  { key: 'home_hero', form: '#home-form', title: 'Disposição da capa', anchor: '#inicio' },
-];
-
 let layoutState = structuredClone(DEFAULT_LAYOUT);
 let loading = null;
+let writeEnabled = false;
+let wrappedTitleApi = false;
 
 function normalizeLayout(raw) {
   const next = structuredClone(DEFAULT_LAYOUT);
   const blocks = raw && typeof raw === 'object' && raw.blocks && typeof raw.blocks === 'object' ? raw.blocks : {};
-  for (const key of Object.keys(next.blocks)) {
-    if (ALLOWED_LAYOUTS.has(blocks[key])) next.blocks[key] = blocks[key];
-  }
+  if (ALLOWED_LAYOUTS.has(blocks.home_hero)) next.blocks.home_hero = blocks.home_hero;
   return next;
 }
 
@@ -40,8 +36,7 @@ function installStyles() {
 .layout-mini.image-left .image { order: -1; }
 .layout-choice strong { display: block; font-size: .9rem; }
 .layout-choice small { display: block; margin-top: 2px; color: var(--ink-600); font-weight: 500; }
-.layout-assist-actions { display: flex; gap: 9px; flex-wrap: wrap; align-items: center; margin-top: 15px; }
-.layout-assist-status { margin: 0; color: var(--ink-600); font-size: .84rem; }
+.layout-assist-status { margin: 12px 0 0; color: var(--ink-600); font-size: .84rem; }
 @media (max-width: 680px) { .layout-choice-grid { grid-template-columns: 1fr; } }
 `;
   document.head.appendChild(style);
@@ -51,7 +46,14 @@ async function loadLayout() {
   if (loading) return loading;
   loading = (async () => {
     try {
-      const api = await fetch('/api/admin/layout', { cache: 'no-store', credentials: 'same-origin' });
+      const [api, statusResponse] = await Promise.all([
+        fetch('/api/admin/layout', { cache: 'no-store', credentials: 'same-origin' }),
+        fetch('/api/admin/status', { cache: 'no-store', credentials: 'same-origin' }),
+      ]);
+      if (statusResponse.ok) {
+        const status = await statusResponse.json();
+        writeEnabled = Boolean(status?.write_enabled);
+      }
       if (api.ok) {
         const result = await api.json();
         if (result?.ok && result.data) return normalizeLayout(result.data);
@@ -68,91 +70,90 @@ async function loadLayout() {
   return layoutState;
 }
 
-function choiceMarkup(key, value, label, description, imageLeft) {
-  const id = `layout-${key}-${value}`;
-  const checked = layoutState.blocks[key] === value ? ' checked' : '';
+function selectedLayout() {
+  const selected = document.querySelector('input[name="layout-home_hero"]:checked')?.value;
+  if (!ALLOWED_LAYOUTS.has(selected)) throw new Error('Escolha uma disposição válida para a capa.');
+  return selected;
+}
+
+function setStatus(message) {
+  const status = document.querySelector('.layout-assist-status');
+  if (status) status.textContent = message;
+}
+
+async function saveLayout(options = {}) {
+  if (!writeEnabled) throw new Error('A publicação da disposição está bloqueada neste ambiente.');
+  const next = structuredClone(layoutState);
+  next.blocks.home_hero = selectedLayout();
+  if (!options.silent) setStatus('Salvando disposição...');
+
+  const response = await fetch('/api/admin/layout', {
+    method: 'PUT',
+    credentials: 'same-origin',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ data: next }),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || !result.ok) throw new Error(result.error || `Falha ao salvar disposição (${response.status}).`);
+  layoutState = normalizeLayout(result.data || next);
+  if (!options.silent) setStatus('Disposição salva.');
+  return layoutState;
+}
+
+function choiceMarkup(value, label, description, imageLeft) {
+  const id = `layout-home_hero-${value}`;
+  const checked = layoutState.blocks.home_hero === value ? ' checked' : '';
   return `
     <label class="layout-choice" for="${id}">
-      <input id="${id}" type="radio" name="layout-${key}" value="${value}"${checked}>
+      <input id="${id}" type="radio" name="layout-home_hero" value="${value}"${checked}>
       <span class="layout-mini${imageLeft ? ' image-left' : ''}" aria-hidden="true"><span class="text"></span><span class="image"></span></span>
       <span><strong>${label}</strong><small>${description}</small></span>
     </label>`;
 }
 
-function buildPreviewUrl() {
-  const url = new URL('/', window.location.origin);
-  url.searchParams.set('layout_home', layoutState.blocks.home_hero);
-  return url;
-}
-
-async function saveLayout(key, card) {
-  const selected = card.querySelector(`input[name="layout-${key}"]:checked`)?.value;
-  const status = card.querySelector('.layout-assist-status');
-  const save = card.querySelector('[data-layout-save]');
-  if (!ALLOWED_LAYOUTS.has(selected)) return;
-
-  const next = structuredClone(layoutState);
-  next.blocks[key] = selected;
-  save.disabled = true;
-  status.textContent = 'Salvando disposição…';
-  try {
-    const response = await fetch('/api/admin/layout', {
-      method: 'PUT',
-      credentials: 'same-origin',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ data: next }),
-    });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok || !result.ok) throw new Error(result.error || `Falha ao salvar (${response.status}).`);
-    layoutState = normalizeLayout(result.data || next);
-    status.textContent = 'Disposição salva. Ao abrir ou atualizar o site deste Preview, esta configuração será aplicada.';
-  } catch (error) {
-    status.textContent = error.message || 'Não foi possível salvar a disposição.';
-  } finally {
-    save.disabled = false;
-  }
-}
-
-function injectControl(definition) {
-  const form = document.querySelector(definition.form);
-  if (!form || form.querySelector(`[data-layout-control="${definition.key}"]`)) return;
-  if (!form.children.length) return;
-
+function injectControl() {
+  const form = document.querySelector('#home-form');
+  if (!form || form.querySelector('[data-layout-control="home_hero"]') || !form.children.length) return;
   const card = document.createElement('div');
   card.className = 'form-card layout-assist-card';
-  card.dataset.layoutControl = definition.key;
+  card.dataset.layoutControl = 'home_hero';
   card.innerHTML = `
-    <h3>${definition.title}</h3>
-    <p>Escolha apenas entre composições seguras. No celular, o conteúdo continua em uma coluna para preservar a leitura.</p>
-    <div class="layout-choice-grid" role="radiogroup" aria-label="${definition.title}">
-      ${choiceMarkup(definition.key, 'text-left', 'Texto à esquerda', 'Imagem à direita', false)}
-      ${choiceMarkup(definition.key, 'image-left', 'Imagem à esquerda', 'Texto à direita', true)}
+    <h3>Disposição da capa</h3>
+    <p>Escolha a composição. No celular, o conteúdo permanece em uma coluna. A disposição é salva pelo mesmo botão Salvar da página.</p>
+    <div class="layout-choice-grid" role="radiogroup" aria-label="Disposição da capa">
+      ${choiceMarkup('text-left', 'Texto à esquerda', 'Imagem à direita', false)}
+      ${choiceMarkup('image-left', 'Imagem à esquerda', 'Texto à direita', true)}
     </div>
-    <div class="layout-assist-actions">
-      <button class="button secondary" type="button" data-layout-preview>Pré-visualizar</button>
-      <button class="button primary" type="button" data-layout-save>Salvar disposição</button>
-      <p class="layout-assist-status" role="status" aria-live="polite"></p>
-    </div>`;
-
-  card.querySelector('[data-layout-preview]').addEventListener('click', () => {
-    const selected = card.querySelector(`input[name="layout-${definition.key}"]:checked`)?.value;
-    if (ALLOWED_LAYOUTS.has(selected)) layoutState.blocks[definition.key] = selected;
-    const url = buildPreviewUrl();
-    url.hash = definition.anchor;
-    window.open(url.toString(), '_blank', 'noopener');
-  });
-  card.querySelector('[data-layout-save]').addEventListener('click', () => saveLayout(definition.key, card));
-
+    <p class="layout-assist-status" role="status" aria-live="polite"></p>`;
   const actions = form.querySelector('.form-actions');
   if (actions) actions.before(card);
   else form.appendChild(card);
 }
 
+function installTitleApiBridge() {
+  if (wrappedTitleApi) return;
+  const api = window.PASafraTitleStyles;
+  if (!api || typeof api.saveKeys !== 'function') return;
+  const originalSaveKeys = api.saveKeys.bind(api);
+  window.PASafraTitleStyles = Object.freeze({
+    ...api,
+    async saveKeys(keys, options = {}) {
+      const requested = Array.isArray(keys) ? keys : [keys];
+      const titleResult = await originalSaveKeys(keys, options);
+      if (requested.includes('home_hero')) await saveLayout(options);
+      return titleResult;
+    },
+  });
+  wrappedTitleApi = true;
+}
+
 async function ensureControls() {
   const app = document.getElementById('admin-app');
+  installTitleApiBridge();
   if (!app || app.hidden) return;
   await loadLayout();
-  for (const definition of BLOCKS) injectControl(definition);
+  installTitleApiBridge();
+  injectControl();
 }
 
 installStyles();
