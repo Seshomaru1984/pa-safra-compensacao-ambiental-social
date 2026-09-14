@@ -77,17 +77,9 @@ function installStyles() {
 .video-title-size-card > p { margin: 0 0 14px; color: var(--ink-600); font-size: .88rem; }
 .video-title-size-row { display: flex; align-items: end; gap: 12px; flex-wrap: wrap; }
 .video-title-size-row label { min-width: 180px; margin: 0; }
-.video-title-size-actions { display: flex; gap: 9px; flex-wrap: wrap; }
 .video-title-size-status { margin: 12px 0 0; color: var(--ink-600); font-size: .84rem; }
 `;
   document.head.appendChild(style);
-}
-
-function previewUrl(size) {
-  const url = new URL('/', window.location.origin);
-  url.searchParams.set('video_title_size', String(size));
-  url.hash = 'palestras';
-  return url;
 }
 
 function selectedVideoTitleSize(card) {
@@ -142,7 +134,6 @@ async function savePageTitleFormatting() {
 async function saveAllVideoChanges(card, triggerButton = null) {
   if (unifiedSaveInProgress) return;
   const status = card?.querySelector('.video-title-size-status');
-  const topButton = card?.querySelector('[data-video-title-save]');
   const bottomButton = document.getElementById('save-videos');
 
   if (!writeEnabled) {
@@ -161,8 +152,8 @@ async function saveAllVideoChanges(card, triggerButton = null) {
   }
 
   unifiedSaveInProgress = true;
-  [topButton, bottomButton, triggerButton].filter(Boolean).forEach((button) => { button.disabled = true; });
-  if (status) status.textContent = 'Salvando títulos, textos, formatação e tamanho…';
+  [bottomButton, triggerButton].filter(Boolean).forEach((button) => { button.disabled = true; });
+  if (status) status.textContent = 'Salvando alterações da página…';
 
   try {
     const [styleResult, videosResult] = await Promise.all([
@@ -174,13 +165,14 @@ async function saveAllVideoChanges(card, triggerButton = null) {
     signalPublicPreviewRefresh();
     if (status) {
       const videoCommit = videosResult.commit ? ` Conteúdo: ${String(videosResult.commit).slice(0, 7)}.` : '';
-      status.textContent = `Alterações publicadas: ${videos.length} vídeo(s), títulos, textos, formatação da página e tamanho ${currentVideoStyle.title_size_px} px.${videoCommit}`;
+      status.textContent = `Alterações salvas: ${videos.length} vídeo(s), textos, formatação e tamanho ${currentVideoStyle.title_size_px} px.${videoCommit}`;
     }
+    window.dispatchEvent(new CustomEvent('pa-safra-page-saved', { detail: { saveId: 'save-videos' } }));
   } catch (error) {
-    if (status) status.textContent = error.message || 'Não foi possível publicar as alterações.';
+    if (status) status.textContent = error.message || 'Não foi possível salvar as alterações.';
   } finally {
     unifiedSaveInProgress = false;
-    [topButton, bottomButton, triggerButton].filter(Boolean).forEach((button) => { button.disabled = !writeEnabled; });
+    [bottomButton, triggerButton].filter(Boolean).forEach((button) => { button.disabled = !writeEnabled; });
   }
 }
 
@@ -197,29 +189,14 @@ function injectVideoTitleControl() {
   const options = VIDEO_TITLE_OPTIONS.map((size) => `<option value="${size}"${size === currentVideoStyle.title_size_px ? ' selected' : ''}>${size} px</option>`).join('');
   card.innerHTML = `
     <h3>Tamanho dos títulos dos vídeos</h3>
-    <p>Esta configuração vale para todos os vídeos atuais e futuros. O botão abaixo publica também os títulos, descrições, links e a formatação do título da página.</p>
+    <p>Esta configuração vale para todos os vídeos atuais e futuros e é salva junto com o restante da página pelo botão Salvar no final da edição.</p>
     <div class="video-title-size-row">
       <label>Tamanho da fonte
         <select data-video-title-size>${options}</select>
       </label>
-      <div class="video-title-size-actions">
-        <button class="button secondary" type="button" data-video-title-preview>Pré-visualizar tamanho</button>
-        <button class="button primary write-action" type="button" data-video-title-save${writeEnabled ? '' : ' disabled'}>Publicar tudo</button>
-      </div>
     </div>
     <p class="video-title-size-status" role="status" aria-live="polite"></p>`;
 
-  card.querySelector('[data-video-title-preview]').addEventListener('click', () => {
-    try {
-      const size = selectedVideoTitleSize(card);
-      window.open(previewUrl(size).toString(), '_blank', 'noopener');
-    } catch (error) {
-      card.querySelector('.video-title-size-status').textContent = error.message;
-    }
-  });
-  card.querySelector('[data-video-title-save]').addEventListener('click', (event) => {
-    void saveAllVideoChanges(card, event.currentTarget);
-  });
   heading.insertAdjacentElement('afterend', card);
 }
 
