@@ -6,7 +6,7 @@ const VIDEO_TITLE_OPTIONS = [18, 20, 22, 24, 26, 28, 30, 32, 36, 40, 44, 48, 52,
 let currentVideoStyle = { version: 1, title_size_px: DEFAULT_VIDEO_TITLE };
 let writeEnabled = false;
 let loading = null;
-let unifiedSaveInProgress = false;
+let wrappedTitleApi = false;
 
 function normalizeVideoStyle(raw) {
   const size = Number(raw?.title_size_px);
@@ -20,20 +20,14 @@ function relabelNumericSizes() {
   document.querySelectorAll('.rich-toolbar select[title="Tamanho do texto"]').forEach((select) => {
     const labels = { '2': '13 px', '3': '16 px', '4': '18 px', '5': '24 px' };
     [...select.options].forEach((option) => {
-      if (labels[option.value] && option.textContent !== labels[option.value]) option.textContent = labels[option.value];
+      if (labels[option.value]) option.textContent = labels[option.value];
     });
   });
 
   document.querySelectorAll('[data-title-control] select[data-title-role="size"]').forEach((select) => {
-    const labels = {
-      default: 'Padrão',
-      small: '30 px',
-      medium: '42 px',
-      large: '54 px',
-      display: '67 px',
-    };
+    const labels = { default: 'Padrão', small: '30 px', medium: '42 px', large: '54 px', display: '67 px' };
     [...select.options].forEach((option) => {
-      if (labels[option.value] && option.textContent !== labels[option.value]) option.textContent = labels[option.value];
+      if (labels[option.value]) option.textContent = labels[option.value];
     });
   });
 }
@@ -82,98 +76,53 @@ function installStyles() {
   document.head.appendChild(style);
 }
 
-function selectedVideoTitleSize(card) {
-  const select = card?.querySelector('[data-video-title-size]');
-  const size = Number(select?.value);
+function selectedVideoTitleSize() {
+  const size = Number(document.querySelector('[data-video-title-size]')?.value);
   if (!Number.isInteger(size) || size < MIN_VIDEO_TITLE || size > MAX_VIDEO_TITLE) {
     throw new Error(`Escolha um tamanho entre ${MIN_VIDEO_TITLE} e ${MAX_VIDEO_TITLE} px.`);
   }
   return size;
 }
 
-function collectVideoPayload() {
-  const cards = [...document.querySelectorAll('#videos-editor .editor-card')];
-  const videos = cards.map((card, index) => {
-    const title = card.querySelector('[data-role="title"]')?.value?.trim() || '';
-    const youtubeUrl = card.querySelector('[data-role="url"]')?.value?.trim() || '';
-    const description = card.querySelector('[data-role="description"]')?.innerHTML?.trim() || '';
-    const published = Boolean(card.querySelector('[data-role="published"]')?.checked);
-    if (!title || !youtubeUrl) throw new Error(`Preencha título e link na palestra ${index + 1}.`);
-    return { title, youtube_url: youtubeUrl, description, published };
-  });
-  return videos;
+function setStatus(message) {
+  const status = document.querySelector('.video-title-size-status');
+  if (status) status.textContent = message;
 }
 
-async function putJson(url, body) {
-  const response = await fetch(url, {
+async function saveVideoStyle(options = {}) {
+  if (!writeEnabled) throw new Error('A publicação do tamanho dos títulos está bloqueada neste ambiente.');
+  const size = selectedVideoTitleSize();
+  if (!options.silent) setStatus('Salvando tamanho dos títulos...');
+
+  const response = await fetch('/api/admin/video-styles', {
     method: 'PUT',
     credentials: 'same-origin',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ data: { version: 1, title_size_px: size } }),
   });
   const result = await response.json().catch(() => ({}));
-  if (!response.ok || !result.ok) {
-    if (response.status === 401) throw new Error('Sua sessão expirou. Entre novamente no painel.');
-    throw new Error(result.error || `Falha ao salvar (${response.status}).`);
-  }
-  return result;
+  if (!response.ok || !result.ok) throw new Error(result.error || `Falha ao salvar tamanho dos títulos (${response.status}).`);
+  currentVideoStyle = normalizeVideoStyle(result.data || { title_size_px: size });
+  if (!options.silent) setStatus('Tamanho dos títulos salvo.');
+  return currentVideoStyle;
 }
 
-function signalPublicPreviewRefresh() {
-  try {
-    localStorage.setItem('pa-safra-editorial-updated', String(Date.now()));
-  } catch {}
-}
-
-async function savePageTitleFormatting() {
+function installTitleApiBridge() {
+  if (wrappedTitleApi) return;
   const api = window.PASafraTitleStyles;
-  if (!api || typeof api.saveKeys !== 'function') return null;
-  return api.saveKeys(['lectures_hero'], { silent: true });
-}
+  if (!api || typeof api.saveKeys !== 'function') return;
 
-async function saveAllVideoChanges(card, triggerButton = null) {
-  if (unifiedSaveInProgress) return;
-  const status = card?.querySelector('.video-title-size-status');
-  const bottomButton = document.getElementById('save-videos');
-
-  if (!writeEnabled) {
-    if (status) status.textContent = 'A publicação está bloqueada neste ambiente.';
-    return;
-  }
-
-  let size;
-  let videos;
-  try {
-    size = selectedVideoTitleSize(card);
-    videos = collectVideoPayload();
-  } catch (error) {
-    if (status) status.textContent = error.message;
-    return;
-  }
-
-  unifiedSaveInProgress = true;
-  [bottomButton, triggerButton].filter(Boolean).forEach((button) => { button.disabled = true; });
-  if (status) status.textContent = 'Salvando alterações da página…';
-
-  try {
-    const [styleResult, videosResult] = await Promise.all([
-      putJson('/api/admin/video-styles', { data: { version: 1, title_size_px: size } }),
-      putJson('/api/admin/content', { resource: 'videos', data: videos }),
-      savePageTitleFormatting(),
-    ]);
-    currentVideoStyle = normalizeVideoStyle(styleResult.data || { title_size_px: size });
-    signalPublicPreviewRefresh();
-    if (status) {
-      const videoCommit = videosResult.commit ? ` Conteúdo: ${String(videosResult.commit).slice(0, 7)}.` : '';
-      status.textContent = `Alterações salvas: ${videos.length} vídeo(s), textos, formatação e tamanho ${currentVideoStyle.title_size_px} px.${videoCommit}`;
-    }
-    window.dispatchEvent(new CustomEvent('pa-safra-page-saved', { detail: { saveId: 'save-videos' } }));
-  } catch (error) {
-    if (status) status.textContent = error.message || 'Não foi possível salvar as alterações.';
-  } finally {
-    unifiedSaveInProgress = false;
-    [bottomButton, triggerButton].filter(Boolean).forEach((button) => { button.disabled = !writeEnabled; });
-  }
+  const originalSaveKeys = api.saveKeys.bind(api);
+  window.PASafraTitleStyles = Object.freeze({
+    ...api,
+    async saveKeys(keys, options = {}) {
+      const requested = Array.isArray(keys) ? keys : [keys];
+      const titleResult = await originalSaveKeys(keys, options);
+      if (requested.includes('lectures_hero')) await saveVideoStyle(options);
+      return titleResult;
+    },
+  });
+  wrappedTitleApi = true;
 }
 
 function injectVideoTitleControl() {
@@ -185,45 +134,28 @@ function injectVideoTitleControl() {
   const card = document.createElement('div');
   card.className = 'form-card video-title-size-card';
   card.dataset.videoTitleControl = 'true';
-
   const options = VIDEO_TITLE_OPTIONS.map((size) => `<option value="${size}"${size === currentVideoStyle.title_size_px ? ' selected' : ''}>${size} px</option>`).join('');
   card.innerHTML = `
     <h3>Tamanho dos títulos dos vídeos</h3>
-    <p>Esta configuração vale para todos os vídeos atuais e futuros e é salva junto com o restante da página pelo botão Salvar no final da edição.</p>
+    <p>Vale para todos os vídeos atuais e futuros. Esta configuração é salva pelo mesmo botão Salvar da página.</p>
     <div class="video-title-size-row">
       <label>Tamanho da fonte
         <select data-video-title-size>${options}</select>
       </label>
     </div>
     <p class="video-title-size-status" role="status" aria-live="polite"></p>`;
-
   heading.insertAdjacentElement('afterend', card);
-}
-
-function installUnifiedBottomSave() {
-  if (document.documentElement.dataset.paVideoUnifiedSave === 'true') return;
-  document.documentElement.dataset.paVideoUnifiedSave = 'true';
-  document.addEventListener('click', (event) => {
-    const button = event.target instanceof Element ? event.target.closest('#save-videos') : null;
-    if (!button) return;
-    const card = document.querySelector('[data-video-title-control]');
-    if (!card) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    void saveAllVideoChanges(card, button);
-  }, true);
 }
 
 async function ensureControls() {
   const app = document.getElementById('admin-app');
-  if (!app || app.hidden) {
-    relabelNumericSizes();
-    return;
-  }
-  await loadState();
   relabelNumericSizes();
+  installTitleApiBridge();
+  if (!app || app.hidden) return;
+  await loadState();
+  installTitleApiBridge();
   injectVideoTitleControl();
-  installUnifiedBottomSave();
+  relabelNumericSizes();
 }
 
 installStyles();
