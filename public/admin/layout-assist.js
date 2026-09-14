@@ -2,16 +2,12 @@ const DEFAULT_LAYOUT = {
   version: 1,
   blocks: {
     home_hero: 'text-left',
-    about_hero: 'text-left',
-    legacy_hero: 'text-left',
   },
 };
 
 const ALLOWED_LAYOUTS = new Set(['text-left', 'image-left']);
 const BLOCKS = [
   { key: 'home_hero', form: '#home-form', title: 'Disposição da capa', anchor: '#inicio' },
-  { key: 'about_hero', form: '#about-form', title: 'Disposição do cabeçalho', anchor: '#sobre' },
-  { key: 'legacy_hero', form: '#legacy-form', title: 'Disposição de Memória e legado', anchor: '#legado' },
 ];
 
 let layoutState = structuredClone(DEFAULT_LAYOUT);
@@ -86,8 +82,6 @@ function choiceMarkup(key, value, label, description, imageLeft) {
 function buildPreviewUrl() {
   const url = new URL('/', window.location.origin);
   url.searchParams.set('layout_home', layoutState.blocks.home_hero);
-  url.searchParams.set('layout_about', layoutState.blocks.about_hero);
-  url.searchParams.set('layout_legacy', layoutState.blocks.legacy_hero);
   return url;
 }
 
