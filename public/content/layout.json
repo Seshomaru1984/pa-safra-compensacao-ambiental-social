@@ -1,8 +1,6 @@
 {
   "version": 1,
   "blocks": {
-    "home_hero": "text-left",
-    "about_hero": "text-left",
-    "legacy_hero": "text-left"
+    "home_hero": "text-left"
   }
 }
