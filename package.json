@@ -11,7 +11,7 @@
     "admin:test": "node tools/admin-contract.mjs && node tools/layout-assist-test.mjs && node tools/title-style-assist-test.mjs && node tools/title-first-paint-test.mjs && node tools/content-preview-bridge-test.mjs && node tools/video-title-style-test.mjs && node tools/admin-write-queue-test.mjs",
     "admin:auth-test": "node tools/admin-auth-test.mjs",
     "admin:content-guard-test": "node tools/admin-content-guard-test.mjs",
-    "admin:ui-test": "node tools/admin-ui-browser-test.mjs",
+    "admin:ui-test": "node tools/admin-ui-browser-test.mjs && node tools/home-editor-browser-test.mjs",
     "admin:credentials": "node tools/admin-credentials.mjs",
     "cloudflare:test": "node tools/cloudflare-readiness.mjs",
     "cloudflare:env-test": "node tools/cloudflare-env-contract.mjs",
