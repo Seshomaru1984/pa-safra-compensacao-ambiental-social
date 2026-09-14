@@ -7,6 +7,8 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 const layout = JSON.parse(read('public/content/layout.json'));
 const publicJs = read('public/layout-assist.js');
 const adminJs = read('public/admin/layout-assist.js');
+const pageActions = read('public/admin/page-actions.js');
+const writeQueue = read('public/admin/write-queue.js');
 const publicApi = read('functions/api/layout.js');
 const middleware = read('functions/api/admin/_middleware.js');
 const viteConfig = read('vite.config.js');
@@ -48,7 +50,12 @@ assert(publicApi.includes("content/pa-v001-admin-preview"), 'API pública de lay
 assert(publicApi.includes("public/content/layout.json"), 'API pública de layout deve ler apenas o arquivo de layout');
 assert(!publicApi.includes('onRequestPut'), 'API pública de layout não pode permitir escrita');
 assert(adminJs.includes('Texto à esquerda') && adminJs.includes('Imagem à esquerda'), 'opções seguras da Home não aparecem no admin');
-assert(adminJs.includes('Pré-visualizar') && adminJs.includes('Salvar disposição'), 'ações do editor de layout da Home ausentes');
+assert(adminJs.includes('saveSelected') && adminJs.includes('PASafraLayout'), 'layout não expõe integração com o salvamento único da página');
+assert(!adminJs.includes('data-layout-preview') && !adminJs.includes('data-layout-save'), 'editor de layout voltou a criar botões próprios de preview/salvar');
+assert(pageActions.includes("form.id !== 'home-form'") && pageActions.includes('saveSelected'), 'Salvar da Home não integra a disposição da capa');
+assert(pageActions.includes('applyPreviewParams'), 'Pré-visualizar único da Home não inclui a disposição selecionada');
+assert(pageActions.includes('requestSubmit'), 'fluxo da Home não retoma o salvamento normal após persistir layout');
+assert(writeQueue.includes("'/api/admin/layout'"), 'layout não participa da fila serial de gravação editorial');
 assert(!adminJs.includes('about_hero') && !adminJs.includes('legacy_hero'), 'admin ainda contém controles de layout das páginas internas');
 assert(!adminJs.toLowerCase().includes('dragstart'), 'drag-and-drop livre não pode ser habilitado');
 assert(middleware.includes("'/api/admin/layout'"), 'guard de branch não cobre escrita de layout');
@@ -56,7 +63,8 @@ assert(viteConfig.includes('/layout-assist.js') && viteConfig.includes('/admin/l
 
 console.log('LAYOUT ASSIST TEST: PASS');
 console.log('- somente text-left/image-left são aceitos para a Home');
+console.log('- disposição da capa é salva pelo mesmo botão Salvar da Página inicial');
+console.log('- editor de disposição não possui botões próprios duplicados');
+console.log('- Pré-visualizar único inclui a disposição atualmente selecionada');
+console.log('- layout participa da fila serial de gravações do Admin');
 console.log('- páginas internas não possuem mais controles de disposição com imagem');
-console.log('- mobile não recebe reordenação forçada');
-console.log('- Preview público lê a disposição editorial da Home salva dinamicamente');
-console.log('- escrita permanece guardada na branch editorial de Preview');
