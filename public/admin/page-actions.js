@@ -11,6 +11,7 @@ const ACTIONS = Object.freeze([
 ]);
 
 const OBSERVER_OPTIONS = Object.freeze({ childList: true, subtree: true });
+let homeSubmitBypass = false;
 
 function normalizedSlug(value) {
   return String(value || '')
@@ -26,8 +27,11 @@ function targetHash(definition) {
 }
 
 function previewUrl(definition) {
-  const url = new URL('/', window.location.origin);
+  let url = new URL('/', window.location.origin);
   url.searchParams.set('_pa_preview', String(Date.now()));
+  if (definition.saveId === 'save-home' && window.PASafraLayout?.applyPreviewParams) {
+    url = window.PASafraLayout.applyPreviewParams(url);
+  }
   url.hash = targetHash(definition);
   return url.toString();
 }
@@ -48,7 +52,7 @@ function ensurePageAction(definition) {
     preview.className = 'button secondary';
     preview.textContent = 'Pré-visualizar';
     preview.dataset.pagePreviewFor = definition.saveId;
-    preview.title = 'Abrir a versão atualmente salva desta página em uma nova aba';
+    preview.title = 'Abrir esta página em uma nova aba usando também as opções visuais atualmente selecionadas';
     preview.addEventListener('click', () => {
       window.open(previewUrl(definition), '_blank', 'noopener');
     });
@@ -61,8 +65,8 @@ function ensurePageAction(definition) {
 }
 
 function removeDuplicateActionButtons() {
-  document.querySelectorAll('[data-title-preview], [data-title-save], [data-video-title-preview], [data-video-title-save]').forEach((button) => button.remove());
-  document.querySelectorAll('.title-assist-actions, .video-title-size-actions').forEach((node) => {
+  document.querySelectorAll('[data-title-preview], [data-title-save], [data-video-title-preview], [data-video-title-save], [data-layout-preview], [data-layout-save]').forEach((button) => button.remove());
+  document.querySelectorAll('.title-assist-actions, .video-title-size-actions, .layout-assist-actions').forEach((node) => {
     if (!node.querySelector('button')) node.remove();
   });
 }
@@ -71,6 +75,40 @@ function normalizeActions() {
   removeDuplicateActionButtons();
   ACTIONS.forEach(ensurePageAction);
 }
+
+async function persistHomeLayoutBeforePageSave(event) {
+  const form = event.target;
+  if (!(form instanceof HTMLFormElement) || form.id !== 'home-form' || homeSubmitBypass) return;
+  const api = window.PASafraLayout;
+  if (!api || typeof api.saveSelected !== 'function') return;
+
+  event.preventDefault();
+  event.stopImmediatePropagation();
+
+  const submitter = event.submitter instanceof HTMLButtonElement ? event.submitter : document.getElementById('save-home');
+  const originalText = submitter?.textContent || 'Salvar';
+  if (submitter) {
+    submitter.disabled = true;
+    submitter.textContent = 'Salvando…';
+  }
+
+  try {
+    await api.saveSelected({ silent: false });
+    homeSubmitBypass = true;
+    form.requestSubmit(submitter || undefined);
+  } catch {
+    if (submitter) {
+      submitter.disabled = false;
+      submitter.textContent = originalText;
+    }
+  } finally {
+    homeSubmitBypass = false;
+  }
+}
+
+document.addEventListener('submit', (event) => {
+  void persistHomeLayoutBeforePageSave(event);
+}, true);
 
 let scheduled = false;
 let observer = null;
