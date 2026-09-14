@@ -10,7 +10,9 @@ const ADMIN_NUMERIC_FONT_TAG = '<script type="module" src="/admin/numeric-font-a
 const ADMIN_PAGE_ACTIONS_TAG = '<script type="module" src="/admin/page-actions.js"></script>';
 const ADMIN_WRITE_QUEUE_TAG = '<script src="/admin/write-queue.js"></script>';
 const ADMIN_HOME_EDITOR_TAG = '<script src="/admin/home-editor.js"></script>';
+const ADMIN_HOME_PREVIEW_TAG = '<script src="/admin/home-preview.js"></script>';
 const ADMIN_HOME_EDITOR_STYLE_TAG = '<link rel="stylesheet" href="/admin/home-editor.css" />';
+const PUBLIC_HOME_PREVIEW_TAG = '<script src="/home-preview-runtime.js"></script>';
 const PUBLIC_INTERNAL_BODY_MEDIA_TAG = '<script src="/internal-header-body-media.js" defer></script>';
 const ADMIN_INTERNAL_LAYOUT_LOCK_TAG = '<script src="/admin/internal-layout-lock.js" defer></script>';
 const PREVIEW_CONTENT_BRIDGE_TAG = '<script src="/content-preview-bridge.js"></script>';
@@ -107,6 +109,7 @@ function syncPublicHero(html) {
 
 function installFirstPaintRoute(html) {
   let next = injectBeforeHeadEnd(html, PREVIEW_CONTENT_BRIDGE_TAG);
+  next = injectBeforeHeadEnd(next, PUBLIC_HOME_PREVIEW_TAG);
   next = injectBeforeHeadEnd(next, PUBLIC_ROUTE_STYLE_TAG);
   next = injectBeforeHeadEnd(next, PUBLIC_INTERNAL_HEADER_STYLE_TAG);
   next = injectBeforeHeadEnd(next, PUBLIC_A30_VISUAL_STYLE_TAG);
@@ -139,6 +142,7 @@ export default defineConfig({
         fs.writeFileSync(adminPath, injectAll(bridgedAdmin, [
           ADMIN_WRITE_QUEUE_TAG,
           ADMIN_HOME_EDITOR_TAG,
+          ADMIN_HOME_PREVIEW_TAG,
           ADMIN_TITLE_TAG,
           ADMIN_NUMERIC_FONT_TAG,
           ADMIN_PAGE_ACTIONS_TAG,
