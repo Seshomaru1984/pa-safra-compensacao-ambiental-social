@@ -26,8 +26,11 @@ function targetHash(definition) {
 }
 
 function previewUrl(definition) {
-  const url = new URL('/', window.location.origin);
+  let url = new URL('/', window.location.origin);
   url.searchParams.set('_pa_preview', String(Date.now()));
+  if (definition.saveId === 'save-home' && window.PASafraHomeEditor?.applyPreviewParams) {
+    url = window.PASafraHomeEditor.applyPreviewParams(url);
+  }
   url.hash = targetHash(definition);
   return url.toString();
 }
@@ -48,7 +51,7 @@ function ensurePageAction(definition) {
     preview.className = 'button secondary';
     preview.textContent = 'Pré-visualizar';
     preview.dataset.pagePreviewFor = definition.saveId;
-    preview.title = 'Abrir a versão atualmente salva desta página em uma nova aba';
+    preview.title = 'Abrir esta página em uma nova aba';
     preview.addEventListener('click', () => {
       window.open(previewUrl(definition), '_blank', 'noopener');
     });
@@ -61,8 +64,8 @@ function ensurePageAction(definition) {
 }
 
 function removeDuplicateActionButtons() {
-  document.querySelectorAll('[data-title-preview], [data-title-save], [data-video-title-preview], [data-video-title-save]').forEach((button) => button.remove());
-  document.querySelectorAll('.title-assist-actions, .video-title-size-actions').forEach((node) => {
+  document.querySelectorAll('[data-title-preview], [data-title-save], [data-video-title-preview], [data-video-title-save], [data-layout-preview], [data-layout-save]').forEach((button) => button.remove());
+  document.querySelectorAll('.title-assist-actions, .video-title-size-actions, .layout-assist-actions').forEach((node) => {
     if (!node.querySelector('button')) node.remove();
   });
 }
@@ -93,12 +96,6 @@ function scheduleNormalizeActions() {
   });
 }
 
-/*
- * O painel recria alguns formulários após salvar. O observer serve apenas para
- * reaplicar os dois botões finais nesses novos nós. Ele é desligado durante a
- * própria normalização para impedir um ciclo de MutationObserver que bloqueie
- * a thread principal e congele o Admin.
- */
 observer = new MutationObserver(scheduleNormalizeActions);
 normalizeActions();
 observe();
