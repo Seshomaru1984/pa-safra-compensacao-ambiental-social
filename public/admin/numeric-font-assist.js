@@ -133,6 +133,12 @@ function signalPublicPreviewRefresh() {
   } catch {}
 }
 
+async function savePageTitleFormatting() {
+  const api = window.PASafraTitleStyles;
+  if (!api || typeof api.saveKeys !== 'function') return null;
+  return api.saveKeys(['lectures_hero'], { silent: true });
+}
+
 async function saveAllVideoChanges(card, triggerButton = null) {
   if (unifiedSaveInProgress) return;
   const status = card?.querySelector('.video-title-size-status');
@@ -156,18 +162,19 @@ async function saveAllVideoChanges(card, triggerButton = null) {
 
   unifiedSaveInProgress = true;
   [topButton, bottomButton, triggerButton].filter(Boolean).forEach((button) => { button.disabled = true; });
-  if (status) status.textContent = 'Salvando títulos, textos e tamanho…';
+  if (status) status.textContent = 'Salvando títulos, textos, formatação e tamanho…';
 
   try {
     const [styleResult, videosResult] = await Promise.all([
       putJson('/api/admin/video-styles', { data: { version: 1, title_size_px: size } }),
       putJson('/api/admin/content', { resource: 'videos', data: videos }),
+      savePageTitleFormatting(),
     ]);
     currentVideoStyle = normalizeVideoStyle(styleResult.data || { title_size_px: size });
     signalPublicPreviewRefresh();
     if (status) {
       const videoCommit = videosResult.commit ? ` Conteúdo: ${String(videosResult.commit).slice(0, 7)}.` : '';
-      status.textContent = `Alterações publicadas: ${videos.length} vídeo(s), títulos, textos e tamanho ${currentVideoStyle.title_size_px} px.${videoCommit}`;
+      status.textContent = `Alterações publicadas: ${videos.length} vídeo(s), títulos, textos, formatação da página e tamanho ${currentVideoStyle.title_size_px} px.${videoCommit}`;
     }
   } catch (error) {
     if (status) status.textContent = error.message || 'Não foi possível publicar as alterações.';
@@ -190,7 +197,7 @@ function injectVideoTitleControl() {
   const options = VIDEO_TITLE_OPTIONS.map((size) => `<option value="${size}"${size === currentVideoStyle.title_size_px ? ' selected' : ''}>${size} px</option>`).join('');
   card.innerHTML = `
     <h3>Tamanho dos títulos dos vídeos</h3>
-    <p>Esta configuração vale para todos os vídeos atuais e futuros. O botão abaixo publica também os títulos, descrições e links editados nos cartões.</p>
+    <p>Esta configuração vale para todos os vídeos atuais e futuros. O botão abaixo publica também os títulos, descrições, links e a formatação do título da página.</p>
     <div class="video-title-size-row">
       <label>Tamanho da fonte
         <select data-video-title-size>${options}</select>
