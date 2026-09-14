@@ -2,14 +2,12 @@ const REPOSITORY = 'Seshomaru1984/pa-safra-compensacao-ambiental-social';
 const FILE_PATH = 'public/content/layout.json';
 const ALLOWED_CONTENT_BRANCH = 'content/pa-v001-admin-preview';
 const ALLOWED_LAYOUTS = new Set(['text-left', 'image-left']);
-const BLOCK_KEYS = ['home_hero', 'about_hero', 'legacy_hero'];
+const BLOCK_KEYS = ['home_hero'];
 
 const DEFAULT_LAYOUT = {
   version: 1,
   blocks: {
     home_hero: 'text-left',
-    about_hero: 'text-left',
-    legacy_hero: 'text-left',
   },
 };
 
