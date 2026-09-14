@@ -281,7 +281,7 @@ try {
   const legacyImage = document.querySelector('[data-view="legado"] img');
   await wait(() => legacyImage?.src.includes('wolnei-divino-franco.jpg'), 'foto editorial de Wolnei aplicada');
   await wait(() => legacyImage.complete && legacyImage.naturalWidth > 0, 'foto de Wolnei carregada');
-  assert(document.querySelector('[data-view="legado"]').innerText.includes('Wolnei Divino Franco'), 'texto de Memória e legado perdeu Wolnei Divino Franco');
+  assert(document.querySelector('[data-view="legado"]').textContent.includes('Wolnei Divino Franco'), 'texto de Memória e legado perdeu Wolnei Divino Franco');
 
   document.querySelector('[data-nav="palestras"]').click();
   await wait(() => !document.querySelector('[data-view="palestras"]')?.hidden, 'palestras visíveis');
