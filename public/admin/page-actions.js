@@ -11,7 +11,6 @@ const ACTIONS = Object.freeze([
 ]);
 
 const OBSERVER_OPTIONS = Object.freeze({ childList: true, subtree: true });
-let homeSubmitBypass = false;
 
 function normalizedSlug(value) {
   return String(value || '')
@@ -76,49 +75,20 @@ function normalizeActions() {
   ACTIONS.forEach(ensurePageAction);
 }
 
-async function persistHomeLayoutBeforePageSave(event) {
+/*
+ * A Página inicial deve manter o submit nativo do admin.js intacto. O layout
+ * da capa é uma gravação complementar disparada pelo mesmo submit, sem
+ * preventDefault, stopPropagation, requestSubmit ou manipulação do estado do
+ * botão. Assim, editar somente texto continua usando exatamente o fluxo
+ * funcional original e editar somente a disposição também é persistido.
+ */
+document.addEventListener('submit', (event) => {
   const form = event.target;
-  if (!(form instanceof HTMLFormElement) || form.id !== 'home-form' || homeSubmitBypass) return;
+  if (!(form instanceof HTMLFormElement) || form.id !== 'home-form') return;
   const api = window.PASafraLayout;
   if (!api || typeof api.saveSelected !== 'function') return;
-
-  event.preventDefault();
-  event.stopImmediatePropagation();
-
-  const submitter = event.submitter instanceof HTMLButtonElement ? event.submitter : document.getElementById('save-home');
-  const originalText = submitter?.textContent || 'Salvar';
-  if (submitter) {
-    submitter.disabled = true;
-    submitter.textContent = 'Salvando…';
-  }
-
-  try {
-    await api.saveSelected({ silent: false });
-
-    // requestSubmit não deve receber um botão desabilitado. O fluxo anterior
-    // mantinha o submitter disabled aqui, então o navegador não retomava o
-    // submit normal da Página inicial e o botão ficava travado após o clique.
-    if (submitter) {
-      submitter.disabled = false;
-      submitter.textContent = originalText;
-    }
-
-    homeSubmitBypass = true;
-    form.requestSubmit(submitter || undefined);
-  } catch (error) {
-    if (submitter) {
-      submitter.disabled = false;
-      submitter.textContent = originalText;
-    }
-    throw error;
-  } finally {
-    homeSubmitBypass = false;
-  }
-}
-
-document.addEventListener('submit', (event) => {
-  void persistHomeLayoutBeforePageSave(event).catch(() => {});
-}, true);
+  void api.saveSelected({ silent: false }).catch(() => {});
+});
 
 let scheduled = false;
 let observer = null;
