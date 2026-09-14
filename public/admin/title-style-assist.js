@@ -7,14 +7,14 @@ const DEFAULT_ENTRY = Object.freeze({
 });
 
 const TARGETS = Object.freeze([
-  { key: 'home_hero', field: '#home-hero-title', title: 'Formatação do título principal', anchor: '#inicio' },
-  { key: 'home_intro', field: '#home-intro-title', title: 'Formatação do título da seção de abertura', anchor: '#inicio' },
-  { key: 'about_hero', field: '#about-title', title: 'Formatação do título de Sobre o Projeto', anchor: '#sobre' },
-  { key: 'lectures_hero', panel: '#panel-videos', title: 'Formatação do título da página Palestras', anchor: '#palestras' },
-  { key: 'gallery_hero', panel: '#panel-galeria', title: 'Formatação do título da Galeria', anchor: '#galeria' },
-  { key: 'resources_hero', panel: '#panel-links', title: 'Formatação do título de Links úteis', anchor: '#recursos' },
-  { key: 'legacy_hero', field: '#legacy-title', title: 'Formatação do título de Memória e legado', anchor: '#legado' },
-  { key: 'extra_pages', panel: '#panel-paginas', title: 'Formatação dos títulos das páginas extras', anchor: '#inicio' },
+  { key: 'home_hero', field: '#home-hero-title', title: 'Formatação do título principal' },
+  { key: 'home_intro', field: '#home-intro-title', title: 'Formatação do título da seção de abertura' },
+  { key: 'about_hero', field: '#about-title', title: 'Formatação do título de Sobre o Projeto' },
+  { key: 'lectures_hero', panel: '#panel-videos', title: 'Formatação do título da página Palestras' },
+  { key: 'gallery_hero', panel: '#panel-galeria', title: 'Formatação do título da Galeria' },
+  { key: 'resources_hero', panel: '#panel-links', title: 'Formatação do título de Links úteis' },
+  { key: 'legacy_hero', field: '#legacy-title', title: 'Formatação do título de Memória e legado' },
+  { key: 'extra_pages', panel: '#panel-paginas', title: 'Formatação dos títulos das páginas extras' },
 ]);
 
 const ALLOWED_SIZES = new Set(['default', 'small', 'medium', 'large', 'display']);
@@ -67,8 +67,7 @@ function installStyles() {
 .title-color-row input[type="color"] { width: 54px; min-height: 38px; padding: 3px; }
 .title-style-check { display: flex; gap: 8px; align-items: center; min-height: 42px; }
 .title-style-check input { width: auto; margin: 0; }
-.title-assist-actions { display: flex; gap: 9px; flex-wrap: wrap; align-items: center; margin-top: 14px; }
-.title-assist-status { margin: 0; color: var(--ink-600); font-size: .84rem; }
+.title-assist-status { margin: 12px 0 0; color: var(--ink-600); font-size: .84rem; }
 @media (max-width: 780px) { .title-assist-grid { grid-template-columns: 1fr; } }
 `;
   document.head.appendChild(style);
@@ -112,7 +111,7 @@ function cardMarkup(definition) {
   const color = customColor ? entry.color : '#1f5949';
   return `
     <h3>${definition.title}</h3>
-    <p>O título continua sendo um título semântico do site. Aqui você altera somente a apresentação visual, dentro de limites responsivos.</p>
+    <p>Altere a apresentação do título aqui. A formatação é salva junto com o restante da página pelo botão Salvar no final da edição.</p>
     <div class="title-assist-grid">
       <label>Tamanho
         ${selectMarkup('size', entry.size, [
@@ -141,11 +140,7 @@ function cardMarkup(definition) {
         <span>Itálico</span>
       </label>
     </div>
-    <div class="title-assist-actions">
-      <button class="button secondary" type="button" data-title-preview>Pré-visualizar</button>
-      <button class="button primary write-action" type="button" data-title-save${writeEnabled ? '' : ' disabled'}>Salvar formatação</button>
-      <p class="title-assist-status" role="status" aria-live="polite"></p>
-    </div>`;
+    <p class="title-assist-status" role="status" aria-live="polite"></p>`;
 }
 
 function readCard(card) {
@@ -157,32 +152,6 @@ function readCard(card) {
     weight: card.querySelector('[data-title-role="weight"]').value,
     italic: card.querySelector('[data-title-role="italic"]').checked,
   });
-}
-
-function normalizedSlug(value) {
-  return String(value || '')
-    .trim().toLowerCase().normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9-]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
-
-function previewUrl(definition, entry) {
-  const url = new URL('/', window.location.origin);
-  url.searchParams.set('title_preview', definition.key);
-  url.searchParams.set('title_size', entry.size);
-  url.searchParams.set('title_align', entry.align);
-  url.searchParams.set('title_color', entry.color);
-  url.searchParams.set('title_weight', entry.weight);
-  url.searchParams.set('title_italic', entry.italic ? '1' : '0');
-
-  if (definition.key === 'extra_pages') {
-    const firstSlug = normalizedSlug(document.querySelector('#pages-editor [data-role="slug"]')?.value);
-    url.hash = firstSlug || 'inicio';
-  } else {
-    url.hash = definition.anchor.replace(/^#/, '');
-  }
-  return url;
 }
 
 function setStatuses(keys, message) {
@@ -221,7 +190,7 @@ async function saveKeys(keys, options = {}) {
     const result = await response.json().catch(() => ({}));
     if (!response.ok || !result.ok) throw new Error(result.error || `Falha ao salvar (${response.status}).`);
     titleState = normalizeStyles(result.data || next);
-    if (!options.silent) setStatuses(found, 'Formatação salva. O Preview já usará essa configuração.');
+    if (!options.silent) setStatuses(found, 'Formatação salva.');
     return titleState;
   } catch (error) {
     setStatuses(found, error.message || 'Não foi possível salvar a formatação.');
@@ -231,29 +200,10 @@ async function saveKeys(keys, options = {}) {
   }
 }
 
-async function saveStyle(definition, card) {
-  const save = card.querySelector('[data-title-save]');
-  save.disabled = true;
-  try {
-    await saveKeys([definition.key]);
-  } catch {
-    // A mensagem detalhada já é exibida no próprio cartão.
-  } finally {
-    save.disabled = !writeEnabled;
-  }
-}
-
-function wireCard(definition, card) {
+function wireCard(card) {
   const defaultColor = card.querySelector('[data-title-role="default-color"]');
   const color = card.querySelector('[data-title-role="color"]');
   defaultColor.addEventListener('change', () => { color.disabled = defaultColor.checked; });
-
-  card.querySelector('[data-title-preview]').addEventListener('click', () => {
-    const entry = readCard(card);
-    window.open(previewUrl(definition, entry).toString(), '_blank', 'noopener');
-  });
-
-  card.querySelector('[data-title-save]').addEventListener('click', () => saveStyle(definition, card));
 }
 
 function injectControl(definition) {
@@ -276,7 +226,7 @@ function injectControl(definition) {
   card.className = 'form-card title-assist-card';
   card.dataset.titleControl = definition.key;
   card.innerHTML = cardMarkup(definition);
-  wireCard(definition, card);
+  wireCard(card);
   anchor.insertAdjacentElement('afterend', card);
 
   if (definition.key === 'home_hero') {
