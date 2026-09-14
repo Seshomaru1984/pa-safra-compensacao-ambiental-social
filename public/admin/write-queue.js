@@ -6,6 +6,7 @@
     '/api/admin/layout',
     '/api/admin/title-styles',
     '/api/admin/video-styles',
+    '/api/admin/media',
   ]);
   const RETRY_DELAYS_MS = [250, 800, 1600];
   const nativeFetch = window.fetch.bind(window);
