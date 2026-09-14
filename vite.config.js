@@ -12,6 +12,8 @@ const PREVIEW_CONTENT_BRIDGE_TAG = '<script src="/content-preview-bridge.js"></s
 const PUBLIC_ROUTE_STYLE_TAG = '<link rel="stylesheet" href="/first-paint-route.css" />';
 const PUBLIC_ROUTE_SCRIPT_TAG = '<script src="/first-paint-route.js"></script>';
 const PUBLIC_INTERNAL_HEADER_STYLE_TAG = '<link rel="stylesheet" href="/internal-header-uniform.css" />';
+const PUBLIC_A30_VISUAL_STYLE_TAG = '<link rel="stylesheet" href="/a30-visual-polish.css" />';
+const PUBLIC_IMAGE_FALLBACK_TAG = '<script src="/image-fallback.js" defer></script>';
 const SITE_CONFIG_PATH = path.resolve('public', 'content', 'site.json');
 
 function injectBeforeBody(html, tag) {
@@ -52,6 +54,13 @@ function readSiteConfig() {
   } catch (error) {
     throw new Error(`site.json inválido para sincronização do primeiro paint: ${error.message}`);
   }
+}
+
+function syncStaticAssetPaths(html) {
+  return html.replaceAll(
+    '/assets/img/solicitante-cerrado.jpg',
+    '/assets/img/solicitante-cerrado.webp',
+  );
 }
 
 function syncPublicHero(html) {
@@ -95,6 +104,7 @@ function installFirstPaintRoute(html) {
   let next = injectBeforeHeadEnd(html, PREVIEW_CONTENT_BRIDGE_TAG);
   next = injectBeforeHeadEnd(next, PUBLIC_ROUTE_STYLE_TAG);
   next = injectBeforeHeadEnd(next, PUBLIC_INTERNAL_HEADER_STYLE_TAG);
+  next = injectBeforeHeadEnd(next, PUBLIC_A30_VISUAL_STYLE_TAG);
   next = injectBeforeHeadEnd(next, PUBLIC_ROUTE_SCRIPT_TAG);
   return next;
 }
@@ -105,8 +115,9 @@ export default defineConfig({
       name: 'pa-safra-edicao-assistida',
       enforce: 'post',
       transformIndexHtml(html) {
-        const publicHtml = installFirstPaintRoute(syncPublicHero(html));
-        return injectAll(publicHtml, [PUBLIC_LAYOUT_TAG, PUBLIC_TITLE_TAG, PUBLIC_VIDEO_TITLE_TAG]);
+        const normalizedHtml = syncStaticAssetPaths(html);
+        const publicHtml = installFirstPaintRoute(syncPublicHero(normalizedHtml));
+        return injectAll(publicHtml, [PUBLIC_LAYOUT_TAG, PUBLIC_TITLE_TAG, PUBLIC_VIDEO_TITLE_TAG, PUBLIC_IMAGE_FALLBACK_TAG]);
       },
       closeBundle() {
         const adminPath = path.resolve('dist', 'admin', 'index.html');
