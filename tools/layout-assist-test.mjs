@@ -57,9 +57,9 @@ assert(adminJs.includes('saveSelected') && adminJs.includes('PASafraLayout'), 'l
 assert(!adminJs.includes('data-layout-preview') && !adminJs.includes('data-layout-save'), 'editor de layout voltou a criar botões próprios de preview/salvar');
 assert(pageActions.includes("form.id !== 'home-form'") && pageActions.includes('saveSelected'), 'Salvar da Home não dispara a persistência complementar da disposição da capa');
 assert(pageActions.includes('applyPreviewParams'), 'Pré-visualizar único da Home não inclui a disposição selecionada');
-assert(!pageActions.includes('event.preventDefault()'), 'page-actions não pode impedir o submit funcional da Página inicial');
-assert(!pageActions.includes('stopImmediatePropagation'), 'page-actions não pode bloquear o listener original do admin.js');
-assert(!pageActions.includes('requestSubmit'), 'page-actions não deve fabricar um segundo submit da Página inicial');
+assert(!/event\.preventDefault\s*\(/.test(pageActions), 'page-actions não pode impedir o submit funcional da Página inicial');
+assert(!/stopImmediatePropagation\s*\(/.test(pageActions), 'page-actions não pode bloquear o listener original do admin.js');
+assert(!/\.requestSubmit\s*\(/.test(pageActions), 'page-actions não deve fabricar um segundo submit da Página inicial');
 assert(!pageActions.includes('submitter.disabled'), 'page-actions não pode controlar o estado do botão Salvar da Página inicial');
 assert(writeQueue.includes("'/api/admin/layout'"), 'layout não participa da fila serial de gravação editorial');
 assert(!adminJs.includes('about_hero') && !adminJs.includes('legacy_hero'), 'admin ainda contém controles de layout das páginas internas');
