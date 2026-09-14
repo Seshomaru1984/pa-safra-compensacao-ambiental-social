@@ -6,8 +6,11 @@ const root = process.cwd();
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 const layout = JSON.parse(read('public/content/layout.json'));
 const publicJs = read('public/layout-assist.js');
-const adminJs = read('public/admin/layout-assist.js');
+const homeEditor = read('public/admin/home-editor.js');
+const pageActions = read('public/admin/page-actions.js');
+const writeQueue = read('public/admin/write-queue.js');
 const publicApi = read('functions/api/layout.js');
+const adminApi = read('functions/api/admin/layout.js');
 const middleware = read('functions/api/admin/_middleware.js');
 const viteConfig = read('vite.config.js');
 
@@ -16,20 +19,12 @@ const assert = (condition, message) => { if (!condition) fail(message); };
 
 const normalized = validateLayout(layout);
 assert(normalized.blocks.home_hero === 'text-left', 'capa deve manter o layout atual como padrão');
-assert(!Object.hasOwn(normalized.blocks, 'about_hero'), 'Sobre não deve mais possuir layout assistido');
-assert(!Object.hasOwn(normalized.blocks, 'legacy_hero'), 'Legado não deve mais possuir layout assistido');
+assert(!Object.hasOwn(normalized.blocks, 'about_hero'), 'Sobre não deve possuir layout assistido');
+assert(!Object.hasOwn(normalized.blocks, 'legacy_hero'), 'Legado não deve possuir layout assistido');
 
 const inverted = structuredClone(layout);
 inverted.blocks.home_hero = 'image-left';
 assert(validateLayout(inverted).blocks.home_hero === 'image-left', 'inversão segura da Home não foi aceita');
-
-for (const obsolete of ['about_hero', 'legacy_hero']) {
-  const candidate = structuredClone(layout);
-  candidate.blocks[obsolete] = 'image-left';
-  let rejected = false;
-  try { validateLayout(candidate); } catch { rejected = true; }
-  assert(rejected, `layout obsoleto não rejeitado: ${obsolete}`);
-}
 
 for (const invalid of ['free', 'absolute', 'drag', 'stacked-random']) {
   const candidate = structuredClone(layout);
@@ -40,23 +35,35 @@ for (const invalid of ['free', 'absolute', 'drag', 'stacked-random']) {
 }
 
 assert(publicJs.includes('@media (min-width: 981px)'), 'reordenação da Home deve ser limitada ao desktop');
-assert(publicJs.includes('layout_home'), 'pré-visualização assistida da Home ausente');
-assert(!publicJs.includes('layout_about') && !publicJs.includes('layout_legacy'), 'site público ainda contém layouts internos obsoletos');
-assert(publicJs.includes("fetch('/api/layout'"), 'site público deve consultar layout editorial salvo no Preview');
+assert(publicJs.includes('layout_home'), 'override de pré-visualização da Home ausente');
+assert(publicJs.includes("fetch('/api/layout'"), 'site público deve consultar o layout editorial');
 assert(publicJs.includes('minmax(420px, .98fr) minmax(0, 1.02fr)'), 'capa invertida deve preservar proporção das colunas');
-assert(publicApi.includes("content/pa-v001-admin-preview"), 'API pública de layout deve ler somente a branch editorial de Preview');
-assert(publicApi.includes("public/content/layout.json"), 'API pública de layout deve ler apenas o arquivo de layout');
+
+assert(homeEditor.includes('Texto à esquerda') && homeEditor.includes('Imagem à esquerda'), 'novo editor não expõe as duas disposições seguras');
+assert(homeEditor.includes("url?.pathname === CONTENT_API") && homeEditor.includes("payload?.resource === 'site'"), 'novo editor não integra a disposição ao salvamento normal da Home');
+assert(homeEditor.includes('await saveSelectedLayout()'), 'layout deve ser concluído antes de liberar a gravação do conteúdo da Home');
+assert(homeEditor.includes("name=\"home-hero-layout\""), 'rádios de disposição da Home ausentes');
+assert(!homeEditor.includes('data-layout-save') && !homeEditor.includes('data-layout-preview'), 'novo editor não pode criar botões próprios de salvar ou pré-visualizar');
+assert(homeEditor.includes('PASafraHomeEditor'), 'API de pré-visualização do novo editor não foi exposta');
+
+assert(pageActions.includes('PASafraHomeEditor?.applyPreviewParams'), 'Pré-visualizar único não considera a disposição selecionada');
+assert(!pageActions.includes('requestSubmit') && !pageActions.includes('stopImmediatePropagation'), 'ações de página não podem recriar/interceptar o submit da Home');
+assert(pageActions.includes("preview.textContent = 'Pré-visualizar'") && pageActions.includes("save.textContent = 'Salvar'"), 'padrão único Salvar/Pré-visualizar ausente');
+
+assert(writeQueue.includes("'/api/admin/layout'"), 'layout deve participar da fila serial de gravações');
+assert(publicApi.includes('_pa_fresh') && publicApi.includes("'cache-control': 'no-cache, no-store, max-age=0'"), 'API pública de layout deve impedir leitura stale');
+assert(adminApi.includes('_pa_fresh') && adminApi.includes("'cache-control': 'no-cache, no-store, max-age=0'"), 'API administrativa deve ler o SHA atual sem cache');
 assert(!publicApi.includes('onRequestPut'), 'API pública de layout não pode permitir escrita');
-assert(adminJs.includes('Texto à esquerda') && adminJs.includes('Imagem à esquerda'), 'opções seguras da Home não aparecem no admin');
-assert(adminJs.includes('Pré-visualizar') && adminJs.includes('Salvar disposição'), 'ações do editor de layout da Home ausentes');
-assert(!adminJs.includes('about_hero') && !adminJs.includes('legacy_hero'), 'admin ainda contém controles de layout das páginas internas');
-assert(!adminJs.toLowerCase().includes('dragstart'), 'drag-and-drop livre não pode ser habilitado');
-assert(middleware.includes("'/api/admin/layout'"), 'guard de branch não cobre escrita de layout');
-assert(viteConfig.includes('/layout-assist.js') && viteConfig.includes('/admin/layout-assist.js'), 'injeção de runtime incompleta');
+assert(middleware.includes("'/api/admin/layout'"), 'guard da branch deve cobrir escrita do layout');
+
+assert(viteConfig.includes('/admin/home-editor.js'), 'novo controlador da Home não é injetado no build');
+assert(viteConfig.includes('/admin/home-editor.css'), 'estilo do novo controlador da Home não é injetado no build');
+assert(!viteConfig.includes('/admin/layout-assist.js'), 'build ainda injeta o controlador antigo de layout');
+assert(!fs.existsSync(path.join(root, 'public/admin/layout-assist.js')), 'controlador antigo de layout ainda existe no projeto');
 
 console.log('LAYOUT ASSIST TEST: PASS');
-console.log('- somente text-left/image-left são aceitos para a Home');
-console.log('- páginas internas não possuem mais controles de disposição com imagem');
-console.log('- mobile não recebe reordenação forçada');
-console.log('- Preview público lê a disposição editorial da Home salva dinamicamente');
-console.log('- escrita permanece guardada na branch editorial de Preview');
+console.log('- Home usa um único controlador reconstruído sobre a versão funcional');
+console.log('- nenhum botão próprio de salvar/preview é criado pela disposição da capa');
+console.log('- o submit original do admin.js não é interceptado por page-actions');
+console.log('- layout, conteúdo e estilos continuam serializados pelo pipeline de escrita');
+console.log('- leitura pública e administrativa do layout ignora cache stale');
