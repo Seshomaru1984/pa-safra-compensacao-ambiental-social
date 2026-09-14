@@ -7,7 +7,7 @@ const DEFAULT_LAYOUT = {
 
 const ALLOWED_LAYOUTS = new Set(['text-left', 'image-left']);
 const BLOCKS = [
-  { key: 'home_hero', form: '#home-form', title: 'Disposição da capa', anchor: '#inicio' },
+  { key: 'home_hero', form: '#home-form', title: 'Disposição da capa' },
 ];
 
 let layoutState = structuredClone(DEFAULT_LAYOUT);
@@ -40,8 +40,7 @@ function installStyles() {
 .layout-mini.image-left .image { order: -1; }
 .layout-choice strong { display: block; font-size: .9rem; }
 .layout-choice small { display: block; margin-top: 2px; color: var(--ink-600); font-weight: 500; }
-.layout-assist-actions { display: flex; gap: 9px; flex-wrap: wrap; align-items: center; margin-top: 15px; }
-.layout-assist-status { margin: 0; color: var(--ink-600); font-size: .84rem; }
+.layout-assist-status { margin: 14px 0 0; color: var(--ink-600); font-size: .84rem; }
 @media (max-width: 680px) { .layout-choice-grid { grid-template-columns: 1fr; } }
 `;
   document.head.appendChild(style);
@@ -79,38 +78,61 @@ function choiceMarkup(key, value, label, description, imageLeft) {
     </label>`;
 }
 
-function buildPreviewUrl() {
-  const url = new URL('/', window.location.origin);
-  url.searchParams.set('layout_home', layoutState.blocks.home_hero);
-  return url;
+function controlFor(key) {
+  return document.querySelector(`[data-layout-control="${key}"]`);
 }
 
-async function saveLayout(key, card) {
-  const selected = card.querySelector(`input[name="layout-${key}"]:checked`)?.value;
-  const status = card.querySelector('.layout-assist-status');
-  const save = card.querySelector('[data-layout-save]');
-  if (!ALLOWED_LAYOUTS.has(selected)) return;
+function selectedLayout(key) {
+  const card = controlFor(key);
+  const selected = card?.querySelector(`input[name="layout-${key}"]:checked`)?.value;
+  return ALLOWED_LAYOUTS.has(selected) ? selected : layoutState.blocks[key];
+}
+
+function setStatus(key, message, isError = false) {
+  const status = controlFor(key)?.querySelector('.layout-assist-status');
+  if (!status) return;
+  status.textContent = message;
+  status.style.color = isError ? '#8a2f2f' : '';
+}
+
+async function saveSelected({ silent = false } = {}) {
+  await loadLayout();
+  const key = 'home_hero';
+  const selected = selectedLayout(key);
+  if (!ALLOWED_LAYOUTS.has(selected)) throw new Error('Disposição da capa inválida.');
+
+  if (selected === layoutState.blocks[key]) {
+    if (!silent) setStatus(key, 'Disposição já está salva.');
+    return { ok: true, data: structuredClone(layoutState), unchanged: true };
+  }
 
   const next = structuredClone(layoutState);
   next.blocks[key] = selected;
-  save.disabled = true;
-  status.textContent = 'Salvando disposição…';
-  try {
-    const response = await fetch('/api/admin/layout', {
-      method: 'PUT',
-      credentials: 'same-origin',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ data: next }),
-    });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok || !result.ok) throw new Error(result.error || `Falha ao salvar (${response.status}).`);
-    layoutState = normalizeLayout(result.data || next);
-    status.textContent = 'Disposição salva. Ao abrir ou atualizar o site deste Preview, esta configuração será aplicada.';
-  } catch (error) {
-    status.textContent = error.message || 'Não foi possível salvar a disposição.';
-  } finally {
-    save.disabled = false;
+  if (!silent) setStatus(key, 'Salvando disposição junto com a página…');
+
+  const response = await fetch('/api/admin/layout', {
+    method: 'PUT',
+    credentials: 'same-origin',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ data: next }),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || !result.ok) {
+    const error = new Error(result.error || `Falha ao salvar a disposição (${response.status}).`);
+    if (!silent) setStatus(key, error.message, true);
+    throw error;
   }
+
+  layoutState = normalizeLayout(result.data || next);
+  if (!silent) setStatus(key, 'Disposição salva junto com a página.');
+  return result;
+}
+
+function applyPreviewParams(url) {
+  const target = url instanceof URL ? url : new URL(String(url), window.location.origin);
+  const selected = selectedLayout('home_hero');
+  if (ALLOWED_LAYOUTS.has(selected)) target.searchParams.set('layout_home', selected);
+  return target;
 }
 
 function injectControl(definition) {
@@ -128,20 +150,13 @@ function injectControl(definition) {
       ${choiceMarkup(definition.key, 'text-left', 'Texto à esquerda', 'Imagem à direita', false)}
       ${choiceMarkup(definition.key, 'image-left', 'Imagem à esquerda', 'Texto à direita', true)}
     </div>
-    <div class="layout-assist-actions">
-      <button class="button secondary" type="button" data-layout-preview>Pré-visualizar</button>
-      <button class="button primary" type="button" data-layout-save>Salvar disposição</button>
-      <p class="layout-assist-status" role="status" aria-live="polite"></p>
-    </div>`;
+    <p class="layout-assist-status" role="status" aria-live="polite">A disposição é salva pelo botão Salvar no final desta página.</p>`;
 
-  card.querySelector('[data-layout-preview]').addEventListener('click', () => {
-    const selected = card.querySelector(`input[name="layout-${definition.key}"]:checked`)?.value;
-    if (ALLOWED_LAYOUTS.has(selected)) layoutState.blocks[definition.key] = selected;
-    const url = buildPreviewUrl();
-    url.hash = definition.anchor;
-    window.open(url.toString(), '_blank', 'noopener');
+  card.addEventListener('change', (event) => {
+    if (event.target?.matches(`input[name="layout-${definition.key}"]`)) {
+      setStatus(definition.key, 'Alteração de disposição pendente. Use Salvar no final da página.');
+    }
   });
-  card.querySelector('[data-layout-save]').addEventListener('click', () => saveLayout(definition.key, card));
 
   const actions = form.querySelector('.form-actions');
   if (actions) actions.before(card);
@@ -154,6 +169,12 @@ async function ensureControls() {
   await loadLayout();
   for (const definition of BLOCKS) injectControl(definition);
 }
+
+window.PASafraLayout = Object.freeze({
+  saveSelected,
+  getSelected: () => selectedLayout('home_hero'),
+  applyPreviewParams,
+});
 
 installStyles();
 const adminApp = document.getElementById('admin-app');
