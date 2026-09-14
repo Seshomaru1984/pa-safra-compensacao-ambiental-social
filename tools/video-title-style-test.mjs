@@ -10,7 +10,7 @@ const viteSource = fs.readFileSync('vite.config.js', 'utf8');
 const config = JSON.parse(fs.readFileSync('public/content/video-styles.json', 'utf8'));
 
 assert.equal(config.version, 1);
-assert.equal(config.title_size_px, 28);
+assert.equal(config.title_size_px, 24, 'tamanho editorial atual dos títulos de vídeo deve ser preservado');
 assert.match(adminSource, /Tamanho dos títulos dos vídeos/);
 assert.match(adminSource, /18 px/);
 assert.match(adminSource, /56/);
@@ -41,6 +41,7 @@ assert.match(viteSource, /numeric-font-assist\.js/);
 assert.match(viteSource, /page-actions\.js/);
 
 console.log('VIDEO TITLE STYLE TEST: PASS');
+console.log('- tamanho editorial atual de 24 px é preservado');
 console.log('- tamanho global vale para todos os vídeos atuais e futuros');
 console.log('- não existem botões próprios de salvar ou pré-visualizar no controle de tamanho');
 console.log('- o mesmo Salvar da página aciona conteúdo, título da página e tamanho dos títulos dos vídeos');
