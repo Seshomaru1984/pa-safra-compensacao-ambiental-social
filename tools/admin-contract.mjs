@@ -30,9 +30,17 @@ const adminJs = read('public/admin/admin.js');
 for (const token of [
   '/api/admin/login', '/api/admin/logout', '/api/admin/status', '/api/admin/content',
   '/content/site.json', '/content/videos.json', '/content/paginas.json', '/content/destaques.json', '/content/galeria.json', '/content/links.json',
-  'justifyFull', 'foreColor', 'fontSize', 'createLink', 'removeFormat',
+  'justifyFull', 'foreColor', 'fontSize', 'createLink', 'removeFormat', 'publishTitleStyles',
 ]) if (!adminJs.includes(token)) fail(`Admin nativo: integração/ferramenta ausente: ${token}`);
 if (adminJs.includes('/content/noticias.json')) fail('Admin nativo: Notícias não deve ser carregado pelo painel.');
+if (adminJs.includes('{ once: true }')) fail('Admin nativo: formulários editoriais não podem perder o submit após a primeira tentativa.');
+
+for (const token of [
+  "form.addEventListener('submit', saveHome)",
+  "form.addEventListener('submit', saveAbout)",
+  "form.addEventListener('submit', saveLegacy)",
+  "form.addEventListener('submit', saveAppearance)",
+]) if (!adminJs.includes(token)) fail(`Admin nativo: submit persistente ausente: ${token}`);
 
 const loginJs = read('functions/api/admin/login.js');
 const statusJs = read('functions/api/admin/status.js');
@@ -101,5 +109,7 @@ console.log('ADMIN NATIVO CONTRACT: OK');
 console.log('- /admin mantém login próprio e nove áreas editoriais');
 console.log('- Notícias permanece fora da interface e da lista branca de escrita');
 console.log('- editor rico oferece alinhamento, tamanho, cor, listas, links e estilos básicos');
+console.log('- formulários persistem após falha e permitem nova tentativa sem recarregar');
+console.log('- publicação de conteúdo integra a formatação do título da mesma área');
 console.log('- sessão HttpOnly assinada e rate limiter D1 preservados');
 console.log('- escrita permanece restrita à branch editorial de Preview pelo middleware');
