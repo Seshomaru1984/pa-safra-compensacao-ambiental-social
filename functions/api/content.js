@@ -14,6 +14,8 @@ const json = (data, status = 200, extraHeaders = {}) => new Response(JSON.string
   headers: {
     'content-type': 'application/json; charset=utf-8',
     'cache-control': 'no-store, max-age=0',
+    pragma: 'no-cache',
+    expires: '0',
     ...extraHeaders,
   },
 });
@@ -25,13 +27,17 @@ function fromBase64Utf8(value) {
 }
 
 async function githubRequest(path, token) {
+  const url = new URL(`https://api.github.com/repos/${REPOSITORY}${path}`);
+  url.searchParams.set('_pa_fresh', `${Date.now()}-${Math.random().toString(36).slice(2)}`);
   const headers = {
     accept: 'application/vnd.github+json',
     'x-github-api-version': '2026-03-10',
-    'user-agent': 'pa-safra-public-content-preview/1.0',
+    'user-agent': 'pa-safra-public-content-preview/1.1',
+    'cache-control': 'no-cache, no-store, max-age=0',
+    pragma: 'no-cache',
   };
   if (token) headers.authorization = `Bearer ${token}`;
-  return fetch(`https://api.github.com/repos/${REPOSITORY}${path}`, { headers });
+  return fetch(url.toString(), { headers });
 }
 
 export async function onRequestGet({ request, env }) {
@@ -58,6 +64,8 @@ export async function onRequestGet({ request, env }) {
     return json(data, 200, {
       'x-pa-content-source': 'editorial-preview',
       'x-pa-content-resource': resource,
+      'x-pa-content-sha': payload.sha || '',
+      'x-pa-content-branch': branch,
     });
   } catch {
     return json({ ok: false, error: 'Falha ao carregar conteúdo editorial.' }, 502);
