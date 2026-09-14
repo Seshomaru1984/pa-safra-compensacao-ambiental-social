@@ -3,15 +3,13 @@ const FILE_PATH = 'public/content/layout.json';
 const COOKIE_NAME = 'pa_safra_admin_session';
 const ALLOWED_CONTENT_BRANCH = 'content/pa-v001-admin-preview';
 const ALLOWED_LAYOUTS = new Set(['text-left', 'image-left']);
-const BLOCK_KEYS = ['home_hero', 'about_hero', 'legacy_hero'];
+const BLOCK_KEYS = ['home_hero'];
 const MAX_BODY_BYTES = 8_000;
 
 const DEFAULT_LAYOUT = {
   version: 1,
   blocks: {
     home_hero: 'text-left',
-    about_hero: 'text-left',
-    legacy_hero: 'text-left',
   },
 };
 
