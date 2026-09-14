@@ -10,6 +10,8 @@ const ACTIONS = Object.freeze([
   { saveId: 'save-appearance', hash: 'inicio' },
 ]);
 
+const OBSERVER_OPTIONS = Object.freeze({ childList: true, subtree: true });
+
 function normalizedSlug(value) {
   return String(value || '')
     .trim().toLowerCase().normalize('NFD')
@@ -36,8 +38,8 @@ function ensurePageAction(definition) {
   const actions = save.closest('.form-actions');
   if (!actions) return;
 
-  save.textContent = 'Salvar';
-  save.dataset.pageSave = 'true';
+  if (save.textContent !== 'Salvar') save.textContent = 'Salvar';
+  if (save.dataset.pageSave !== 'true') save.dataset.pageSave = 'true';
 
   let preview = actions.querySelector(`[data-page-preview-for="${definition.saveId}"]`);
   if (!preview) {
@@ -70,6 +72,33 @@ function normalizeActions() {
   ACTIONS.forEach(ensurePageAction);
 }
 
-const observer = new MutationObserver(() => normalizeActions());
-observer.observe(document.documentElement, { childList: true, subtree: true });
+let scheduled = false;
+let observer = null;
+
+function observe() {
+  observer?.observe(document.documentElement, OBSERVER_OPTIONS);
+}
+
+function scheduleNormalizeActions() {
+  if (scheduled) return;
+  scheduled = true;
+  queueMicrotask(() => {
+    scheduled = false;
+    observer?.disconnect();
+    try {
+      normalizeActions();
+    } finally {
+      observe();
+    }
+  });
+}
+
+/*
+ * O painel recria alguns formulários após salvar. O observer serve apenas para
+ * reaplicar os dois botões finais nesses novos nós. Ele é desligado durante a
+ * própria normalização para impedir um ciclo de MutationObserver que bloqueie
+ * a thread principal e congele o Admin.
+ */
+observer = new MutationObserver(scheduleNormalizeActions);
 normalizeActions();
+observe();
