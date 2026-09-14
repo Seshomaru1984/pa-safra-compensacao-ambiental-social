@@ -1,13 +1,19 @@
 (() => {
   'use strict';
 
-  function syncLegacyInlinePhoto() {
+  function legacyNodes() {
     const view = document.querySelector('[data-view="legado"]');
-    if (!view) return;
-
+    if (!view) return null;
     const source = view.querySelector('.legacy-grid .legacy-photo');
     const article = view.querySelector('.legacy-content .prose-card.emphasized');
-    if (!source || !article) return;
+    if (!source || !article) return null;
+    return { view, source, article };
+  }
+
+  function syncLegacyInlinePhoto() {
+    const nodes = legacyNodes();
+    if (!nodes) return;
+    const { source, article } = nodes;
 
     const sourceImage = source.querySelector('img');
     if (!sourceImage) return;
@@ -36,23 +42,49 @@
     if (image.getAttribute('src') !== src) image.setAttribute('src', src);
     if (image.getAttribute('alt') !== alt) image.setAttribute('alt', alt);
 
-    const captionHtml = sourceCaption?.innerHTML || '';
+    const captionHtml = sourceCaption && !sourceCaption.hidden ? sourceCaption.innerHTML.trim() : '';
+    const hasCaption = Boolean(captionHtml);
+    if (caption.hidden === hasCaption) caption.hidden = !hasCaption;
     if (caption.innerHTML !== captionHtml) caption.innerHTML = captionHtml;
   }
 
+  function applyLegacyCredit(value) {
+    const nodes = legacyNodes();
+    if (!nodes) return;
+    const sourceCaption = nodes.source.querySelector('figcaption');
+    if (!sourceCaption) return;
+
+    const credit = typeof value === 'string' ? value.trim() : '';
+    sourceCaption.hidden = !credit;
+    sourceCaption.textContent = credit;
+    syncLegacyInlinePhoto();
+  }
+
+  async function syncConfiguredLegacyCredit() {
+    try {
+      const response = await fetch('/content/site.json', { cache: 'no-store', credentials: 'same-origin' });
+      if (!response.ok) return;
+      const site = await response.json();
+      applyLegacyCredit(site?.legacy?.image_credit);
+    } catch {
+      // Mantém o conteúdo estático apenas se a configuração editorial não puder ser lida.
+    }
+  }
+
   function install() {
-    const view = document.querySelector('[data-view="legado"]');
-    if (!view) return;
+    const nodes = legacyNodes();
+    if (!nodes) return;
 
     syncLegacyInlinePhoto();
+    syncConfiguredLegacyCredit();
 
     const observer = new MutationObserver(() => syncLegacyInlinePhoto());
-    observer.observe(view, {
+    observer.observe(nodes.view, {
       subtree: true,
       childList: true,
       characterData: true,
       attributes: true,
-      attributeFilter: ['src', 'alt'],
+      attributeFilter: ['src', 'alt', 'hidden'],
     });
   }
 
