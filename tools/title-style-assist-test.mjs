@@ -9,6 +9,8 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 const styles = JSON.parse(read('public/content/title-styles.json'));
 const publicJs = read('public/title-style-assist.js');
 const adminJs = read('public/admin/title-style-assist.js');
+const adminMain = read('public/admin/admin.js');
+const numericAdmin = read('public/admin/numeric-font-assist.js');
 const middleware = read('functions/api/admin/_middleware.js');
 const viteConfig = read('vite.config.js');
 
@@ -54,6 +56,18 @@ for (const token of ['Pequeno', 'Médio', 'Grande', 'Destaque', 'Centralizado', 
   assert(adminJs.includes(token), `controle administrativo ausente: ${token}`);
 }
 
+assert(adminJs.includes('window.PASafraTitleStyles = Object.freeze({ saveKeys })'), 'API interna de salvamento unificado de títulos não foi exposta');
+for (const token of [
+  "publishTitleStyles(['home_hero', 'home_intro'])",
+  "publishTitleStyles(['about_hero'])",
+  "publishTitleStyles(['lectures_hero'])",
+  "publishTitleStyles(['gallery_hero'])",
+  "publishTitleStyles(['resources_hero'])",
+  "publishTitleStyles(['legacy_hero'])",
+  "publishTitleStyles(['extra_pages'])",
+]) assert(adminMain.includes(token), `publicação conjunta conteúdo+título ausente: ${token}`);
+assert(numericAdmin.includes("saveKeys(['lectures_hero'], { silent: true })"), 'Publicar tudo dos vídeos não inclui a formatação do título da página');
+
 assert(publicJs.includes('/api/title-styles'), 'site público não consulta formatação editorial salva');
 assert(publicJs.includes('clamp('), 'tamanhos responsivos não usam clamp');
 assert(publicJs.includes('#titulo-inicio') && publicJs.includes('#titulo-sobre') && publicJs.includes('#titulo-legado'), 'títulos principais não estão cobertos');
@@ -77,6 +91,8 @@ for (const file of [
 
 console.log('TITLE STYLE ASSIST TEST: PASS');
 console.log('- tamanho, alinhamento, cor, peso e itálico são controlados por lista branca');
+console.log('- publicar alterações salva conteúdo e formatação do título da mesma área');
+console.log('- publicar tudo dos vídeos inclui conteúdo, tamanho dos títulos dos vídeos e título da página');
 console.log('- tamanhos usam faixas responsivas com clamp()');
 console.log('- títulos principais e páginas extras possuem formatação assistida');
 console.log('- HTML semântico dos títulos não é substituído');
