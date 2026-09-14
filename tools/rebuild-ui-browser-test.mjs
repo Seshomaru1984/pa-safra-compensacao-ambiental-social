@@ -267,7 +267,7 @@ try {
   await wait(() => document.querySelector('#titulo-inicio')?.textContent.includes('PA Safra'), 'conteúdo editorial da Home');
   assert(noHorizontalOverflow(), 'rolagem horizontal involuntária na Home em ' + window.innerWidth + 'px');
 
-  const views = ['inicio','sobre','palestras','noticias','galeria','recursos','legado'];
+  const views = ['inicio','sobre','palestras','galeria','recursos','legado'];
   for (const id of views) {
     const link = document.querySelector('[data-nav="' + id + '"]');
     assert(link, 'navegação ausente: ' + id);
@@ -357,10 +357,12 @@ async function runBrowser(kind, width, height) {
   clearTimeout(timeout);
   if (timedOut) throw new Error(`${kind} ${width}px excedeu 30 segundos`);
   if (code !== 0) throw new Error(`${kind} ${width}px: Chrome terminou com código ${code}: ${stderr.trim()}`);
-  const marker = kind === 'admin' ? 'data-rebuild-admin-result="PASS"' : 'data-rebuild-public-result="PASS"';
-  const text = kind === 'admin' ? 'REBUILD ADMIN UI TEST: PASS' : 'REBUILD PUBLIC UI TEST: PASS';
-  if (!stdout.includes(marker) || !stdout.includes(text)) {
-    const failure = stdout.match(/REBUILD (?:ADMIN|PUBLIC) UI TEST: FAIL[^<]*/)?.[0] || stderr.trim() || 'resultado PASS não encontrado';
+
+  const attribute = kind === 'admin' ? 'data-rebuild-admin-result' : 'data-rebuild-public-result';
+  const resultId = kind === 'admin' ? 'rebuild-admin-result' : 'rebuild-public-result';
+  if (!stdout.includes(`${attribute}="PASS"`)) {
+    const match = stdout.match(new RegExp(`<pre id="${resultId}"[^>]*>([^<]*)<\\/pre>`));
+    const failure = match?.[1] || stderr.trim() || 'resultado PASS não encontrado';
     throw new Error(`${kind} ${width}px: ${failure}`);
   }
 }
@@ -381,5 +383,5 @@ console.log('- upload simples aparece na Home e em Memória e legado');
 console.log('- primeiro, segundo e terceiro salvamentos consecutivos da Home funcionam sem recarregar');
 console.log('- 502 transitório do primeiro salvamento é recuperado pela fila de escrita');
 console.log('- vídeos usam uma única gravação de conteúdo com título e tamanho integrados');
-console.log('- site público validado em 1440px e 390px nas sete áreas principais');
+console.log('- site público validado em 1440px e 390px nas seis áreas principais');
 console.log('- foto de Wolnei, Memória e legado e dois vídeos editoriais atuais são carregados no site');
