@@ -55,6 +55,12 @@ assert(!adminJs.includes('data-layout-preview') && !adminJs.includes('data-layou
 assert(pageActions.includes("form.id !== 'home-form'") && pageActions.includes('saveSelected'), 'Salvar da Home não integra a disposição da capa');
 assert(pageActions.includes('applyPreviewParams'), 'Pré-visualizar único da Home não inclui a disposição selecionada');
 assert(pageActions.includes('requestSubmit'), 'fluxo da Home não retoma o salvamento normal após persistir layout');
+
+const reenableIndex = pageActions.indexOf('submitter.disabled = false');
+const requestSubmitIndex = pageActions.indexOf('form.requestSubmit');
+assert(reenableIndex >= 0 && requestSubmitIndex > reenableIndex, 'botão Salvar precisa ser reabilitado antes de requestSubmit para não travar a Home');
+assert(pageActions.includes("submitter.textContent = originalText"), 'rótulo do botão Salvar deve ser restaurado antes de retomar o submit');
+
 assert(writeQueue.includes("'/api/admin/layout'"), 'layout não participa da fila serial de gravação editorial');
 assert(!adminJs.includes('about_hero') && !adminJs.includes('legacy_hero'), 'admin ainda contém controles de layout das páginas internas');
 assert(!adminJs.toLowerCase().includes('dragstart'), 'drag-and-drop livre não pode ser habilitado');
@@ -64,6 +70,7 @@ assert(viteConfig.includes('/layout-assist.js') && viteConfig.includes('/admin/l
 console.log('LAYOUT ASSIST TEST: PASS');
 console.log('- somente text-left/image-left são aceitos para a Home');
 console.log('- disposição da capa é salva pelo mesmo botão Salvar da Página inicial');
+console.log('- botão Salvar é reabilitado antes de retomar o submit normal da Home');
 console.log('- editor de disposição não possui botões próprios duplicados');
 console.log('- Pré-visualizar único inclui a disposição atualmente selecionada');
 console.log('- layout participa da fila serial de gravações do Admin');
