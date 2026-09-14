@@ -94,20 +94,30 @@ async function persistHomeLayoutBeforePageSave(event) {
 
   try {
     await api.saveSelected({ silent: false });
-    homeSubmitBypass = true;
-    form.requestSubmit(submitter || undefined);
-  } catch {
+
+    // requestSubmit não deve receber um botão desabilitado. O fluxo anterior
+    // mantinha o submitter disabled aqui, então o navegador não retomava o
+    // submit normal da Página inicial e o botão ficava travado após o clique.
     if (submitter) {
       submitter.disabled = false;
       submitter.textContent = originalText;
     }
+
+    homeSubmitBypass = true;
+    form.requestSubmit(submitter || undefined);
+  } catch (error) {
+    if (submitter) {
+      submitter.disabled = false;
+      submitter.textContent = originalText;
+    }
+    throw error;
   } finally {
     homeSubmitBypass = false;
   }
 }
 
 document.addEventListener('submit', (event) => {
-  void persistHomeLayoutBeforePageSave(event);
+  void persistHomeLayoutBeforePageSave(event).catch(() => {});
 }, true);
 
 let scheduled = false;
