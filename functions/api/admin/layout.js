@@ -18,6 +18,8 @@ const json = (data, status = 200) => new Response(JSON.stringify(data), {
   headers: {
     'content-type': 'application/json; charset=utf-8',
     'cache-control': 'no-store, max-age=0',
+    pragma: 'no-cache',
+    expires: '0',
   },
 });
 
@@ -135,13 +137,17 @@ function fromBase64Utf8(value) {
 }
 
 async function githubRequest(path, token, init = {}) {
-  return fetch(`https://api.github.com/repos/${REPOSITORY}${path}`, {
+  const url = new URL(`https://api.github.com/repos/${REPOSITORY}${path}`);
+  url.searchParams.set('_pa_fresh', `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  return fetch(url.toString(), {
     ...init,
     headers: {
       accept: 'application/vnd.github+json',
       authorization: `Bearer ${token}`,
       'x-github-api-version': '2026-03-10',
-      'user-agent': 'pa-safra-native-admin-layout/1.0',
+      'user-agent': 'pa-safra-native-admin-layout/1.1',
+      'cache-control': 'no-cache, no-store, max-age=0',
+      pragma: 'no-cache',
       ...(init.headers || {}),
     },
   });
@@ -162,7 +168,7 @@ export async function onRequestGet({ request, env }) {
   if (!auth.ok) return json({ ok: false, error: auth.error }, auth.status);
   try {
     const current = await readCurrent(auth);
-    return json({ ok: true, data: current.data, branch: auth.branch, user: auth.user });
+    return json({ ok: true, data: current.data, branch: auth.branch, user: auth.user, sha: current.sha });
   } catch (error) {
     return json({ ok: false, error: error.message || 'Falha ao carregar a disposição.' }, 502);
   }
