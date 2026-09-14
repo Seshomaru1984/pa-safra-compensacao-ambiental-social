@@ -243,6 +243,12 @@ async function publish(resource, data) {
   return result;
 }
 
+async function publishTitleStyles(keys) {
+  const api = window.PASafraTitleStyles;
+  if (!api || typeof api.saveKeys !== 'function') return null;
+  return api.saveKeys(keys, { silent: true });
+}
+
 async function withButton(button, work, successMessage) {
   const original = button.textContent;
   button.disabled = true;
@@ -278,7 +284,7 @@ function renderHome() {
   card.appendChild(grid);
   form.appendChild(card);
   formActions(form, 'save-home');
-  form.addEventListener('submit', saveHome, { once: true });
+  form.addEventListener('submit', saveHome);
 }
 
 async function saveHome(event) {
@@ -298,7 +304,11 @@ async function saveHome(event) {
   next.home.intro_title = $('#home-intro-title').value.trim();
   next.home.intro_text = richValue('home-intro-text');
   const button = $('#save-home');
-  await withButton(button, async () => { await publish('site', next); state.site = next; renderHome(); }, 'Página inicial enviada para publicação.');
+  await withButton(button, async () => {
+    await Promise.all([publish('site', next), publishTitleStyles(['home_hero', 'home_intro'])]);
+    state.site = next;
+    renderHome();
+  }, 'Página inicial enviada para publicação.');
 }
 
 function renderAbout() {
@@ -312,7 +322,7 @@ function renderAbout() {
   card.appendChild(grid);
   form.appendChild(card);
   formActions(form, 'save-about');
-  form.addEventListener('submit', saveAbout, { once: true });
+  form.addEventListener('submit', saveAbout);
 }
 
 async function saveAbout(event) {
@@ -323,7 +333,11 @@ async function saveAbout(event) {
   next.about.summary = richValue('about-summary');
   next.about.body = richValue('about-body-editor');
   const button = $('#save-about');
-  await withButton(button, async () => { await publish('site', next); state.site = next; renderAbout(); }, 'Texto institucional enviado para publicação.');
+  await withButton(button, async () => {
+    await Promise.all([publish('site', next), publishTitleStyles(['about_hero'])]);
+    state.site = next;
+    renderAbout();
+  }, 'Texto institucional enviado para publicação.');
 }
 
 function highlightCard(item = {}, index = 0) {
@@ -464,7 +478,7 @@ function renderLegacy() {
   fieldInput(grid, 'Texto do botão', 'legacy-source-label', legacy.source_link_label || '', { maxlength: 180 });
   fieldInput(grid, 'Nota de validação', 'legacy-validation-note', legacy.validation_note || '', { full: true, multiline: true, rows: 4, maxlength: 5000 });
   card.appendChild(grid); form.appendChild(card); formActions(form, 'save-legacy');
-  form.addEventListener('submit', saveLegacy, { once: true });
+  form.addEventListener('submit', saveLegacy);
 }
 
 async function saveLegacy(event) {
@@ -478,7 +492,11 @@ async function saveLegacy(event) {
     source_link_label: $('#legacy-source-label').value.trim(), validation_note: $('#legacy-validation-note').value.trim(),
   };
   const button = $('#save-legacy');
-  await withButton(button, async () => { await publish('site', next); state.site = next; renderLegacy(); }, 'Memória e legado enviados para publicação.');
+  await withButton(button, async () => {
+    await Promise.all([publish('site', next), publishTitleStyles(['legacy_hero'])]);
+    state.site = next;
+    renderLegacy();
+  }, 'Memória e legado enviados para publicação.');
 }
 
 function renderAppearance() {
@@ -493,7 +511,7 @@ function renderAppearance() {
   richField(grid, 'Homenagem do rodapé', 'appearance-dedication', state.site.footer?.dedication || '', { full: true });
   richField(grid, 'Nota institucional', 'appearance-note', state.site.footer?.institutional_note || '', { full: true });
   card.appendChild(grid); form.appendChild(card); formActions(form, 'save-appearance');
-  form.addEventListener('submit', saveAppearance, { once: true });
+  form.addEventListener('submit', saveAppearance);
 }
 
 async function saveAppearance(event) {
@@ -527,7 +545,11 @@ async function saveVideos() {
     description: $('[data-role="description"]', card).innerHTML.trim(), published: $('[data-role="published"]', card).checked,
   }));
   if (next.some((item) => !item.title || !item.youtube_url)) return showMessage('Preencha título e link em todas as palestras.', 'error');
-  await withButton($('#save-videos'), async () => { await publish('videos', next); state.videos = next; renderLists(); }, 'Palestras enviadas para publicação.');
+  await withButton($('#save-videos'), async () => {
+    await Promise.all([publish('videos', next), publishTitleStyles(['lectures_hero'])]);
+    state.videos = next;
+    renderLists();
+  }, 'Palestras enviadas para publicação.');
 }
 
 async function saveGallery() {
@@ -537,7 +559,11 @@ async function saveGallery() {
     published: $('[data-role="published"]', card).checked,
   }));
   if (next.some((item) => !item.image)) return showMessage('Informe o arquivo de todas as imagens.', 'error');
-  await withButton($('#save-gallery'), async () => { await publish('gallery', next); state.gallery = next; renderLists(); }, 'Galeria enviada para publicação.');
+  await withButton($('#save-gallery'), async () => {
+    await Promise.all([publish('gallery', next), publishTitleStyles(['gallery_hero'])]);
+    state.gallery = next;
+    renderLists();
+  }, 'Galeria enviada para publicação.');
 }
 
 async function saveLinks() {
@@ -553,7 +579,11 @@ async function saveLinks() {
     })),
   };
   if (next.official.some((item) => !item.title || !item.url) || next.sources.some((item) => !item.label || !item.url)) return showMessage('Preencha nome e endereço de todos os links.', 'error');
-  await withButton($('#save-links'), async () => { await publish('links', next); state.links = next; renderLists(); }, 'Links úteis enviados para publicação.');
+  await withButton($('#save-links'), async () => {
+    await Promise.all([publish('links', next), publishTitleStyles(['resources_hero'])]);
+    state.links = next;
+    renderLists();
+  }, 'Links úteis enviados para publicação.');
 }
 
 async function savePages() {
@@ -564,7 +594,11 @@ async function savePages() {
     published: $('[data-role="published"]', card).checked,
   }));
   if (next.some((item) => !item.slug || !item.nav_label || !item.title)) return showMessage('Preencha identificador, nome no menu e título de todas as páginas.', 'error');
-  await withButton($('#save-pages'), async () => { await publish('pages', next); state.pages = next; renderLists(); }, 'Páginas extras enviadas para publicação.');
+  await withButton($('#save-pages'), async () => {
+    await Promise.all([publish('pages', next), publishTitleStyles(['extra_pages'])]);
+    state.pages = next;
+    renderLists();
+  }, 'Páginas extras enviadas para publicação.');
 }
 
 async function loadEditableContent() {
