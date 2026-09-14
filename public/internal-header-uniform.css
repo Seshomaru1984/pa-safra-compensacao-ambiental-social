@@ -1,12 +1,12 @@
-/* PA-V001-A28 R2 — cabeçalho interno realmente padronizado.
+/* PA-V001-A30 — cabeçalhos internos compactos e proporcionais.
    A Home permanece fora deste escopo.
-   A moldura de mídia é uniforme, mas a proporção original da imagem é preservada. */
+   A proporção original das imagens é preservada, sem recorte ou distorção. */
 
 :root {
   --pa-internal-header-bg-start: #173f35;
   --pa-internal-header-bg-end: #285f52;
-  --pa-internal-header-height: 300px;
-  --pa-internal-header-image-width: 460px;
+  --pa-internal-header-height: 240px;
+  --pa-internal-header-image-width: 500px;
   --pa-internal-header-image-height: 220px;
 }
 
@@ -17,7 +17,7 @@
 [data-view="legado"] > .page-hero,
 #cms-pages-root [data-view] > .page-hero {
   min-height: var(--pa-internal-header-height) !important;
-  padding: 42px 0 !important;
+  padding: 30px 0 !important;
   display: flex;
   align-items: center;
   color: var(--white);
@@ -36,8 +36,8 @@
 
 [data-view="sobre"] .page-hero-grid,
 [data-view="legado"] .legacy-grid {
-  grid-template-columns: minmax(0, 1.1fr) minmax(360px, .9fr);
-  gap: 52px;
+  grid-template-columns: minmax(0, 1.08fr) minmax(340px, .92fr);
+  gap: 36px;
   align-items: center;
 }
 
@@ -47,15 +47,17 @@
 }
 
 [data-view="sobre"] .page-hero-grid > img {
+  display: block;
   width: min(100%, var(--pa-internal-header-image-width));
-  height: var(--pa-internal-header-image-height);
-  max-height: none;
+  height: auto;
+  max-height: var(--pa-internal-header-image-height);
   justify-self: end;
+  align-self: center;
   object-fit: contain;
   object-position: center;
-  background: rgba(8, 20, 17, .18);
-  border-radius: var(--radius-md);
-  box-shadow: 0 18px 50px rgba(0,0,0,.22);
+  background: transparent;
+  border-radius: 16px;
+  box-shadow: 0 12px 30px rgba(0,0,0,.16);
 }
 
 [data-view="legado"] .legacy-grid h1 {
@@ -69,15 +71,16 @@
   justify-self: end;
   align-self: center;
   overflow: hidden;
-  border-radius: var(--radius-md);
-  background: rgba(8, 20, 17, .18);
-  box-shadow: 0 18px 50px rgba(0,0,0,.22);
+  border-radius: 16px;
+  background: transparent;
+  box-shadow: 0 12px 30px rgba(0,0,0,.16);
 }
 
 [data-view="legado"] .legacy-photo img {
+  display: block;
   width: 100%;
-  height: 186px;
-  max-height: none;
+  height: auto;
+  max-height: 205px;
   object-fit: contain;
   object-position: center;
 }
@@ -88,14 +91,14 @@
 [data-view="recursos"] > .page-hero p:not(.eyebrow),
 [data-view="legado"] > .page-hero p:not(.eyebrow),
 #cms-pages-root [data-view] > .page-hero p:not(.eyebrow) {
-  max-width: 760px;
+  max-width: 720px;
 }
 
 @media (max-width: 980px) {
   :root {
     --pa-internal-header-height: auto;
     --pa-internal-header-image-width: 520px;
-    --pa-internal-header-image-height: 220px;
+    --pa-internal-header-image-height: 240px;
   }
 
   [data-view="sobre"] > .page-hero,
@@ -105,13 +108,13 @@
   [data-view="legado"] > .page-hero,
   #cms-pages-root [data-view] > .page-hero {
     min-height: 0 !important;
-    padding: 46px 0 !important;
+    padding: 36px 0 !important;
   }
 
   [data-view="sobre"] .page-hero-grid,
   [data-view="legado"] .legacy-grid {
     grid-template-columns: 1fr;
-    gap: 26px;
+    gap: 22px;
   }
 
   [data-view="sobre"] .page-hero-grid > img,
@@ -122,6 +125,21 @@
   }
 
   [data-view="legado"] .legacy-photo img {
-    height: var(--pa-internal-header-image-height);
+    max-height: var(--pa-internal-header-image-height);
+  }
+}
+
+@media (max-width: 620px) {
+  :root {
+    --pa-internal-header-image-height: 220px;
+  }
+
+  [data-view="sobre"] > .page-hero,
+  [data-view="palestras"] > .page-hero,
+  [data-view="galeria"] > .page-hero,
+  [data-view="recursos"] > .page-hero,
+  [data-view="legado"] > .page-hero,
+  #cms-pages-root [data-view] > .page-hero {
+    padding: 30px 0 !important;
   }
 }
