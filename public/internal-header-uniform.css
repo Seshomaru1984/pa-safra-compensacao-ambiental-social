@@ -1,13 +1,11 @@
-/* PA-V001-A30 — cabeçalhos internos compactos e proporcionais.
+/* PA-V001-A30 — cabeçalhos internos sem mídia e visualmente padronizados.
    A Home permanece fora deste escopo.
-   A proporção original das imagens é preservada, sem recorte ou distorção. */
+   Imagens não ocupam mais a área de título; a foto histórica do legado é exibida no corpo. */
 
 :root {
   --pa-internal-header-bg-start: #173f35;
   --pa-internal-header-bg-end: #285f52;
-  --pa-internal-header-height: 240px;
-  --pa-internal-header-image-width: 500px;
-  --pa-internal-header-image-height: 220px;
+  --pa-internal-header-height: 184px;
 }
 
 [data-view="sobre"] > .page-hero,
@@ -17,7 +15,7 @@
 [data-view="legado"] > .page-hero,
 #cms-pages-root [data-view] > .page-hero {
   min-height: var(--pa-internal-header-height) !important;
-  padding: 30px 0 !important;
+  padding: 26px 0 !important;
   display: flex;
   align-items: center;
   color: var(--white);
@@ -34,55 +32,38 @@
   margin-inline: auto;
 }
 
+/* Todos os cabeçalhos internos passam a ter uma única coluna de texto. */
 [data-view="sobre"] .page-hero-grid,
-[data-view="legado"] .legacy-grid {
-  grid-template-columns: minmax(0, 1.08fr) minmax(340px, .92fr);
-  gap: 36px;
-  align-items: center;
+[data-view="legado"] .legacy-grid,
+#cms-pages-root [data-view] .page-hero-grid {
+  display: block !important;
+  grid-template-columns: 1fr !important;
+  gap: 0 !important;
 }
 
 [data-view="sobre"] .page-hero-grid > div,
-[data-view="legado"] .legacy-grid > div {
-  align-self: center;
+[data-view="legado"] .legacy-grid > div,
+#cms-pages-root [data-view] .page-hero-grid > div {
+  max-width: 900px;
+  grid-column: auto !important;
+  grid-row: auto !important;
 }
 
-[data-view="sobre"] .page-hero-grid > img {
-  display: block;
-  width: min(100%, var(--pa-internal-header-image-width));
-  height: auto;
-  max-height: var(--pa-internal-header-image-height);
-  justify-self: end;
-  align-self: center;
-  object-fit: contain;
-  object-position: center;
-  background: transparent;
-  border-radius: 16px;
-  box-shadow: 0 12px 30px rgba(0,0,0,.16);
+/* Retira qualquer mídia da faixa de título. Mantemos os nós no DOM para compatibilidade editorial. */
+[data-view="sobre"] .page-hero-grid > img,
+[data-view="legado"] .legacy-grid > .legacy-photo,
+#cms-pages-root [data-view] .page-hero-grid > img,
+#cms-pages-root [data-view] .page-hero .legacy-photo {
+  display: none !important;
 }
 
-[data-view="legado"] .legacy-grid h1 {
-  margin-bottom: 14px !important;
-}
-
-[data-view="legado"] .legacy-photo {
-  width: min(100%, var(--pa-internal-header-image-width));
-  max-width: var(--pa-internal-header-image-width);
-  margin: 0;
-  justify-self: end;
-  align-self: center;
-  overflow: hidden;
-  border-radius: 16px;
-  background: transparent;
-  box-shadow: 0 12px 30px rgba(0,0,0,.16);
-}
-
-[data-view="legado"] .legacy-photo img {
-  display: block;
-  width: 100%;
-  height: auto;
-  max-height: 205px;
-  object-fit: contain;
-  object-position: center;
+[data-view="sobre"] > .page-hero h1,
+[data-view="palestras"] > .page-hero h1,
+[data-view="galeria"] > .page-hero h1,
+[data-view="recursos"] > .page-hero h1,
+[data-view="legado"] > .page-hero h1,
+#cms-pages-root [data-view] > .page-hero h1 {
+  margin-bottom: 8px !important;
 }
 
 [data-view="sobre"] > .page-hero p:not(.eyebrow),
@@ -91,15 +72,54 @@
 [data-view="recursos"] > .page-hero p:not(.eyebrow),
 [data-view="legado"] > .page-hero p:not(.eyebrow),
 #cms-pages-root [data-view] > .page-hero p:not(.eyebrow) {
-  max-width: 720px;
+  max-width: 760px;
+  margin-bottom: 0;
+}
+
+/* Foto histórica: sai do cabeçalho e vira elemento editorial do corpo do texto. */
+[data-view="legado"] .legacy-content .legacy-inline-photo {
+  float: right;
+  width: min(44%, 390px);
+  margin: 4px 0 26px 34px;
+  overflow: hidden;
+  border: 1px solid rgba(16, 50, 42, .12);
+  border-radius: 16px;
+  background: #f4f1e9;
+  box-shadow: 0 16px 38px rgba(20, 44, 37, .14);
+}
+
+[data-view="legado"] .legacy-content .legacy-inline-photo img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 360px;
+  object-fit: contain;
+  object-position: center;
+  background: #ece7dc;
+  filter: contrast(1.03);
+}
+
+[data-view="legado"] .legacy-content .legacy-inline-photo figcaption {
+  padding: 10px 13px 11px;
+  background: #f4f1e9;
+  color: var(--ink-600);
+  font-size: .76rem;
+  line-height: 1.45;
+}
+
+[data-view="legado"] .legacy-content .legacy-inline-photo figcaption a {
+  color: var(--forest-800);
+  font-weight: 750;
+}
+
+[data-view="legado"] .legacy-content .prose-card.emphasized::after {
+  content: "";
+  display: block;
+  clear: both;
 }
 
 @media (max-width: 980px) {
-  :root {
-    --pa-internal-header-height: auto;
-    --pa-internal-header-image-width: 520px;
-    --pa-internal-header-image-height: 240px;
-  }
+  :root { --pa-internal-header-height: 168px; }
 
   [data-view="sobre"] > .page-hero,
   [data-view="palestras"] > .page-hero,
@@ -107,32 +127,18 @@
   [data-view="recursos"] > .page-hero,
   [data-view="legado"] > .page-hero,
   #cms-pages-root [data-view] > .page-hero {
-    min-height: 0 !important;
-    padding: 36px 0 !important;
+    min-height: var(--pa-internal-header-height) !important;
+    padding: 24px 0 !important;
   }
 
-  [data-view="sobre"] .page-hero-grid,
-  [data-view="legado"] .legacy-grid {
-    grid-template-columns: 1fr;
-    gap: 22px;
-  }
-
-  [data-view="sobre"] .page-hero-grid > img,
-  [data-view="legado"] .legacy-photo {
-    width: min(100%, var(--pa-internal-header-image-width));
-    max-width: var(--pa-internal-header-image-width);
-    justify-self: start;
-  }
-
-  [data-view="legado"] .legacy-photo img {
-    max-height: var(--pa-internal-header-image-height);
+  [data-view="legado"] .legacy-content .legacy-inline-photo {
+    width: min(46%, 340px);
+    margin-left: 26px;
   }
 }
 
-@media (max-width: 620px) {
-  :root {
-    --pa-internal-header-image-height: 220px;
-  }
+@media (max-width: 700px) {
+  :root { --pa-internal-header-height: 150px; }
 
   [data-view="sobre"] > .page-hero,
   [data-view="palestras"] > .page-hero,
@@ -140,6 +146,17 @@
   [data-view="recursos"] > .page-hero,
   [data-view="legado"] > .page-hero,
   #cms-pages-root [data-view] > .page-hero {
-    padding: 30px 0 !important;
+    min-height: var(--pa-internal-header-height) !important;
+    padding: 22px 0 !important;
+  }
+
+  [data-view="legado"] .legacy-content .legacy-inline-photo {
+    float: none;
+    width: min(100%, 520px);
+    margin: 4px auto 26px;
+  }
+
+  [data-view="legado"] .legacy-content .legacy-inline-photo img {
+    max-height: 420px;
   }
 }
