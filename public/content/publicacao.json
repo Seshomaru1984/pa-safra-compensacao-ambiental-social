@@ -4,10 +4,10 @@
   "checks": {
     "redacao_juridica_confirmada": false,
     "creditos_imagens_confirmados": false,
-    "dados_contato_confirmados": false,
+    "dados_contato_confirmados": true,
     "afirmacoes_historicas_confirmadas": false,
     "revisao_visual_confirmada": false,
-    "pages_cms_testado": false
+    "admin_nativo_validado": true
   },
-  "notes": "A publicacao em producao deve permanecer bloqueada enquanto qualquer validacao obrigatoria estiver pendente."
+  "notes": "Os dados de contato foram confirmados pelos responsáveis e incorporados ao conteúdo editorial. A publicação em produção deve permanecer bloqueada enquanto qualquer outra validação obrigatória estiver pendente. O painel administrativo nativo permanece validado tecnicamente."
 }

@@ -5,6 +5,9 @@ dist/
 Thumbs.db
 npm-debug.log*
 
+# Estado local do Wrangler/Miniflare. Nunca versionar dados locais de bindings.
+.wrangler/
+
 # Artefatos locais de build e pacotes para teste
 _PACOTES-LOCAL/
 

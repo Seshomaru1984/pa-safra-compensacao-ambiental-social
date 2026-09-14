@@ -17,6 +17,9 @@ const required = [
   'index.html',
   '_headers',
   'robots.txt',
+  'admin/index.html',
+  'admin/admin.css',
+  'admin/admin.js',
   'content/publicacao.json',
   'content/site.json',
   'content/noticias.json',
@@ -58,7 +61,7 @@ function validateImage(rel) {
     const declaredLength = data.readUInt32LE(4) + 8;
     if (declaredLength !== data.length) errors.push(`WebP truncado/inconsistente no build: ${rel}`);
   } else if (/\.jpe?g$/i.test(rel)) {
-    if (!(data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff)) errors.push(`Assinatura JPEG invalida no build: ${rel}`);
+    if (!(data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff)) errors.push(`Assinatura JPEG invalida: ${rel}`);
     if (!(data[data.length - 2] === 0xff && data[data.length - 1] === 0xd9)) errors.push(`JPEG truncado/inconsistente no build: ${rel}`);
   }
 }
@@ -95,6 +98,22 @@ if (fs.existsSync(indexPath)) {
   if (!/(?:src|href)="[^"]*\/assets\//.test(html)) errors.push('index.html gerado nao referencia assets compilados pelo Vite.');
 }
 
+const adminPath = path.join(dist, 'admin/index.html');
+if (fs.existsSync(adminPath)) {
+  const html = fs.readFileSync(adminPath, 'utf8');
+  for (const token of ['Administração de conteúdo', 'Entrar no painel', 'Página inicial', 'Palestras e vídeos', '/admin/admin.js']) {
+    if (!html.includes(token)) errors.push(`Admin nativo incompleto no build: ${token}`);
+  }
+}
+
+const adminJsPath = path.join(dist, 'admin/admin.js');
+if (fs.existsSync(adminJsPath)) {
+  const js = fs.readFileSync(adminJsPath, 'utf8');
+  for (const token of ['/api/admin/login', '/api/admin/logout', '/api/admin/status', '/api/admin/content']) {
+    if (!js.includes(token)) errors.push(`Integração do admin ausente no build: ${token}`);
+  }
+}
+
 const forbiddenTokens = ['contato@exemplo.com', "url('https://unsplash.com')", 'url("https://unsplash.com")'];
 
 function scanTextTree(dir) {
@@ -129,6 +148,8 @@ if (fs.existsSync(headersPath)) {
     'Referrer-Policy: strict-origin-when-cross-origin',
     'Permissions-Policy:',
     'X-Frame-Options: DENY',
+    '/admin/*',
+    'Cache-Control: private, no-store, max-age=0',
     '/content/*',
     'Cache-Control: public, max-age=0, must-revalidate',
     '/assets/*',
@@ -144,6 +165,8 @@ if (fs.existsSync(publicationPath)) {
     publication = JSON.parse(fs.readFileSync(publicationPath, 'utf8'));
     if (publication.production_branch !== 'main') errors.push('content/publicacao.json no build deve manter production_branch como main.');
     if (!publication.checks || typeof publication.checks !== 'object') errors.push('content/publicacao.json no build deve conter o objeto checks.');
+    if ('pages_cms_testado' in (publication.checks || {})) errors.push('Gate legado pages_cms_testado não deve existir no build.');
+    if (typeof publication.checks?.admin_nativo_validado !== 'boolean') errors.push('admin_nativo_validado deve ser booleano no build.');
   } catch {
     // JSON ja e validado acima.
   }

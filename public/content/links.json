@@ -1,0 +1,52 @@
+{
+  "official": [
+    {
+      "acronym": "SEMA-MT",
+      "title": "Secretaria de Estado de Meio Ambiente de Mato Grosso",
+      "description": "Portal estadual de informações, serviços e políticas ambientais.",
+      "url": "https://www.sema.mt.gov.br/",
+      "published": true
+    },
+    {
+      "acronym": "MPMT",
+      "title": "Ministério Público do Estado de Mato Grosso",
+      "description": "Portal institucional do Ministério Público de Mato Grosso.",
+      "url": "https://mpmt.mp.br/",
+      "published": true
+    },
+    {
+      "acronym": "IBAMA",
+      "title": "Instituto Brasileiro do Meio Ambiente e dos Recursos Naturais Renováveis",
+      "description": "Informações federais sobre educação ambiental, fiscalização, recuperação e reparação de danos.",
+      "url": "https://www.gov.br/ibama/pt-br",
+      "published": true
+    }
+  ],
+  "sources": [
+    {
+      "label": "História de Campinápolis — Câmara Municipal",
+      "url": "https://www.campinapolis.mt.leg.br/institucional/historia",
+      "published": true
+    },
+    {
+      "label": "Nova Xavantina — IBGE",
+      "url": "https://www.ibge.gov.br/cidades-e-estados/mt/nova-xavantina.html",
+      "published": true
+    },
+    {
+      "label": "Campinápolis — IBGE",
+      "url": "https://www.ibge.gov.br/cidades-e-estados/mt/campinapolis.html",
+      "published": true
+    },
+    {
+      "label": "Educação Ambiental — Ibama",
+      "url": "https://www.gov.br/ibama/pt-br/assuntos/educacao-ambiental/educacao-ambiental-no-ibama",
+      "published": true
+    },
+    {
+      "label": "Reparação de danos — Ibama",
+      "url": "https://www.gov.br/ibama/pt-br/assuntos/processo-sancionador-ambiental/reparacao-de-danos",
+      "published": true
+    }
+  ]
+}

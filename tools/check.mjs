@@ -21,77 +21,47 @@ const sourceParts = [
 ];
 
 const required = [
-  'index.html',
-  'styles.css',
-  'app.js',
-  '.pages.yml',
-  'public/_headers',
-  'tools/prepublish.mjs',
-  'tools/smoke-build.mjs',
-  'tools/prepare-requester-images.mjs',
-  'public/content/publicacao.json',
-  'public/content/site.json',
-  'public/content/noticias.json',
-  'public/content/videos.json',
-  'public/content/paginas.json',
-  'public/content/destaques.json',
-  'public/content/galeria.json',
-  'public/assets/icons/pa-safra.svg',
-  ...requiredImages,
-  ...sourceParts,
+  'index.html', 'styles.css', 'app.js', 'public/_headers',
+  'public/admin/index.html', 'public/admin/admin.css', 'public/admin/admin.js',
+  'functions/api/admin/status.js', 'functions/api/admin/content.js',
+  'docs/ADR-0002-ADMIN-NATIVO.md', 'tools/admin-contract.mjs', 'tools/prepublish.mjs',
+  'tools/smoke-build.mjs', 'tools/prepare-requester-images.mjs',
+  'public/content/publicacao.json', 'public/content/site.json', 'public/content/noticias.json',
+  'public/content/videos.json', 'public/content/paginas.json', 'public/content/destaques.json',
+  'public/content/galeria.json', 'public/content/links.json', 'public/assets/icons/pa-safra.svg',
+  ...requiredImages, ...sourceParts,
 ];
 
 const contentJson = [
-  'public/content/publicacao.json',
-  'public/content/site.json',
-  'public/content/noticias.json',
-  'public/content/videos.json',
-  'public/content/paginas.json',
-  'public/content/destaques.json',
-  'public/content/galeria.json',
+  'public/content/publicacao.json', 'public/content/site.json', 'public/content/noticias.json',
+  'public/content/videos.json', 'public/content/paginas.json', 'public/content/destaques.json',
+  'public/content/galeria.json', 'public/content/links.json',
 ];
 
 const errors = [];
-for (const rel of required) {
-  if (!fs.existsSync(path.join(root, rel))) errors.push(`Arquivo ausente: ${rel}`);
-}
+for (const rel of required) if (!fs.existsSync(path.join(root, rel))) errors.push(`Arquivo ausente: ${rel}`);
 
 function validateImage(rel) {
   const full = path.join(root, rel);
   if (!fs.existsSync(full)) return;
   const data = fs.readFileSync(full);
-  if (data.length < 32) {
-    errors.push(`Imagem muito pequena ou corrompida: ${rel}`);
-    return;
-  }
-
+  if (data.length < 32) { errors.push(`Imagem muito pequena ou corrompida: ${rel}`); return; }
   if (/\.webp$/i.test(rel)) {
-    if (data.toString('ascii', 0, 4) !== 'RIFF' || data.toString('ascii', 8, 12) !== 'WEBP') {
-      errors.push(`Assinatura WebP invalida: ${rel}`);
-      return;
-    }
+    if (data.toString('ascii', 0, 4) !== 'RIFF' || data.toString('ascii', 8, 12) !== 'WEBP') { errors.push(`Assinatura WebP invalida: ${rel}`); return; }
     const declaredLength = data.readUInt32LE(4) + 8;
     if (declaredLength !== data.length) errors.push(`WebP truncado/inconsistente: ${rel}`);
   } else if (/\.jpe?g$/i.test(rel)) {
-    if (!(data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff)) {
-      errors.push(`Assinatura JPEG invalida: ${rel}`);
-    }
-    if (!(data[data.length - 2] === 0xff && data[data.length - 1] === 0xd9)) {
-      errors.push(`JPEG truncado/inconsistente: ${rel}`);
-    }
+    if (!(data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff)) errors.push(`Assinatura JPEG invalida: ${rel}`);
+    if (!(data[data.length - 2] === 0xff && data[data.length - 1] === 0xd9)) errors.push(`JPEG truncado/inconsistente: ${rel}`);
   }
 }
-
 requiredImages.forEach(validateImage);
 
 for (const rel of contentJson) {
   const full = path.join(root, rel);
   if (!fs.existsSync(full)) continue;
-  try {
-    JSON.parse(fs.readFileSync(full, 'utf8'));
-  } catch (error) {
-    errors.push(`JSON invalido em ${rel}: ${error.message}`);
-  }
+  try { JSON.parse(fs.readFileSync(full, 'utf8')); }
+  catch (error) { errors.push(`JSON invalido em ${rel}: ${error.message}`); }
 }
 
 const publicationPath = path.join(root, 'public/content/publicacao.json');
@@ -99,28 +69,22 @@ if (fs.existsSync(publicationPath)) {
   try {
     const publication = JSON.parse(fs.readFileSync(publicationPath, 'utf8'));
     if (publication.production_branch !== 'main') errors.push('publicacao.json deve manter production_branch como main.');
-    if (!publication.checks || typeof publication.checks !== 'object') {
-      errors.push('publicacao.json deve conter o objeto checks.');
-    } else {
-      for (const [key, value] of Object.entries(publication.checks)) {
-        if (typeof value !== 'boolean') errors.push(`Validacao de publicacao deve ser booleana: ${key}`);
-      }
+    if (!publication.checks || typeof publication.checks !== 'object') errors.push('publicacao.json deve conter o objeto checks.');
+    else {
+      for (const [key, value] of Object.entries(publication.checks)) if (typeof value !== 'boolean') errors.push(`Validacao de publicacao deve ser booleana: ${key}`);
+      if ('pages_cms_testado' in publication.checks) errors.push('Gate legado pages_cms_testado não deve permanecer.');
+      if (typeof publication.checks.admin_nativo_validado !== 'boolean') errors.push('admin_nativo_validado deve ser booleano.');
     }
-  } catch {
-    // Erro de JSON ja registrado acima.
-  }
+  } catch {}
 }
 
 const sitePath = path.join(root, 'public/content/site.json');
 if (fs.existsSync(sitePath)) {
   try {
     const site = JSON.parse(fs.readFileSync(sitePath, 'utf8'));
-    if (site?.hero?.image !== '/assets/img/solicitante-rio-cristalino.webp') {
-      errors.push('Imagem principal deve apontar para o WebP reconstruido e validado.');
-    }
-  } catch {
-    // Erro de JSON ja registrado acima.
-  }
+    if (site?.hero?.image !== '/assets/img/solicitante-rio-cristalino.webp') errors.push('Imagem principal deve apontar para o WebP reconstruido e validado.');
+    if (!site?.legacy?.body || !site?.legacy?.title) errors.push('Memória e legado deve estar representado em site.json.');
+  } catch {}
 }
 
 const galleryPath = path.join(root, 'public/content/galeria.json');
@@ -130,42 +94,42 @@ if (fs.existsSync(galleryPath)) {
     for (const image of ['/assets/img/solicitante-rio-cristalino.webp', '/assets/img/solicitante-cerrado.webp']) {
       if (!gallery.some((item) => item?.image === image)) errors.push(`Galeria nao referencia a imagem validada: ${image}`);
     }
-  } catch {
-    // Erro de JSON ja registrado acima.
-  }
+  } catch {}
+}
+
+const linksPath = path.join(root, 'public/content/links.json');
+if (fs.existsSync(linksPath)) {
+  try {
+    const links = JSON.parse(fs.readFileSync(linksPath, 'utf8'));
+    if (!Array.isArray(links.official) || !Array.isArray(links.sources)) errors.push('links.json deve conter listas official e sources.');
+    if (!links.official?.some((item) => item?.url === 'https://www.sema.mt.gov.br/')) errors.push('links.json perdeu referência SEMA-MT existente.');
+  } catch {}
 }
 
 const htmlPath = path.join(root, 'index.html');
 if (fs.existsSync(htmlPath)) {
   const html = fs.readFileSync(htmlPath, 'utf8');
   for (const token of [
-    'Projeto de Compensação Ambiental e Social - PA Safra',
-    'Sobre este site',
-    'Memória e legado',
-    'Notícias',
-    'Galeria',
-    'Links Úteis',
-    'Vila do Banco Safra',
-    'https://www.sema.mt.gov.br/',
-    'https://mpmt.mp.br/',
-    'https://www.gov.br/ibama/pt-br',
-    'id="cms-pages-root"',
-    'id="noticias-list"',
-    'id="videos-list"',
-    'id="destaques-list"',
-    'id="galeria-list"',
-    '<script type="module" src="app.js"></script>',
-  ]) {
-    if (!html.includes(token)) errors.push(`Conteudo obrigatorio ausente: ${token}`);
-  }
+    'Projeto de Compensação Ambiental e Social - PA Safra', 'Sobre este site', 'Memória e legado', 'Galeria', 'Links Úteis',
+    'Vila do Banco Safra', 'https://www.sema.mt.gov.br/', 'https://mpmt.mp.br/', 'https://www.gov.br/ibama/pt-br',
+    'id="cms-pages-root"', 'id="videos-list"', 'id="destaques-list"', 'id="galeria-list"', '<script type="module" src="app.js"></script>',
+  ]) if (!html.includes(token)) errors.push(`Conteudo obrigatorio ausente: ${token}`);
 }
 
 const appPath = path.join(root, 'app.js');
 if (fs.existsSync(appPath)) {
   const app = fs.readFileSync(appPath, 'utf8');
-  for (const token of ['/content/site.json', '/content/noticias.json', '/content/videos.json', '/content/paginas.json', '/content/destaques.json', '/content/galeria.json']) {
-    if (!app.includes(token)) errors.push(`Integracao CMS ausente em app.js: ${token}`);
-  }
+  for (const token of [
+    '/content/site.json', '/content/noticias.json', '/content/videos.json', '/content/paginas.json',
+    '/content/destaques.json', '/content/galeria.json', '/content/links.json', 'disableNewsModule', 'renderLinks',
+  ]) if (!app.includes(token)) errors.push(`Integracao de conteudo ausente em app.js: ${token}`);
+  if (/const baseViews = \[[^\]]*['"]noticias['"]/s.test(app)) errors.push('Notícias não pode permanecer como view pública ativa.');
+}
+
+const adminHtmlPath = path.join(root, 'public/admin/index.html');
+if (fs.existsSync(adminHtmlPath)) {
+  const adminHtml = fs.readFileSync(adminHtmlPath, 'utf8');
+  if (/data-tab=["']noticias["']/i.test(adminHtml)) errors.push('Notícias não pode existir como aba administrativa.');
 }
 
 const headersPath = path.join(root, 'public/_headers');
@@ -180,5 +144,4 @@ if (errors.length) {
   console.error(errors.join('\n'));
   process.exit(1);
 }
-
 console.log('RESULTADO: OK');

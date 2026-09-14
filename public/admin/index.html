@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Administração | PA Safra</title>
+  <link rel="stylesheet" href="/admin/admin.css">
+  <script src="/content-preview-bridge.js"></script>
+</head>
+<body>
+  <main class="admin-shell">
+    <header class="admin-header">
+      <div>
+        <p class="eyebrow">PA Safra</p>
+        <h1>Administração de conteúdo</h1>
+        <p class="subtitle">Atualize textos, imagens, links e páginas sem editar código.</p>
+      </div>
+      <div class="header-actions">
+        <a class="site-link" href="/" target="_blank" rel="noopener">Abrir site</a>
+        <button id="logout-button" class="site-link button-link" type="button" hidden>Sair</button>
+      </div>
+    </header>
+
+    <section id="login-panel" class="login-panel" aria-labelledby="login-title">
+      <div class="login-card">
+        <p class="eyebrow">Acesso administrativo</p>
+        <h2 id="login-title">Entrar no painel</h2>
+        <p class="login-help">Use o usuário e a senha definidos para a administração do PA Safra.</p>
+        <form id="login-form" class="login-form">
+          <label>Usuário<input id="login-user" name="username" autocomplete="username" maxlength="80" required></label>
+          <label>Senha<input id="login-password" name="password" type="password" autocomplete="current-password" maxlength="256" required></label>
+          <button id="login-button" class="button primary" type="submit">Entrar</button>
+        </form>
+        <p id="login-message" class="login-message" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <section id="admin-app" hidden>
+      <section class="status-card" aria-live="polite">
+        <span id="admin-status-dot" class="status-dot"></span>
+        <div>
+          <strong id="admin-status-title">Verificando acesso…</strong>
+          <p id="admin-status-message">Aguarde.</p>
+        </div>
+      </section>
+
+      <nav class="admin-tabs" aria-label="Áreas administrativas">
+        <button class="tab is-active" type="button" data-tab="inicio">Página inicial</button>
+        <button class="tab" type="button" data-tab="sobre">Sobre o Projeto</button>
+        <button class="tab" type="button" data-tab="destaques">Destaques</button>
+        <button class="tab" type="button" data-tab="videos">Palestras e vídeos</button>
+        <button class="tab" type="button" data-tab="galeria">Galeria</button>
+        <button class="tab" type="button" data-tab="links">Links úteis</button>
+        <button class="tab" type="button" data-tab="legado">Memória e legado</button>
+        <button class="tab" type="button" data-tab="paginas">Páginas extras</button>
+        <button class="tab" type="button" data-tab="aparencia">Aparência e rodapé</button>
+      </nav>
+
+      <section id="panel-inicio" class="panel is-active" data-panel="inicio">
+        <div class="panel-heading"><div><p class="eyebrow">Conteúdo principal</p><h2>Página inicial</h2><p>Título, apresentação, imagem principal e texto de abertura.</p></div></div>
+        <form id="home-form" class="editor-stack"></form>
+      </section>
+
+      <section id="panel-sobre" class="panel" data-panel="sobre" hidden>
+        <div class="panel-heading"><div><p class="eyebrow">Institucional</p><h2>Sobre o Projeto</h2><p>Edite o texto institucional mantendo a estrutura do site.</p></div></div>
+        <form id="about-form" class="editor-stack"></form>
+      </section>
+
+      <section id="panel-destaques" class="panel" data-panel="destaques" hidden>
+        <div class="panel-heading"><div><p class="eyebrow">Página inicial</p><h2>Destaques</h2><p>Cartões de acesso e eixos exibidos na página inicial.</p></div><button id="add-highlight" class="button secondary" type="button">+ Adicionar destaque</button></div>
+        <div id="highlights-editor" class="editor-list"></div>
+        <div class="form-actions align-end"><button id="save-highlights" class="button primary write-action" type="button" disabled>Salvar</button></div>
+      </section>
+
+      <section id="panel-videos" class="panel" data-panel="videos" hidden>
+        <div class="panel-heading"><div><p class="eyebrow">Educação ambiental</p><h2>Palestras e vídeos</h2><p>Adicione links do YouTube e descrições.</p></div><button id="add-video" class="button secondary" type="button">+ Adicionar palestra</button></div>
+        <div id="videos-editor" class="editor-list"></div>
+        <div class="form-actions align-end"><button id="save-videos" class="button primary write-action" type="button" disabled>Salvar</button></div>
+      </section>
+
+      <section id="panel-galeria" class="panel" data-panel="galeria" hidden>
+        <div class="panel-heading"><div><p class="eyebrow">Imagens</p><h2>Galeria</h2><p>Gerencie imagens, descrições acessíveis, legendas e créditos.</p></div><button id="add-gallery" class="button secondary" type="button">+ Adicionar imagem</button></div>
+        <div id="gallery-editor" class="editor-list"></div>
+        <div class="form-actions align-end"><button id="save-gallery" class="button primary write-action" type="button" disabled>Salvar</button></div>
+      </section>
+
+      <section id="panel-links" class="panel" data-panel="links" hidden>
+        <div class="panel-heading"><div><p class="eyebrow">Referências</p><h2>Links úteis</h2><p>Mantenha órgãos oficiais e fontes públicas consultadas.</p></div></div>
+        <div class="subsection-heading"><h3>Órgãos e serviços</h3><button id="add-official-link" class="button secondary" type="button">+ Adicionar link</button></div>
+        <div id="official-links-editor" class="editor-list"></div>
+        <div class="subsection-heading"><h3>Fontes públicas</h3><button id="add-source-link" class="button secondary" type="button">+ Adicionar fonte</button></div>
+        <div id="source-links-editor" class="editor-list"></div>
+        <div class="form-actions align-end"><button id="save-links" class="button primary write-action" type="button" disabled>Salvar</button></div>
+      </section>
+
+      <section id="panel-legado" class="panel" data-panel="legado" hidden>
+        <div class="panel-heading"><div><p class="eyebrow">Memória</p><h2>Memória e legado</h2><p>Os textos atuais foram preservados integralmente como ponto de partida.</p></div></div>
+        <form id="legacy-form" class="editor-stack"></form>
+      </section>
+
+      <section id="panel-paginas" class="panel" data-panel="paginas" hidden>
+        <div class="panel-heading"><div><p class="eyebrow">Conteúdo adicional</p><h2>Páginas extras</h2><p>Crie páginas complementares que aparecem no menu do portal.</p></div><button id="add-page" class="button secondary" type="button">+ Adicionar página</button></div>
+        <div id="pages-editor" class="editor-list"></div>
+        <div class="form-actions align-end"><button id="save-pages" class="button primary write-action" type="button" disabled>Salvar</button></div>
+      </section>
+
+      <section id="panel-aparencia" class="panel" data-panel="aparencia" hidden>
+        <div class="panel-heading"><div><p class="eyebrow">Identidade visual</p><h2>Aparência e rodapé</h2><p>Cores, identidade do portal e textos do rodapé.</p></div></div>
+        <form id="appearance-form" class="editor-stack"></form>
+      </section>
+    </section>
+
+    <div id="admin-message" class="toast" role="status" aria-live="polite" hidden></div>
+  </main>
+  <script src="/admin/write-queue.js"></script>
+  <script type="module" src="/admin/admin.js"></script>
+  <script type="module" src="/admin/layout-assist.js"></script>
+  <script type="module" src="/admin/title-style-assist.js"></script>
+  <script type="module" src="/admin/numeric-font-assist.js"></script>
+  <script type="module" src="/admin/page-actions.js"></script>
+  <script src="/admin/internal-layout-lock.js" defer></script>
+</body>
+</html>

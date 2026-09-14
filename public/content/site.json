@@ -15,19 +15,34 @@
   "home": {
     "intro_eyebrow": "Eixos do projeto",
     "intro_title": "Informação ambiental, conhecimento e acesso para a comunidade",
-    "intro_text": "O portal reúne informações institucionais, palestras, notícias, registros fotográficos, referências oficiais e outros conteúdos de interesse das comunidades atendidas pelo projeto e dos demais munícipes de Nova Xavantina."
+    "intro_text": "O portal reúne informações institucionais, palestras, registros fotográficos, referências oficiais e outros conteúdos de interesse das comunidades atendidas pelo projeto e dos demais munícipes de Nova Xavantina."
   },
   "about": {
     "title": "Sobre este site",
     "summary": "Finalidade, público e compromisso ambiental do projeto.",
     "body": "<p>Este site foi criado no âmbito do Termo de Ajustamento de Conduta (TAC) firmado entre o Espólio de Wolnei Divino Franco e o Ministério Público do Estado de Mato Grosso, como parte das medidas de compensação ambiental e social pela degradação ocorrida na região de Nova Xavantina/MT.</p><p>Nosso objetivo é centralizar informações, disponibilizar palestras gravadas e oferecer recursos úteis para a comunidade de Alvorada, Córrego do Jatobá, Vila do Banco Safra e demais munícipes de Nova Xavantina.</p><p>Acreditamos que a educação ambiental e o acesso à informação são ferramentas essenciais para prevenir novos danos, promover o desenvolvimento sustentável e fortalecer a cidadania.</p><p>A existência humana na Terra depende da preservação da natureza. Este site é uma contribuição para que possamos, juntos, construir um futuro mais equilibrado e consciente.</p>"
   },
+  "legacy": {
+    "eyebrow": "Memória e responsabilidade",
+    "title": "Um legado ligado à terra e à comunidade",
+    "body": "<p>Este projeto nasce da necessidade de reparar um dano ambiental, mas também do desejo de honrar a memória de Wolnei Divino Franco, que dedicou sua vida a esta terra e que, infelizmente, não pôde ver a conclusão deste trabalho.</p><p>Ele foi um dos primeiros advogados da região, participou da fundação da cidade de Campinápolis/MT — que derivou do município de Nova Xavantina/MT — e foi o primeiro advogado a trabalhar na legalização das terras da viúva Estephânia Brawn.</p><p>Em 1990, em Perdizes/MG, colaborou com o Ministério Público na elaboração de Termos de Ajustamento de Conduta (TACs), quando uma empresa suíça, que havia despejado amônia em um córrego da cidade, firmou um acordo para doar um laboratório de química para a Escola Estadual de Perdizes.</p>",
+    "closing_quote": "Que esta iniciativa sirva como um legado de responsabilidade ambiental e cuidado com a comunidade.",
+    "image": "/assets/uploads/1789405328979-b6ebde2c-wolnei-divino-franco.jpg",
+    "image_alt": "",
+    "image_credit": "",
+    "source_eyebrow": "Referência histórica pública",
+    "source_title": "Campinápolis",
+    "source_body": "A história oficial registra a origem em Vila Jatobá, a presença de área de 25 mil hectares pertencente à viúva Estephânia Brawn, a condição posterior de distrito de Nova Xavantina e a emancipação de Campinápolis em 1986.",
+    "source_url": "https://www.campinapolis.mt.leg.br/institucional/historia",
+    "source_link_label": "Consultar a Câmara Municipal ↗",
+    "validation_note": "Nota de desenvolvimento: informações biográficas específicas sobre a atuação profissional de Wolnei Divino Franco e o episódio de Perdizes/MG foram fornecidas pelos responsáveis pelo projeto e devem ser acompanhadas da documentação correspondente antes da publicação definitiva."
+  },
   "theme": {
     "primary": "#1f5949",
     "accent": "#b46d3f"
   },
   "footer": {
-    "institutional_note": "Iniciativa desenvolvida no âmbito do projeto de compensação ambiental e social relacionado ao TAC. A redação jurídica definitiva e os dados de contato serão publicados somente após validação dos responsáveis.",
+    "institutional_note": "Iniciativa desenvolvida no âmbito do projeto de compensação ambiental e social relacionado ao TAC. O conteúdo permanece sujeito às validações editoriais e jurídicas previstas para a publicação definitiva.",
     "dedication": "Que esta iniciativa sirva como um legado de responsabilidade ambiental e cuidado com a comunidade."
   }
 }
