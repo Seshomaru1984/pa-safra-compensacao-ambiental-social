@@ -22,6 +22,8 @@
     '/content/layout.json',
     '/api/title-styles',
     '/content/title-styles.json',
+    '/api/video-styles',
+    '/content/video-styles.json',
   ]);
 
   root.dataset.paInitialView = initialView;
