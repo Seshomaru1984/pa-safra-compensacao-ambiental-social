@@ -7,6 +7,8 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 const layout = JSON.parse(read('public/content/layout.json'));
 const publicJs = read('public/layout-assist.js');
 const homeEditor = read('public/admin/home-editor.js');
+const homePreview = read('public/admin/home-preview.js');
+const publicHomePreview = read('public/home-preview-runtime.js');
 const pageActions = read('public/admin/page-actions.js');
 const writeQueue = read('public/admin/write-queue.js');
 const publicApi = read('functions/api/layout.js');
@@ -44,9 +46,11 @@ assert(homeEditor.includes("url?.pathname === CONTENT_API") && homeEditor.includ
 assert(homeEditor.includes('await saveSelectedLayout()'), 'layout deve ser concluído antes de liberar a gravação do conteúdo da Home');
 assert(homeEditor.includes("name=\"home-hero-layout\""), 'rádios de disposição da Home ausentes');
 assert(!homeEditor.includes('data-layout-save') && !homeEditor.includes('data-layout-preview'), 'novo editor não pode criar botões próprios de salvar ou pré-visualizar');
-assert(homeEditor.includes('PASafraHomeEditor'), 'API de pré-visualização do novo editor não foi exposta');
 
-assert(pageActions.includes('PASafraHomeEditor?.applyPreviewParams'), 'Pré-visualizar único não considera a disposição selecionada');
+assert(homePreview.includes('PASafraHomePreview') && homePreview.includes('site_patch'), 'controlador de preview real da Home não foi criado');
+assert(homePreview.includes("url.searchParams.set('layout_home', layout)"), 'preview real não considera a disposição selecionada');
+assert(publicHomePreview.includes("url.pathname === '/content/site.json'") && publicHomePreview.includes("resource') === 'site'"), 'runtime público não aplica o rascunho da Home');
+assert(pageActions.includes('PASafraHomePreview?.createUrl'), 'Pré-visualizar único não usa o rascunho real da Home');
 assert(!pageActions.includes('requestSubmit') && !pageActions.includes('stopImmediatePropagation'), 'ações de página não podem recriar/interceptar o submit da Home');
 assert(pageActions.includes("preview.textContent = 'Pré-visualizar'") && pageActions.includes("save.textContent = 'Salvar'"), 'padrão único Salvar/Pré-visualizar ausente');
 
@@ -57,6 +61,8 @@ assert(!publicApi.includes('onRequestPut'), 'API pública de layout não pode pe
 assert(middleware.includes("'/api/admin/layout'"), 'guard da branch deve cobrir escrita do layout');
 
 assert(viteConfig.includes('/admin/home-editor.js'), 'novo controlador da Home não é injetado no build');
+assert(viteConfig.includes('/admin/home-preview.js'), 'controlador de preview real da Home não é injetado no build');
+assert(viteConfig.includes('/home-preview-runtime.js'), 'runtime público de preview não é injetado no build');
 assert(viteConfig.includes('/admin/home-editor.css'), 'estilo do novo controlador da Home não é injetado no build');
 assert(!viteConfig.includes('/admin/layout-assist.js'), 'build ainda injeta o controlador antigo de layout');
 assert(!fs.existsSync(path.join(root, 'public/admin/layout-assist.js')), 'controlador antigo de layout ainda existe no projeto');
@@ -64,6 +70,7 @@ assert(!fs.existsSync(path.join(root, 'public/admin/layout-assist.js')), 'contro
 console.log('LAYOUT ASSIST TEST: PASS');
 console.log('- Home usa um único controlador reconstruído sobre a versão funcional');
 console.log('- nenhum botão próprio de salvar/preview é criado pela disposição da capa');
+console.log('- o Pré-visualizar único usa rascunho real e disposição não salva');
 console.log('- o submit original do admin.js não é interceptado por page-actions');
 console.log('- layout, conteúdo e estilos continuam serializados pelo pipeline de escrita');
 console.log('- leitura pública e administrativa do layout ignora cache stale');
