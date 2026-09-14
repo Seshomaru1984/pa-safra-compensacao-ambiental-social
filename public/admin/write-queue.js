@@ -3,6 +3,7 @@
 
   const MUTATING_PATHS = new Set([
     '/api/admin/content',
+    '/api/admin/layout',
     '/api/admin/title-styles',
     '/api/admin/video-styles',
   ]);
@@ -34,7 +35,7 @@
     return new Promise((resolve) => window.setTimeout(resolve, ms));
   }
 
-  function requestForAttempt(input, init) {
+  function requestForAttempt(input) {
     if (input instanceof Request) return input.clone();
     return input;
   }
@@ -42,7 +43,7 @@
   async function performWithRetry(input, init) {
     let response = null;
     for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt += 1) {
-      response = await nativeFetch(requestForAttempt(input, init), init);
+      response = await nativeFetch(requestForAttempt(input), init);
       if (response.status !== 502 || attempt === RETRY_DELAYS_MS.length) return response;
       await sleep(RETRY_DELAYS_MS[attempt]);
     }
