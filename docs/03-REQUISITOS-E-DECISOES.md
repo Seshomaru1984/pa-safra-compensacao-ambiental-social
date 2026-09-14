@@ -46,7 +46,7 @@ A entrega administrativa útil é: autenticação nativa, edição controlada de
 
 ### REQ-007 - Trava editorial de produção
 - Esperado: produção bloqueada enquanto houver qualquer validação obrigatória pendente.
-- Situação: CONFIRMADO. `admin_nativo_validado=true` e `dados_contato_confirmados=true`; redação jurídica, créditos/licenças de imagens, afirmações históricas e revisão visual continuam pendentes.
+- Situação: CONFIRMADO. `admin_nativo_validado=true` e `dados_contato_confirmados=true`; redação jurídica, direitos de uso das imagens de terceiros, afirmações históricas e revisão visual continuam pendentes.
 
 ### REQ-008 - Isolamento de projeto e ambientes
 - Esperado: somente `Seshomaru1984/pa-safra-compensacao-ambiental-social`; nenhuma leitura/escrita em repositórios de outros projetos; Preview não autoriza produção.
@@ -69,6 +69,14 @@ A entrega administrativa útil é: autenticação nativa, edição controlada de
 - Contato confirmado: `gustavomzfranco@hotmail.com`.
 - Implementação: página extra `contato`, publicada e editável no Admin; o endereço aparece uma única vez no texto visível e o restante da redação referencia apenas `este canal de contato`.
 - Situação: PASS no candidato final e integrada em `develop`. `dados_contato_confirmados=true`.
+
+### REQ-012 - Informações opcionais de imagem
+- Esperado: legenda, crédito e licença podem permanecer vazios no Admin. Campo vazio não deve ser preenchido com aviso artificial de pendência para o público.
+- Regra pública: quando não houver nenhuma informação preenchida, o bloco de informações da imagem deve ficar oculto. Quando houver apenas parte dos dados, exibir somente o que foi efetivamente informado.
+- Acessibilidade: `image_alt` permanece independente e continua sendo usado mesmo quando a área visual de informações estiver oculta.
+- Legado: `image_credit` vazio oculta a legenda da imagem original e da cópia inserida no corpo.
+- Galeria: não usar `Registro do projeto` como legenda padrão quando o usuário não informou legenda; não exibir `Crédito/licença a confirmar`, `Crédito editorial a confirmar` ou equivalentes como conteúdo.
+- Situação: CORREÇÃO IMPLEMENTADA em `fix/pa-v001-image-info-optional`; validação funcional run 1078 PASS antes do fechamento documental.
 
 ## 3. Decisões duráveis
 
@@ -120,6 +128,11 @@ Conteúdos complementares como Acesso e Contato devem usar o mecanismo existente
 ### DEC-016 - Integração por um único PR e autorização explícita
 A reconstrução foi integrada por um único PR de `rebuild/pa-v001-clean` para `develop`, o PR #39. Em 14/09/2026 o usuário autorizou explicitamente esse merge, exigindo observância das regras anexas. O merge foi executado com precondição no HEAD validado e resultou no commit `5b5c60983875341b3d9f6b5bfe6c684a68d08d5e`. Essa autorização foi consumida nessa integração e não autoriza promoção para `main`, domínio ou publicação em produção.
 
+### DEC-017 - Metadados vazios não viram conteúdo público
+A ausência de legenda, crédito ou licença não deve produzir texto de placeholder no site. O bloco de informações da imagem existe somente quando há informação real a exibir. A descrição acessível é independente dessa apresentação.
+
+Essa decisão de interface não equivale a declaração jurídica de autorização/licença de material de terceiros. O gate de direitos de uso permanece independente até existir confirmação correspondente.
+
 ## 4. Mapeamento de controles atuais
 
 | Requisito | Controle/evidência atual | Estado |
@@ -133,6 +146,7 @@ A reconstrução foi integrada por um único PR de `rebuild/pa-v001-clean` para 
 | REQ-009 PBKDF2 | diagnóstico runtime + 100000 + R4 | PASS |
 | REQ-010 acesso/localização | `tools/editorial-demand-test.mjs` + runs 1071/1072 | PASS |
 | REQ-011 contato/correções | `tools/editorial-demand-test.mjs` + `publicacao.json` + runs 1071/1072 | PASS |
+| REQ-012 informações de imagem | `tools/editorial-demand-test.mjs` + run 1078 + headless | PASS no HEAD funcional anterior à documentação |
 | Notícias fora do escopo | `admin-contract`, `check.mjs`, browser tests | PASS |
 
 ## 5. Gates editoriais atuais
@@ -144,18 +158,21 @@ A reconstrução foi integrada por um único PR de `rebuild/pa-v001-clean` para 
 - `revisao_visual_confirmada=false`.
 - `admin_nativo_validado=true`.
 
+A política de ocultar campos vazios não altera sozinha `creditos_imagens_confirmados`. Esse gate representa confirmação de direitos de uso, não a existência visual de um campo de crédito.
+
 O contato confirmado não libera produção. Revisão técnica/headless não equivale a revisão visual humana.
 
 ## 6. Estado corrente e continuidade
 
-A reconstrução limpa preservou as evidências A19 a A24 e adicionou sincronização editorial, upload simples, foto de Wolnei, ações finais unificadas, controles integrados, três salvamentos consecutivos e teste headless responsivo. Em 14/09/2026 foram acrescentadas as demandas de Acesso e Contato, com teste automático no `npm run check`, e a redação territorial foi refinada para não extrapolar as fontes disponíveis.
+A reconstrução limpa foi integrada em `develop` pelo PR #39 e validada novamente após o merge. Em seguida, foi aberta a branch `fix/pa-v001-image-info-optional` a partir do checkpoint `d656ef76c2bdb65e5e49d8ec71e8259e11fc3041` para corrigir a apresentação de informações de imagem.
 
-O PR #39 foi mesclado em `develop` em 14/09/2026. O HEAD final do candidato `a7e5c5d11241ac8fa46dd29fea7cab3c438e81c7` passou integralmente no workflow `validate`, run 1071. O commit de integração `5b5c60983875341b3d9f6b5bfe6c684a68d08d5e` passou novamente no workflow `validate` pós-merge, run 1072.
+A correção remove placeholders públicos de crédito/licença, oculta blocos vazios, preserva `alt` e sincroniza a galeria da branch editorial de Preview. O HEAD funcional `cf934bbfa138bc8ec6badc492e2cc7127b7d0399` passou no workflow `validate`, run 1078, incluindo build, smoke e navegador headless. A documentação posterior altera o HEAD e exige nova validação.
 
-Evidências históricas preservadas:
+Evidências relevantes:
 - `docs/evidencias/PA-V001-A21-R3-CONTENT-WRITE-PASS-20260913.md`
 - `docs/evidencias/PA-V001-A22-ADMIN-UI-FLOW-PASS-20260913.md`
 - `docs/evidencias/PA-V001-A23-AUDITORIA-BLOQUEIOS-EDITORIAIS-20260913.md`
 - `docs/evidencias/PA-V001-A24-ADMIN-EDITOR-EXPANDIDO-PASS-20260913.md`
+- `docs/evidencias/PA-V001-IMAGE-INFO-OPTIONAL-PASS-20260914.md`
 
-A próxima fase não é promoção automática para produção. A continuidade deve resolver os quatro gates editoriais restantes e manter `main` intacta até nova autorização específica e evidência suficiente.
+Próxima ação: validar o HEAD documental final da branch `fix/pa-v001-image-info-optional`; se permanecer verde e 0 commits atrás de `develop`, abrir PR específico para `develop`. Não mesclar automaticamente e não promover para `main` sem nova autorização específica.
