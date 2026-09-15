@@ -20,7 +20,7 @@ A funcionalidade continua isolada em:
 
 Transformar Acesso e localização em uma experiência cartográfica útil para desktop e principalmente celular, sem substituir o conteúdo textual e as referências já existentes.
 
-O mapa deve permanecer limpo por padrão. Informações de maior densidade territorial são apresentadas como camadas opcionais que o usuário liga ou desliga conforme a necessidade.
+O mapa permanece limpo por padrão. Informações de maior densidade territorial são apresentadas como camadas opcionais que o usuário liga ou desliga conforme a necessidade.
 
 ## Funcionalidades
 
@@ -31,9 +31,9 @@ O mapa deve permanecer limpo por padrão. Informações de maior densidade terri
 - camada `Vias oficiais e vicinais`;
 - camada `Rios e córregos`;
 - camada `Massas d'água`;
-- camada `Assentamentos`;
+- camada `Projetos de assentamento (INCRA)`;
 - camada `Limites municipais`;
-- camadas oficiais carregadas somente quando selecionadas;
+- camadas vetoriais carregadas somente quando selecionadas;
 - pontos rodoviários de referência da BR-158, MT-251, divisa Nova Xavantina/Campinápolis e entroncamento MT-251/MT-110;
 - pontos rodoviários baseados no Sistema Rodoviário Estadual da SINFRA/MT;
 - botão `Minha localização`;
@@ -44,9 +44,9 @@ O mapa deve permanecer limpo por padrão. Informações de maior densidade terri
 - layout responsivo para celular;
 - fallback textual caso a biblioteca cartográfica externa não esteja disponível.
 
-## Camadas oficiais do INTERMAT
+## Rota cartográfica controlada
 
-A aplicação não entrega ao navegador uma URL arbitrária de consulta. A rota pública fixa `/api/map/layer` aceita somente cinco identificadores conhecidos:
+A aplicação não entrega ao navegador URLs arbitrárias de consulta. A rota pública fixa `/api/map/layer` aceita somente cinco identificadores conhecidos:
 
 - `roads`;
 - `drainage`;
@@ -56,13 +56,39 @@ A aplicação não entrega ao navegador uma URL arbitrária de consulta. A rota 
 
 A consulta é limitada por envelope geográfico à região de Nova Xavantina/Campinápolis e usa paginação controlada. O navegador recebe GeoJSON com apenas os campos necessários à leitura cartográfica.
 
-No caso de assentamentos, foram deliberadamente excluídos campos cadastrais que não são necessários ao mapa, como matrícula e responsável técnico. São solicitados somente nome, município, identificação SIPRA e modalidade.
+### INTERMAT
+
+O INTERMAT é usado para:
+
+- sistema viário;
+- drenagem;
+- massas d'água;
+- limites municipais.
+
+### INCRA via geosserviço do IBAMA
+
+A primeira tentativa de usar a camada de assentamentos do INTERMAT foi rejeitada pelo próprio gate ao vivo porque retornou zero feições na região de interesse, apesar de o INCRA confirmar a existência do PA Safra em Nova Xavantina.
+
+A camada fundiária foi então substituída pela base `Assentamentos - INCRA` publicada no geosserviço do IBAMA, que oferece geometria poligonal e código SIPRA. Essa base retornou feições reais para o envelope regional no teste automatizado.
+
+O proxy solicita apenas:
+
+- código SIPRA;
+- nome do projeto;
+- município;
+- área;
+- capacidade;
+- número de famílias;
+- fase;
+- data de criação.
+
+Esses atributos são normalizados antes de chegar ao navegador. Não são solicitados CPF, CNPJ, detentor, proprietário, matrícula ou responsável técnico.
 
 ## Privacidade
 
 O site não persiste coordenadas do usuário no backend. A geolocalização é obtida pelo navegador após consentimento. Ao centralizar o mapa, os provedores de tiles recebem as solicitações correspondentes à área cartográfica visualizada.
 
-As consultas ao INTERMAT passam pela rota intermediária do próprio site e não carregam dados pessoais do usuário.
+As camadas vetoriais oficiais passam pela rota intermediária do próprio site e não recebem a posição GPS do usuário.
 
 ## Segurança e desempenho
 
@@ -88,10 +114,15 @@ Serviços utilizados:
 - sistema viário: `INTERMAT_CARTOGRAFIA/TRA_SISTEMA_VIARIO_L`;
 - drenagem: `BDC/HID_TRECHO_DRENAGEM_L`;
 - massas d'água: `INTERMAT_CARTOGRAFIA/HID_MASSA_DE_AGUA_A`;
-- assentamentos: `INTERMAT_CARTOGRAFIA/LIM_ASSENTAMENTO_A`;
 - limites municipais: `INTERMAT_CARTOGRAFIA/LIM_LIMITE_POLITICO_ADMINISTRATIVO_A`.
 
-Os metadados oficiais informam reprodução permitida mediante citação da fonte para as camadas fundiárias e administrativas aplicáveis.
+### INCRA / IBAMA
+
+Camada `Assentamentos - INCRA` do geosserviço público do IBAMA:
+
+`01_Publicacoes_Bases/assentamentos_incra/MapServer/1`
+
+A camada declara INCRA como fonte dos dados e publica os polígonos dos projetos de assentamento.
 
 ### SINFRA/MT
 
@@ -106,25 +137,22 @@ Sistema Rodoviário Estadual, trechos 251EMT0005 e 251EMT0006 da MT-251, usado p
 
 O TOPODATA foi pesquisado e registrado como fonte oficial brasileira de modelo digital de elevação e variáveis geomorfométricas. Não é consumido diretamente nesta versão. Pode ser usado em evolução posterior para altitude, declividade, relevo sombreado próprio ou outras derivações locais, sempre com atribuição ao INPE.
 
-## Validação
+## Validação ao vivo das fontes
 
-HEAD antes desta atualização documental:
+No run 1139, antes dos ajustes finais de rótulo e documentação, o gate consultou diretamente os serviços cartográficos para o envelope regional e obteve:
 
-`8fbb399bcc02f30b42e713a6fdcfb38078a3228f`
+- vias: 46 feições;
+- drenagem: 5.857 feições;
+- massas d'água: 18 feições;
+- projetos de assentamento: 14 feições;
+- polígonos municipais: 7 feições.
 
-Workflow `validate` do PR #44:
+O mesmo run passou build, smoke, JavaScript, Cloudflare readiness e navegador headless.
 
-- run ID `34967717396`;
-- run number `1129`;
-- resultado: SUCCESS;
-- build: PASS;
-- smoke: PASS;
-- JavaScript: PASS;
-- Cloudflare readiness: PASS;
-- navegador headless: PASS.
-
-A atualização deste documento altera o HEAD da branch. O novo HEAD deve ser revalidado antes de qualquer integração.
+A checagem de fontes ao vivo permanece ativa na branch do candidato para impedir a entrega de uma camada configurada, porém vazia.
 
 ## Limite da validação automatizada
 
-O CI protege estrutura, sintaxe, build, segurança, contrato das camadas e interface headless. A disponibilidade momentânea dos servidores externos do INTERMAT e dos provedores de tiles continua sendo uma condição de rede e deve ser observada no Preview real durante a revisão manual.
+O CI protege estrutura, sintaxe, build, segurança, contrato das camadas, disponibilidade mínima das fontes no candidato e interface headless. A disponibilidade futura dos servidores externos e dos provedores de tiles continua sendo uma condição de rede; por isso, uma falha isolada de camada não deve derrubar o mapa-base.
+
+Esta atualização documental altera novamente o HEAD da branch. O HEAD final deve permanecer verde antes de qualquer integração em `develop`.
