@@ -15,9 +15,9 @@ const vite = read('vite.config.js');
 const pages = JSON.parse(read('public/content/paginas.json'));
 
 for (const token of [
-  "slug: 'acesso-localizacao'",
+  "const ACCESS_SLUG = 'acesso-localizacao'",
+  "const CONTACT_SLUG = 'contato'",
   "tabLabel: 'Mapas e acessos'",
-  "slug: 'contato'",
   "tabLabel: 'Contato'",
   'dataset.pageMode',
 ]) {
