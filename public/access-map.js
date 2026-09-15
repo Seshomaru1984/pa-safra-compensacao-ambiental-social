@@ -386,6 +386,37 @@
     });
   }
 
+  function installBaseTileFallback(tileLayer, panel) {
+    let loadedAnyTile = false;
+    let fallbackTriggered = false;
+    let fallbackTimer = null;
+
+    const cancelFallback = () => {
+      loadedAnyTile = true;
+      if (fallbackTimer) clearTimeout(fallbackTimer);
+      fallbackTimer = null;
+    };
+
+    tileLayer.on('tileload', cancelFallback);
+    tileLayer.on('load', cancelFallback);
+    tileLayer.on('tileerror', () => {
+      if (loadedAnyTile || fallbackTriggered) return;
+      if (fallbackTimer) clearTimeout(fallbackTimer);
+      fallbackTimer = setTimeout(() => {
+        if (loadedAnyTile || fallbackTriggered) return;
+        fallbackTriggered = true;
+        try {
+          mapInstance?.remove();
+        } catch (error) {
+          console.warn('[PA Safra] Falha ao desmontar mapa-base indisponível:', error);
+        }
+        mapInstance = null;
+        mapSection = null;
+        showFallback(panel, 'Não foi possível carregar o mapa-base agora. As informações textuais de acesso continuam disponíveis abaixo.');
+      }, 2200);
+    });
+  }
+
   function initMap(panel, L) {
     const canvas = panel.querySelector('[data-map-canvas]');
     if (!canvas || canvas.dataset.mapReady === 'true') return;
@@ -396,7 +427,10 @@
     const osm = L.tileLayer(OSM_TILES, {
       maxZoom: 19,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>',
-    }).addTo(mapInstance);
+    });
+    installBaseTileFallback(osm, panel);
+    osm.addTo(mapInstance);
+
     const topo = L.tileLayer(TOPO_TILES, {
       subdomains: 'abc',
       maxZoom: 17,
