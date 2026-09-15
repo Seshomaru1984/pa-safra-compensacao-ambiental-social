@@ -45,11 +45,15 @@ assert(/correções, atualizações ou esclarecimentos/i.test(contactText), 'tex
 assert(Array.isArray(gallery), 'galeria.json deve ser uma lista');
 assert(!gallery.some((item) => /a confirmar|em conferência/i.test(String(item?.credit || ''))), 'crédito/licença vazio não pode ser substituído por aviso de pendência no conteúdo público');
 assert(imageFallbackScript.includes('pendingInfoPattern'), 'higiene pública de informações de imagem deve reconhecer placeholders pendentes');
+assert(imageFallbackScript.includes('stripPendingSuffix'), 'legenda estática deve remover somente o sufixo pendente, preservando informação válida');
+assert(imageFallbackScript.includes("caption.textContent = cleaned"), 'legenda estática limpa deve manter o texto válido remanescente');
+assert(imageFallbackScript.includes("[data-view=\"galeria\"] .status-banner.editorial-warning"), 'aviso editorial de créditos pendentes deve ser removido da Galeria pública');
 assert(imageFallbackScript.includes("main?.textContent.trim() === 'Registro do projeto'"), 'galeria deve remover legenda padrão quando não há legenda informada');
 assert(imageFallbackScript.includes('if (!caption.textContent.trim()) caption.remove()'), 'galeria deve remover o bloco de informações quando ficar vazio');
 assert(legacyMediaScript.includes("site?.legacy?.image_credit || ''"), 'legado deve usar o crédito configurado no conteúdo editorial');
 assert(legacyMediaScript.includes('sourceCaption.hidden = !configuredCredit'), 'legado deve ocultar crédito quando o campo estiver vazio');
 assert(legacyMediaScript.includes('caption.hidden = !captionHtml'), 'cópia da imagem no corpo deve ocultar a legenda quando não houver informação');
+assert((legacyMediaScript.match(/configuredCredit = null;/g) || []).length >= 2, 'falha ao carregar site.json deve preservar estado desconhecido e atribuição estática de fallback');
 
 assert(!/dados de contato serão publicados/i.test(site.footer?.institutional_note || ''), 'rodapé não pode dizer que o contato ainda aguarda publicação');
 assert(publication.checks?.dados_contato_confirmados === true, 'gate de dados de contato deve estar confirmado');
