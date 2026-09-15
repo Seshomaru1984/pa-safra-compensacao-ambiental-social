@@ -13,6 +13,17 @@
   `)}`;
 
   const pendingInfoPattern = /(?:cr[eé]dito\s*\/\s*licen[çc]a|cr[eé]dito editorial)[\s\S]{0,120}a confirmar|cr[eé]ditos? em confer[eê]ncia/i;
+  const pendingSuffixPatterns = [
+    /\s*Cr[eé]dito\s*\/\s*licen[çc]a\s+a confirmar(?:\s+antes\s+da\s+publica[çc][aã]o\s+definitiva)?\.?\s*$/i,
+    /\s*Cr[eé]dito editorial\s+a confirmar\.?\s*$/i,
+    /\s*Cr[eé]ditos?\s+em\s+confer[eê]ncia\.?\s*$/i,
+  ];
+
+  function stripPendingSuffix(value) {
+    let text = String(value || '').trim();
+    for (const pattern of pendingSuffixPatterns) text = text.replace(pattern, '').trim();
+    return text;
+  }
 
   function arm(image) {
     if (!(image instanceof HTMLImageElement) || image.dataset.paFallbackArmed === 'true') return;
@@ -27,15 +38,15 @@
 
   function syncStaticImageInformation() {
     document.querySelectorAll('.hero-media figcaption').forEach((caption) => {
-      const text = caption.textContent.trim();
-      if (!text || pendingInfoPattern.test(text)) {
-        if (caption.textContent) caption.textContent = '';
-        caption.hidden = true;
-      }
+      const cleaned = stripPendingSuffix(caption.textContent);
+      if (caption.textContent.trim() !== cleaned) caption.textContent = cleaned;
+      caption.hidden = !cleaned;
     });
   }
 
   function syncGalleryInformation() {
+    document.querySelectorAll('[data-view="galeria"] .status-banner.editorial-warning').forEach((banner) => banner.remove());
+
     document.querySelectorAll('#galeria-list .gallery-card figcaption').forEach((caption) => {
       const main = caption.querySelector('strong');
       const credit = caption.querySelector('span');
