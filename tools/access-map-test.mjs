@@ -33,6 +33,9 @@ for (const token of [
   'access-map-layers-label',
   'bindTooltip(',
   'access-map-tooltip',
+  'white-space: normal !important',
+  'overflow-wrap: anywhere',
+  'access-map-canvas .leaflet-popup-content',
   "button.addEventListener('mouseenter'",
   'featureCollectionBounds',
   'fitOfficialLayer',
@@ -144,6 +147,7 @@ console.log('ACCESS MAP TEST: PASS');
 console.log('- mapa mantém geolocalização sob ação explícita do usuário');
 console.log('- controle de camadas permanece recolhido, mas exibe rótulo Camadas de forma explícita');
 console.log('- pontos e feições mostram legenda por hover no desktop, mantendo clique como fallback touch/mobile');
+console.log('- tooltips e popups quebram linha e respeitam largura máxima responsiva dentro do mapa');
 console.log('- mapa reenquadra automaticamente a geometria regional ao ativar uma camada oficial');
 console.log('- vias são filtradas para feições classificadas como Rodovia na base oficial');
 console.log('- paginação suporta integralmente a drenagem regional acima do antigo teto de 2.000 feições');
