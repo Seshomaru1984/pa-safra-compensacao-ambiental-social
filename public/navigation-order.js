@@ -14,6 +14,12 @@
 
   let syncing = false;
 
+  function currentRelevantOrder(menu) {
+    return [...menu.querySelectorAll('a[data-nav]')]
+      .map((node) => node.dataset.nav || '')
+      .filter((slug) => ORDER.includes(slug));
+  }
+
   function arrangeNavigation() {
     const menu = document.getElementById('menu-principal');
     if (!menu || syncing) return;
@@ -22,15 +28,19 @@
     const contact = menu.querySelector('[data-nav="contato"]');
     if (!access || !contact) return;
 
+    const nodes = new Map();
+    for (const slug of ORDER) {
+      const node = menu.querySelector(`[data-nav="${slug}"]`);
+      if (node) nodes.set(slug, node);
+    }
+    const desired = ORDER.filter((slug) => nodes.has(slug));
+    const current = currentRelevantOrder(menu);
+    const alreadyOrdered = current.length === desired.length && current.every((slug, index) => slug === desired[index]);
+    if (alreadyOrdered && contact.parentElement === menu) return;
+
     syncing = true;
     try {
       const cmsRoot = document.getElementById('cms-pages-nav');
-      const nodes = new Map();
-      for (const slug of ORDER) {
-        const node = menu.querySelector(`[data-nav="${slug}"]`);
-        if (node) nodes.set(slug, node);
-      }
-
       const genericPages = cmsRoot
         ? [...cmsRoot.querySelectorAll('a[data-nav]')].filter((node) => !['acesso-localizacao', 'contato'].includes(node.dataset.nav || ''))
         : [];
