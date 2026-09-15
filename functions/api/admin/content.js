@@ -175,11 +175,12 @@ function validateSite(site) {
   ensureRichText(site.about.body, 'Texto completo sobre', 16000);
 
   rejectUnknown(site.legacy, [
-    'eyebrow', 'title', 'body', 'closing_quote', 'image', 'image_alt', 'image_credit',
+    'eyebrow', 'title', 'summary', 'body', 'closing_quote', 'image', 'image_alt', 'image_credit',
     'source_eyebrow', 'source_title', 'source_body', 'source_url', 'source_link_label', 'validation_note',
   ], 'legacy');
   ensureString(site.legacy.eyebrow, 'Rótulo do legado', 120);
   ensureString(site.legacy.title, 'Título do legado', 220);
+  ensureString(site.legacy.summary, 'Resumo do legado', 1200);
   ensureRichText(site.legacy.body, 'Texto do legado', 18000);
   ensureRichText(site.legacy.closing_quote, 'Fechamento do legado', 2000);
   ensureAssetPath(site.legacy.image, 'Imagem do legado');
