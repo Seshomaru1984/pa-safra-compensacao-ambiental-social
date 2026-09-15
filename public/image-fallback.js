@@ -12,6 +12,8 @@
     </svg>
   `)}`;
 
+  const pendingInfoPattern = /(?:cr[eé]dito\s*\/\s*licen[çc]a|cr[eé]dito editorial)[\s\S]{0,120}a confirmar|cr[eé]ditos? em confer[eê]ncia/i;
+
   function arm(image) {
     if (!(image instanceof HTMLImageElement) || image.dataset.paFallbackArmed === 'true') return;
     image.dataset.paFallbackArmed = 'true';
@@ -23,16 +25,47 @@
     });
   }
 
+  function syncStaticImageInformation() {
+    document.querySelectorAll('.hero-media figcaption').forEach((caption) => {
+      const text = caption.textContent.trim();
+      if (!text || pendingInfoPattern.test(text)) {
+        if (caption.textContent) caption.textContent = '';
+        caption.hidden = true;
+      }
+    });
+  }
+
+  function syncGalleryInformation() {
+    document.querySelectorAll('#galeria-list .gallery-card figcaption').forEach((caption) => {
+      const main = caption.querySelector('strong');
+      const credit = caption.querySelector('span');
+
+      if (main?.textContent.trim() === 'Registro do projeto') main.remove();
+      if (credit && pendingInfoPattern.test(credit.textContent.trim())) credit.remove();
+
+      if (!caption.textContent.trim()) caption.remove();
+    });
+  }
+
+  function syncImageInformation() {
+    syncStaticImageInformation();
+    syncGalleryInformation();
+  }
+
   document.querySelectorAll('img').forEach(arm);
+  syncImageInformation();
 
   const observer = new MutationObserver((mutations) => {
+    let shouldSyncInformation = false;
     for (const mutation of mutations) {
+      if (mutation.type === 'childList') shouldSyncInformation = true;
       for (const node of mutation.addedNodes) {
         if (!(node instanceof Element)) continue;
         if (node.matches('img')) arm(node);
         node.querySelectorAll?.('img').forEach(arm);
       }
     }
+    if (shouldSyncInformation) queueMicrotask(syncImageInformation);
   });
 
   observer.observe(document.documentElement, { childList: true, subtree: true });

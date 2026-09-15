@@ -1,6 +1,14 @@
 (() => {
   'use strict';
 
+  let configuredCredit = null;
+
+  function applyConfiguredCredit(sourceCaption) {
+    if (!sourceCaption || configuredCredit === null) return;
+    if (sourceCaption.textContent.trim() !== configuredCredit) sourceCaption.textContent = configuredCredit;
+    sourceCaption.hidden = !configuredCredit;
+  }
+
   function syncLegacyInlinePhoto() {
     const view = document.querySelector('[data-view="legado"]');
     if (!view) return;
@@ -20,6 +28,7 @@
       image.loading = 'lazy';
       image.decoding = 'async';
       const caption = document.createElement('figcaption');
+      caption.hidden = true;
       figure.append(image, caption);
 
       const firstParagraph = article.querySelector('p');
@@ -31,13 +40,28 @@
     const caption = figure.querySelector('figcaption');
     const sourceCaption = source.querySelector('figcaption');
 
+    applyConfiguredCredit(sourceCaption);
+
     const src = sourceImage.getAttribute('src') || '';
     const alt = sourceImage.getAttribute('alt') || '';
     if (image.getAttribute('src') !== src) image.setAttribute('src', src);
     if (image.getAttribute('alt') !== alt) image.setAttribute('alt', alt);
 
-    const captionHtml = sourceCaption?.innerHTML || '';
+    const captionHtml = sourceCaption && !sourceCaption.hidden ? sourceCaption.innerHTML.trim() : '';
     if (caption.innerHTML !== captionHtml) caption.innerHTML = captionHtml;
+    caption.hidden = !captionHtml;
+  }
+
+  async function loadConfiguredCredit() {
+    try {
+      const response = await fetch('/content/site.json', { cache: 'no-store' });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const site = await response.json();
+      configuredCredit = String(site?.legacy?.image_credit || '').trim();
+    } catch {
+      configuredCredit = '';
+    }
+    syncLegacyInlinePhoto();
   }
 
   function install() {
@@ -45,6 +69,7 @@
     if (!view) return;
 
     syncLegacyInlinePhoto();
+    loadConfiguredCredit();
 
     const observer = new MutationObserver(() => syncLegacyInlinePhoto());
     observer.observe(view, {

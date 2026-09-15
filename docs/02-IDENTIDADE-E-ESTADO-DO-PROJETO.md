@@ -12,85 +12,73 @@ Atualizado em 14/09/2026. Este arquivo registra o checkpoint técnico corrente d
 | Público prioritário | Comunidades de Alvorada, Córrego do Jatobá, Vila do Banco Safra e demais munícipes de Nova Xavantina |
 | Repositório | `Seshomaru1984/pa-safra-compensacao-ambiental-social` |
 | Branch de integração | `develop` |
-| Branch de reconstrução | `rebuild/pa-v001-clean`, preservada como histórico do candidato já integrado |
+| Branch de correção atual | `fix/pa-v001-image-info-optional` |
 | Branch editorial de Preview | `content/pa-v001-admin-preview` |
+| Branch de reconstrução histórica | `rebuild/pa-v001-clean`, já integrada pelo PR #39 |
 | Branch problemática arquivada | `archive/pa-v001-experimental-20260914` |
 | Produção | `main`, protegida pelos gates editoriais vigentes |
 | Administração | `/admin`, com login próprio e nove áreas editoriais |
-| Escopo atual | P1 concluída em `develop`; produção continua fora do escopo autorizado enquanto houver gates editoriais pendentes |
+| Escopo atual | Correção pós-integração para tratamento opcional de informações de imagem; `main` permanece fora do escopo autorizado |
 
-A versão problemática permanece somente como referência histórica. Ela não deve ser reintegrada integralmente nem usada como nova base de desenvolvimento.
+## 2. Estado integrado anterior
 
-## 2. Decisões operacionais vigentes
+A reconstrução limpa foi integrada em `develop` pelo PR #39 em 14/09/2026.
 
-- O candidato reconstruído em `rebuild/pa-v001-clean` foi integrado em `develop` pelo PR #39 em 14/09/2026.
-- Preservar e sincronizar o conteúdo editorial atual com `content/pa-v001-admin-preview` enquanto esse continuar sendo o destino administrativo de Preview.
-- Notícias permanece fora da interface pública e da lista branca de escrita.
-- Upload de imagens do Admin deve ser simples e integrado aos campos existentes, sem editor paralelo.
-- Cada área administrativa deve expor um único `Salvar` e um único `Pré-visualizar` como ações finais.
-- Controles de título, disposição da Home e tamanho dos títulos de vídeo participam do salvamento da própria página, sem fluxos concorrentes independentes.
-- Gravações editoriais em `content`, `title-styles`, `video-styles` e `layout` são serializadas e repetem somente conflitos transitórios HTTP 502 dentro da política vigente.
-- As páginas extras são o mecanismo vigente para conteúdo complementar editável, inclusive `Acesso` e `Contato`.
-- A integração da reconstrução ocorreu por um único PR, `#39`, de `rebuild/pa-v001-clean` para `develop`.
-- A autorização explícita dada em 14/09/2026 foi consumida somente para o merge em `develop`. Ela não se estende a `main`, domínio ou publicação em produção.
+- HEAD do candidato integrado: `a7e5c5d11241ac8fa46dd29fea7cab3c438e81c7`.
+- Commit de merge em `develop`: `5b5c60983875341b3d9f6b5bfe6c684a68d08d5e`.
+- CI final do PR: run 1071, SUCCESS.
+- CI pós-merge: run 1072, SUCCESS.
+- Checkpoint documental pós-integração em `develop`: `d656ef76c2bdb65e5e49d8ec71e8259e11fc3041`.
+- `main` não foi promovida e permanece fora da autorização.
 
-## 3. Demandas editoriais incorporadas em 14/09/2026
+## 3. Regra corrigida para informações de imagem
 
-### Acesso e localização
+O usuário reafirmou em 14/09/2026 a regra já definida para informações de imagem:
 
-Foi adicionada a página `Acesso`, editável pelo Admin, contendo somente formulações sustentadas pelas referências públicas incorporadas:
+- legenda, crédito e licença podem permanecer vazios no Admin;
+- não preencher campo vazio com mensagens artificiais como `Crédito/licença a confirmar`, `Crédito editorial a confirmar` ou `Créditos em conferência`;
+- quando o bloco não possuir nenhuma informação preenchida, ele deve ficar oculto na página pública;
+- quando houver apenas parte das informações, exibir somente o que foi efetivamente informado;
+- a descrição acessível da imagem (`alt`) permanece independente e não deve ser removida por essa regra;
+- no Legado, `image_credit` vazio deve ocultar a legenda tanto na imagem de origem quanto na imagem reproduzida no corpo do texto.
 
-- referência territorial ao PA Safra no município de Nova Xavantina/MT;
-- referência municipal ao entroncamento BR-158/MT-251 em Nova Xavantina;
-- MT-110 e MT-251 indicadas como principais rodovias de Campinápolis em documento público municipal;
-- alerta de que o acesso final às comunidades pode depender de estradas vicinais, pontes e trechos não pavimentados, devendo a rota local ser confirmada antes do deslocamento;
-- referências públicas no próprio conteúdo.
+A regra de apresentação não deve ser confundida com declaração de autorização ou licença de material de terceiros. A ocultação de metadados vazios não confirma direitos de uso.
 
-Não afirmar como fato, sem fonte adicional, que a BR-158 é o principal eixo rodoviário de acesso nem que a MT-251 constitui diretamente uma ligação Nova Xavantina/Campinápolis.
+## 4. Implementação da correção
 
-### Contato, manifestações e correções
+Branch: `fix/pa-v001-image-info-optional`.
 
-Foi adicionada a página `Contato`, editável pelo Admin, com o endereço confirmado `gustavomzfranco@hotmail.com` e o texto aprovado para manifestações, esclarecimentos, imprecisões e possíveis correções. O endereço aparece uma única vez no texto visível.
+Alterações implementadas:
 
-O gate `dados_contato_confirmados` passou para `true`. Isso não autoriza produção, pois os demais gates obrigatórios continuam independentes.
+- `public/image-fallback.js`: remove legenda padrão artificial da galeria, elimina informação pública pendente e remove o bloco quando ele fica vazio;
+- `public/internal-header-body-media.js`: usa o `image_credit` configurado e oculta a legenda do Legado quando o campo está vazio;
+- `public/content/galeria.json`: remove placeholders de crédito/licença e preserva somente dados reais;
+- `content/pa-v001-admin-preview`: galeria sincronizada com a mesma regra editorial;
+- `tools/editorial-demand-test.mjs`: protege a regra contra regressão;
+- evidência: `docs/evidencias/PA-V001-IMAGE-INFO-OPTIONAL-PASS-20260914.md`.
 
-## 4. Checkpoint corrente
+O Admin já aceitava `caption`, `credit` e `image_credit` vazios; portanto, não foi necessário criar campo paralelo nem mudar o contrato de gravação.
+
+## 5. Validação
 
 | Campo | Estado |
 |---|---|
-| Revisado em | 14/09/2026 |
-| Fase atual | P1 concluída em `develop`; produção não iniciada |
-| PR de integração | `#39` - fechado e mesclado |
-| HEAD do candidato integrado | `a7e5c5d11241ac8fa46dd29fea7cab3c438e81c7` |
-| Commit de integração em `develop` | `5b5c60983875341b3d9f6b5bfe6c684a68d08d5e` |
-| Base anterior de `develop` | `e485f9270ef81680609d5fa2f1b9430ceaa4dbc0` |
-| CI final do PR | workflow `validate`, run `34901601723`, run number `1071`, SUCCESS |
-| CI pós-merge em `develop` | workflow `validate`, run `34901699296`, run number `1072`, SUCCESS |
-| Conteúdo editorial atual sincronizado | VERIFICADO no candidato integrado |
-| Upload simples de imagens | IMPLEMENTADO e VALIDADO TECNICAMENTE |
-| Foto de Wolnei e Memória e legado | IMPLEMENTADO e VALIDADO NO BUILD/HEADLESS |
-| Um Salvar + um Pré-visualizar por área | IMPLEMENTADO e VALIDADO NO HEADLESS |
-| Títulos, texto e vídeos | REVISADOS e VALIDADOS TECNICAMENTE |
-| 1º, 2º e 3º salvamentos consecutivos | PASS em teste de fila e cenário headless da Home |
-| Revisão técnica visual Admin/site | PASS em 1440 px e 390 px no cenário headless |
-| Acesso e localização | INCORPORADO, REVISADO CONTRA FONTES e protegido por teste automático |
-| Contato e aviso de correções | INCORPORADO e protegido por teste automático |
-| Integração em `develop` | VERIFICADA pelo PR #39 e commit de merge |
-| Publicação em `main` | NÃO AUTORIZADA |
-| Publicação em produção | NÃO EXECUTADA |
+| Base da correção | `develop` em `d656ef76c2bdb65e5e49d8ec71e8259e11fc3041` |
+| HEAD funcional validado antes desta documentação | `cf934bbfa138bc8ec6badc492e2cc7127b7d0399` |
+| Workflow | `validate` |
+| Run | `34904795806` / run number `1078` |
+| Resultado | SUCCESS |
+| Check editorial | PASS |
+| Auditoria editorial | PASS |
+| Autenticação e guard | PASS |
+| Cloudflare | PASS |
+| JavaScript e PowerShell | PASS |
+| Build | PASS |
+| Smoke | PASS |
+| Navegador headless | PASS |
+| Conteúdo da galeria no Preview | SINCRONIZADO, commit `36370df1fa5c5d8e2141e00f2b01b005f205f153` |
 
-A integração em `develop` não equivale a publicação em produção. Não houve promoção para `main`, alteração de domínio ou declaração de versão pública.
-
-## 5. Evidências técnicas preservadas
-
-- A21: `docs/evidencias/PA-V001-A21-R3-CONTENT-WRITE-PASS-20260913.md`.
-- A22: `docs/evidencias/PA-V001-A22-ADMIN-UI-FLOW-PASS-20260913.md`.
-- A23: `docs/evidencias/PA-V001-A23-AUDITORIA-BLOQUEIOS-EDITORIAIS-20260913.md`.
-- A24: `docs/evidencias/PA-V001-A24-ADMIN-EDITOR-EXPANDIDO-PASS-20260913.md`.
-- Reconstrução limpa: upload simples, sincronização editorial, foto de Wolnei, ações unificadas, controles integrados, fila de escrita e teste headless responsivo.
-- `tools/editorial-demand-test.mjs`: exige as páginas `Acesso` e `Contato`, referências rodoviárias previstas, e-mail visível uma única vez e estado correto dos gates.
-- Run 1071: validação completa do HEAD final do PR antes do merge.
-- Run 1072: validação completa do commit de integração já presente em `develop`.
+Esta atualização documental altera o HEAD da branch de correção. O candidato final deve ser revalidado antes de qualquer integração.
 
 ## 6. Gates editoriais atuais
 
@@ -103,10 +91,12 @@ A integração em `develop` não equivale a publicação em produção. Não hou
 | `revisao_visual_confirmada` | `false` |
 | `admin_nativo_validado` | `true` |
 
-Produção deve permanecer bloqueada enquanto qualquer gate obrigatório restante estiver pendente. Validação headless não substitui aprovação visual humana.
+`creditos_imagens_confirmados=false` continua significando que a confirmação de direitos de uso das imagens de terceiros ainda não foi registrada. Isso é independente da regra visual de ocultar informações vazias.
 
-## 7. Recuperação e próxima ação
+Produção permanece bloqueada enquanto houver gates obrigatórios pendentes. Validação headless não substitui aprovação visual humana.
 
-O commit de integração `5b5c60983875341b3d9f6b5bfe6c684a68d08d5e` possui como pais a base anterior de `develop` e o HEAD validado da reconstrução, permitindo identificar precisamente a integração caso seja necessário avaliar uma reversão. Nenhuma reversão é necessária no estado atual.
+## 7. Próxima ação
 
-Próxima ação: tratar os gates editoriais restantes de forma independente - redação jurídica, créditos/licenças das imagens, afirmações históricas e revisão visual humana. Somente depois dessas confirmações, e mediante autorização específica para a próxima promoção, avaliar integração/publicação em `main`. Não promover automaticamente.
+Executar `validate` no HEAD final desta branch após a documentação. Se o CI permanecer verde, confirmar que a branch está 0 commits atrás de `develop` e abrir um PR específico de `fix/pa-v001-image-info-optional` para `develop`.
+
+Não promover automaticamente para `main`. A autorização dada anteriormente foi específica para o PR #39 e já foi consumida.
