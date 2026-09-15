@@ -4,22 +4,27 @@ const MAX_PAGES = 4;
 
 const LAYERS = Object.freeze({
   roads: {
+    source: 'INTERMAT',
     endpoint: 'https://intergeo.intermat.mt.gov.br/server/rest/services/INTERMAT_CARTOGRAFIA/TRA_SISTEMA_VIARIO_L/FeatureServer/0/query',
     fields: 'sv_no,sv_den,sv_juriscl,sv_tipo',
   },
   drainage: {
+    source: 'INTERMAT',
     endpoint: 'https://intergeo.intermat.mt.gov.br/server/rest/services/BDC/HID_TRECHO_DRENAGEM_L/FeatureServer/0/query',
     fields: 'td_no,td_juris,td_rm,td_tipo,td_eixo',
   },
   water: {
+    source: 'INTERMAT',
     endpoint: 'https://intergeo.intermat.mt.gov.br/server/rest/services/INTERMAT_CARTOGRAFIA/HID_MASSA_DE_AGUA_A/FeatureServer/0/query',
     fields: 'ma_no,ma_juris,ma_rm,ma_tipo',
   },
   settlements: {
-    endpoint: 'https://intergeo.intermat.mt.gov.br/server/rest/services/INTERMAT_CARTOGRAFIA/LIM_ASSENTAMENTO_A/FeatureServer/0/query',
-    fields: 's_no,s_mn,s_sipra,s_md',
+    source: 'INCRA/IBAMA',
+    endpoint: 'https://pamgia.ibama.gov.br/server/rest/services/01_Publicacoes_Bases/assentamentos_incra/MapServer/1/query',
+    fields: 'cd_sipra,nome_proje,municipio,area_hecta,capacidade,num_famili,fase,data_de_cr',
   },
   municipalities: {
+    source: 'INTERMAT',
     endpoint: 'https://intergeo.intermat.mt.gov.br/server/rest/services/INTERMAT_CARTOGRAFIA/LIM_LIMITE_POLITICO_ADMINISTRATIVO_A/FeatureServer/0/query',
     fields: 'mn_no,mn_cod',
   },
@@ -59,16 +64,13 @@ async function fetchLayer(config) {
 
   for (let page = 0; page < MAX_PAGES; page += 1) {
     const response = await fetch(buildQuery(config, page * PAGE_SIZE), {
-      headers: {
-        accept: 'application/geo+json, application/json;q=0.9',
-        'user-agent': 'PA-Safra-Mapa/1.0',
-      },
+      headers: { accept: 'application/geo+json, application/json;q=0.9' },
     });
 
-    if (!response.ok) throw new Error(`INTERMAT respondeu HTTP ${response.status}`);
+    if (!response.ok) throw new Error(`${config.source} respondeu HTTP ${response.status}`);
     const data = await response.json();
     if (!data || data.type !== 'FeatureCollection' || !Array.isArray(data.features)) {
-      throw new Error('Resposta cartográfica inválida do INTERMAT');
+      throw new Error(`Resposta cartográfica inválida de ${config.source}`);
     }
 
     features.push(...data.features);
