@@ -108,7 +108,13 @@ if (candidateBranch.includes('feat/pa-v001-interactive-access-map')) {
     url.searchParams.set('spatialRel', 'esriSpatialRelIntersects');
     url.searchParams.set('returnCountOnly', 'true');
     url.searchParams.set('f', 'json');
-    const response = await fetch(url, { signal: AbortSignal.timeout(20000) });
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(20000),
+      headers: {
+        accept: 'application/json',
+        'user-agent': 'PA-Safra-Mapa/1.0',
+      },
+    });
     assert.equal(response.ok, true, `fonte cartográfica ${name} respondeu HTTP ${response.status}`);
     const body = await response.json();
     assert.ok(Number.isInteger(body.count) && body.count > 0, `fonte cartográfica ${name} sem feições na região`);
