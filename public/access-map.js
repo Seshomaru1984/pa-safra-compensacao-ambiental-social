@@ -8,6 +8,7 @@
   const LEAFLET_JS_INTEGRITY = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
   const OSM_TILES = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
   const TOPO_TILES = 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png';
+  const REGION_BOUNDS = Object.freeze({ xmin: -53.15, ymin: -15.15, xmax: -51.75, ymax: -14.05 });
 
   const REFERENCES = Object.freeze([
     { id: 'nova-xavantina', label: 'Nova Xavantina', detail: 'Referência urbana do município.', lat: -14.677063, lng: -52.350234, kind: 'city' },
@@ -17,11 +18,11 @@
   ]);
 
   const OFFICIAL_LAYERS = Object.freeze({
-    roads: { label: 'Vias oficiais e vicinais' },
-    drainage: { label: 'Rios e córregos' },
-    water: { label: "Massas d'água" },
-    settlements: { label: 'Projetos de assentamento (INCRA)' },
-    municipalities: { label: 'Limites municipais' },
+    roads: { label: 'Vias oficiais e vicinais', maxZoom: 11 },
+    drainage: { label: 'Rios e córregos', maxZoom: 11 },
+    water: { label: "Massas d'água", maxZoom: 12 },
+    settlements: { label: 'Projetos de assentamento (INCRA)', maxZoom: 11 },
+    municipalities: { label: 'Limites municipais', maxZoom: 9 },
   });
 
   let leafletPromise = null;
@@ -153,6 +154,7 @@
       <div class="access-map-references" data-map-references aria-label="Pontos de referência rodoviária"></div>
       <div class="access-map-note">
         <p><strong>Fontes:</strong> OpenStreetMap; relevo OpenTopoMap com SRTM; sistema viário, drenagem, massas d'água e limites municipais do INTERMAT; projetos de assentamento do INCRA publicados no geosserviço do IBAMA; pontos rodoviários conferidos na SINFRA/MT.</p>
+        <p><strong>Leitura das camadas:</strong> “Rios e córregos” mostra eixos de drenagem. “Massas d'água” mostra polígonos de cursos de margem dupla e outros corpos d'água da base oficial. A cartografia do INTERMAT usada nessas camadas é de escala 1:100.000.</p>
         <p>As camadas oficiais são consultadas pela própria aplicação e limitadas à região de interesse. O site não grava suas coordenadas de localização no servidor.</p>
         <p><a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener noreferrer">Informar uma correção no mapa-base ↗</a></p>
       </div>
@@ -168,6 +170,47 @@
 
   function fitRegion(map, L) {
     map.fitBounds(L.latLngBounds(REFERENCES.map((point) => [point.lat, point.lng])), { padding: [34, 34], maxZoom: 10 });
+  }
+
+  function regionBounds(L) {
+    return L.latLngBounds(
+      [REGION_BOUNDS.ymin, REGION_BOUNDS.xmin],
+      [REGION_BOUNDS.ymax, REGION_BOUNDS.xmax],
+    );
+  }
+
+  function featureCollectionBounds(data, L) {
+    const bounds = L.latLngBounds([]);
+    const visit = (coordinates) => {
+      if (!Array.isArray(coordinates)) return;
+      if (
+        coordinates.length >= 2
+        && Number.isFinite(coordinates[0])
+        && Number.isFinite(coordinates[1])
+      ) {
+        const lng = coordinates[0];
+        const lat = coordinates[1];
+        if (
+          lng >= REGION_BOUNDS.xmin && lng <= REGION_BOUNDS.xmax
+          && lat >= REGION_BOUNDS.ymin && lat <= REGION_BOUNDS.ymax
+        ) bounds.extend([lat, lng]);
+        return;
+      }
+      coordinates.forEach(visit);
+    };
+
+    data?.features?.forEach((feature) => visit(feature?.geometry?.coordinates));
+    return bounds.isValid() ? bounds : regionBounds(L);
+  }
+
+  function fitOfficialLayer(name, group, map) {
+    const bounds = group?._paFitBounds;
+    if (!bounds?.isValid?.()) return;
+    map.fitBounds(bounds, {
+      padding: [28, 28],
+      maxZoom: OFFICIAL_LAYERS[name]?.maxZoom || 11,
+      animate: true,
+    });
   }
 
   function popupHtml(point) {
@@ -254,7 +297,11 @@
   }
 
   async function populateOfficialLayer(name, group, panel, L) {
-    if (loadedLayers.has(name)) return;
+    if (loadedLayers.has(name)) {
+      fitOfficialLayer(name, group, mapInstance);
+      setStatus(panel, `${OFFICIAL_LAYERS[name].label} exibida e enquadrada na área correspondente.`);
+      return;
+    }
     if (layerPromises.has(name)) return layerPromises.get(name);
     setStatus(panel, `Carregando ${OFFICIAL_LAYERS[name].label}...`);
     const promise = fetch(`/api/map/layer?layer=${encodeURIComponent(name)}`, {
@@ -264,8 +311,10 @@
       const data = await response.json().catch(() => null);
       if (!response.ok || !data || data.type !== 'FeatureCollection') throw new Error(data?.error || 'Resposta cartográfica inválida.');
       L.geoJSON(data, geoJsonOptions(name)).addTo(group);
+      group._paFitBounds = featureCollectionBounds(data, L);
       loadedLayers.add(name);
-      setStatus(panel, `${OFFICIAL_LAYERS[name].label} carregada com ${data.features.length} feições.`);
+      fitOfficialLayer(name, group, mapInstance);
+      setStatus(panel, `${OFFICIAL_LAYERS[name].label} carregada com ${data.features.length} feições e enquadrada automaticamente.`);
     }).catch((error) => {
       console.warn('[PA Safra] Falha ao carregar camada oficial:', name, error);
       setStatus(panel, `${OFFICIAL_LAYERS[name].label} não pôde ser carregada agora. O restante do mapa continua disponível.`);
