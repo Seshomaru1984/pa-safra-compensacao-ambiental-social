@@ -25,7 +25,15 @@ for (const token of [
   "['#home-hero-image', 'Imagem principal']",
   "['#legacy-image', 'Imagem de Memória e legado']",
   "['#gallery-editor input[data-role=\"image\"]', 'Imagem da galeria']",
-  'Enviar foto do computador', 'JPG, PNG ou WebP', '/api/admin/media',
+  'Enviar foto', 'Remover foto', 'JPG, PNG ou WebP', '/api/admin/media',
+  "actionRow.className = 'image-upload-actions'",
+  "pickerLabel.className = 'image-upload-action image-upload-picker'",
+  "clear.className = 'image-upload-action image-upload-remove'",
+  'grid-template-columns: repeat(2, minmax(150px, 190px))',
+  'align-items: stretch',
+  '.image-upload-action { width: 100%; min-height: 42px;',
+  '@media (max-width: 620px)',
+  '.image-upload-actions { grid-template-columns: 1fr; width: 100%; }',
 ]) assert.ok(admin.includes(token), `Admin de mídia incompleto: ${token}`);
 
 assert.ok(pageActions.includes("import './image-upload.js'"), 'upload não está carregado pelo fluxo do Admin');
@@ -64,5 +72,6 @@ console.log('ADMIN MEDIA TEST: PASS');
 console.log('- upload aceita somente JPG, PNG e WebP até 4 MB com validação de assinatura');
 console.log('- escrita exige sessão, origem válida, token e branch editorial autorizada');
 console.log('- Home, Memória e legado e Galeria exibem upload explícito do computador');
+console.log('- ações Enviar foto e Remover foto usam dimensões e alinhamento consistentes, com empilhamento no celular');
 console.log('- Acesso e localização aparece como área própria e mantém as referências rodoviárias editáveis');
 console.log('- uploads editoriais possuem rota pública restrita à pasta de imagens');

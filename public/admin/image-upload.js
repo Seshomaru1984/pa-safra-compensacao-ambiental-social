@@ -14,14 +14,27 @@
     const style = document.createElement('style');
     style.id = 'pa-image-upload-styles';
     style.textContent = `
-.image-upload { grid-column: 1 / -1; display: grid; grid-template-columns: 120px 1fr; gap: 14px; align-items: center; padding: 14px; border: 1px solid var(--line, #d7ddd9); border-radius: 12px; background: #fff; }
-.image-upload-preview { width: 120px; height: 82px; border-radius: 9px; overflow: hidden; background: #eef2ef; display: grid; place-items: center; color: #65716c; font-size: .78rem; text-align: center; }
+.image-upload { grid-column: 1 / -1; display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 18px; align-items: center; padding: 16px; margin: 0 0 18px; border: 1px solid var(--line, #d7ddd9); border-radius: 14px; background: #fff; }
+.image-upload-preview { width: 132px; height: 92px; border: 1px solid rgba(24,33,30,.08); border-radius: 11px; overflow: hidden; background: #eef2ef; display: grid; place-items: center; color: #65716c; font-size: .8rem; text-align: center; }
 .image-upload-preview img { width: 100%; height: 100%; object-fit: cover; }
-.image-upload-controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.image-upload-title { flex-basis: 100%; font-size: .95rem; color: var(--ink, #18211e); }
+.image-upload-controls { min-width: 0; display: grid; gap: 10px; align-content: center; }
+.image-upload-title { display: block; margin: 0; font-size: .94rem; line-height: 1.25; color: var(--ink-950, #18211e); }
+.image-upload-actions { display: grid; grid-template-columns: repeat(2, minmax(150px, 190px)); gap: 10px; align-items: stretch; justify-content: start; }
+.image-upload-action { width: 100%; min-height: 42px; margin: 0; padding: 0 14px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: .88rem; font-weight: 800; line-height: 1.15; text-align: center; cursor: pointer; box-sizing: border-box; }
+.image-upload-picker { border: 1px solid var(--forest-800, #173f35); background: var(--forest-800, #173f35); color: #fff; }
+.image-upload-picker:hover { filter: brightness(.96); }
+.image-upload-remove { border: 1px solid rgba(138,45,37,.32); background: #fff; color: var(--danger, #8a2d25); }
+.image-upload-remove:hover { background: rgba(138,45,37,.05); }
+.image-upload-action:focus-visible { outline: 3px solid rgba(31,89,73,.18); outline-offset: 2px; }
+.image-upload-action:disabled { cursor: not-allowed; opacity: .45; }
 .image-upload-controls input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
-.image-upload-status { flex-basis: 100%; margin: 2px 0 0; color: var(--ink-600, #59635f); font-size: .84rem; }
-@media (max-width: 620px) { .image-upload { grid-template-columns: 1fr; } .image-upload-preview { width: 100%; height: 150px; } }
+.image-upload-status { margin: 0; max-width: 620px; color: var(--ink-600, #59635f); font-size: .82rem; line-height: 1.45; }
+@media (max-width: 620px) {
+  .image-upload { grid-template-columns: 1fr; gap: 12px; padding: 14px; }
+  .image-upload-preview { width: 100%; height: 160px; }
+  .image-upload-actions { grid-template-columns: 1fr; width: 100%; }
+  .image-upload-action { min-height: 44px; }
+}
 `;
     document.head.appendChild(style);
   }
@@ -83,9 +96,12 @@
     heading.className = 'image-upload-title';
     heading.textContent = `${title} - upload`;
 
+    const actionRow = document.createElement('div');
+    actionRow.className = 'image-upload-actions';
+
     const pickerLabel = document.createElement('label');
-    pickerLabel.className = 'button secondary';
-    pickerLabel.textContent = 'Enviar foto do computador';
+    pickerLabel.className = 'image-upload-action image-upload-picker';
+    pickerLabel.textContent = 'Enviar foto';
     const picker = document.createElement('input');
     picker.type = 'file';
     picker.accept = '.jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp';
@@ -93,16 +109,18 @@
 
     const clear = document.createElement('button');
     clear.type = 'button';
-    clear.className = 'button secondary';
+    clear.className = 'image-upload-action image-upload-remove';
     clear.textContent = 'Remover foto';
+
+    actionRow.append(pickerLabel, clear);
 
     const status = document.createElement('p');
     status.className = 'image-upload-status';
     status.setAttribute('role', 'status');
     status.setAttribute('aria-live', 'polite');
-    status.textContent = 'Escolha uma foto JPG, PNG ou WebP de até 4 MB. O arquivo será enviado e o caminho será preenchido automaticamente. Depois clique em Salvar.';
+    status.textContent = 'JPG, PNG ou WebP, até 4 MB. Depois do envio, clique em Salvar para aplicar.';
 
-    controls.append(heading, pickerLabel, clear, status);
+    controls.append(heading, actionRow, status);
     wrap.append(preview, controls);
     label.insertAdjacentElement('afterend', wrap);
     refreshPreview(input, image, empty);
@@ -139,6 +157,7 @@
 
       picker.disabled = true;
       clear.disabled = true;
+      pickerLabel.setAttribute('aria-disabled', 'true');
       status.textContent = 'Enviando foto...';
       try {
         const response = await fetch('/api/admin/media', {
@@ -159,6 +178,7 @@
       } finally {
         picker.disabled = false;
         clear.disabled = false;
+        pickerLabel.removeAttribute('aria-disabled');
       }
     });
   }
