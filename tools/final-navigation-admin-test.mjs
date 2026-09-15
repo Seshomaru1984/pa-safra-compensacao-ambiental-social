@@ -19,7 +19,7 @@ for (const token of [
   "tabLabel: 'Mapas e acessos'",
   "slug: 'contato'",
   "tabLabel: 'Contato'",
-  "data.pageMode",
+  'dataset.pageMode',
 ]) {
   assert(assist.includes(token), `assistente do Admin sem contrato esperado: ${token}`);
 }
