@@ -62,9 +62,14 @@
 .leaflet-container { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
 .leaflet-control-attribution { font-size: 10px; }
 .leaflet-control-layers { border: 1px solid rgba(16,50,42,.2) !important; border-radius: 12px !important; box-shadow: 0 10px 24px rgba(20,44,37,.14) !important; overflow: hidden; }
+.leaflet-control-layers:not(.leaflet-control-layers-expanded) .leaflet-control-layers-toggle { display: flex !important; align-items: center; gap: 8px; width: auto !important; min-width: 116px; height: 44px !important; padding: 0 13px !important; background: #fff !important; color: #173f35 !important; text-decoration: none !important; font-size: .84rem; font-weight: 800; line-height: 1; }
+.access-map-layers-symbol { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; background: #173f35; color: #fff; font-size: 14px; line-height: 1; }
+.access-map-layers-label { white-space: nowrap; }
 .leaflet-control-layers-expanded { max-width: min(310px, calc(100vw - 72px)); padding: 12px 14px !important; color: #18211e; }
 .leaflet-control-layers label { margin: 0; padding: 5px 0; font-weight: 700; font-size: .84rem; }
 .leaflet-control-layers-selector { width: auto; margin-right: 7px; }
+.leaflet-tooltip.access-map-tooltip { max-width: min(300px, calc(100vw - 48px)); border: 1px solid rgba(16,50,42,.18); border-radius: 10px; padding: 8px 10px; background: rgba(255,255,255,.98); box-shadow: 0 8px 22px rgba(20,44,37,.16); color: #18211e; }
+.leaflet-tooltip.access-map-tooltip .access-map-popup { min-width: 130px; }
 @media (max-width: 760px) {
   .access-map-head { grid-template-columns: 1fr; padding: 18px 16px 12px; }
   .access-map-badge { justify-self: start; }
@@ -79,6 +84,7 @@
   .access-map-reference { min-height: 54px; }
   .access-map-canvas { height: 58vh; min-height: 350px; }
   .leaflet-control-layers-expanded { max-width: calc(100vw - 56px); }
+  .leaflet-control-layers:not(.leaflet-control-layers-expanded) .leaflet-control-layers-toggle { min-width: 108px; height: 42px !important; padding: 0 11px !important; }
 }
 `;
     document.head.appendChild(style);
@@ -134,7 +140,7 @@
       <div class="access-map-head">
         <div>
           <h2 id="access-map-title">Mapa interativo da região</h2>
-          <p>Explore acessos, relevo, rios e limites. Use o controle de camadas no canto superior direito do mapa para mostrar apenas o que precisar.</p>
+          <p>Explore acessos, relevo, rios e limites. Use o botão “Camadas” no canto superior direito do mapa para mostrar apenas o que precisar.</p>
         </div>
         <span class="access-map-badge">Mobile + GPS + camadas</span>
       </div>
@@ -142,7 +148,7 @@
         <button class="access-map-action primary" type="button" data-map-locate>Minha localização</button>
         <button class="access-map-action" type="button" data-map-region>Mostrar região</button>
       </div>
-      <p class="access-map-status" data-map-status role="status" aria-live="polite">A localização só será solicitada quando você tocar em “Minha localização”. As camadas oficiais são carregadas apenas quando selecionadas.</p>
+      <p class="access-map-status" data-map-status role="status" aria-live="polite">A localização só será solicitada quando você tocar em “Minha localização”. As camadas oficiais são carregadas apenas quando selecionadas. No computador, passe o mouse sobre pontos e feições para ver a legenda.</p>
       <div class="access-map-canvas" data-map-canvas aria-label="Mapa interativo de Nova Xavantina, PA Safra e acessos regionais"></div>
       <div class="access-map-references" data-map-references aria-label="Pontos de referência rodoviária"></div>
       <div class="access-map-note">
@@ -189,6 +195,32 @@
     return wrapper;
   }
 
+  function bindFeatureInfo(layer, titleText, detailText) {
+    layer.bindPopup(featurePopup(titleText, detailText));
+    layer.bindTooltip(featurePopup(titleText, detailText), {
+      sticky: true,
+      direction: 'top',
+      opacity: .98,
+      className: 'access-map-tooltip',
+    });
+  }
+
+  function labelLayersControl(control) {
+    const toggle = control?.getContainer()?.querySelector('.leaflet-control-layers-toggle');
+    if (!toggle) return;
+    toggle.replaceChildren();
+    toggle.setAttribute('aria-label', 'Abrir camadas do mapa');
+    toggle.setAttribute('title', 'Camadas do mapa');
+    const symbol = document.createElement('span');
+    symbol.className = 'access-map-layers-symbol';
+    symbol.setAttribute('aria-hidden', 'true');
+    symbol.textContent = '▤';
+    const label = document.createElement('span');
+    label.className = 'access-map-layers-label';
+    label.textContent = 'Camadas';
+    toggle.append(symbol, label);
+  }
+
   function firstText(properties, keys, fallback = '') {
     for (const key of keys) {
       const value = properties?.[key];
@@ -207,11 +239,11 @@
   function geoJsonOptions(name) {
     const onEachFeature = (feature, layer) => {
       const p = feature?.properties || {};
-      if (name === 'roads') layer.bindPopup(featurePopup(firstText(p, ['sv_no', 'sv_den'], 'Trecho viário'), [firstText(p, ['sv_juriscl']), firstText(p, ['sv_tipo'])].filter(Boolean).join(' · ')));
-      if (name === 'drainage') layer.bindPopup(featurePopup(firstText(p, ['td_no'], 'Curso d’água'), [firstText(p, ['td_tipo']), firstText(p, ['td_juris'])].filter(Boolean).join(' · ')));
-      if (name === 'water') layer.bindPopup(featurePopup(firstText(p, ['ma_no'], "Massa d'água"), firstText(p, ['ma_tipo'])));
-      if (name === 'settlements') layer.bindPopup(featurePopup(firstText(p, ['s_no'], 'Projeto de assentamento'), [firstText(p, ['s_mn']), firstText(p, ['s_sipra']), firstText(p, ['s_md'])].filter(Boolean).join(' · ')));
-      if (name === 'municipalities') layer.bindPopup(featurePopup(firstText(p, ['mn_no', 'mn_cod'], 'Limite municipal'), 'Base político-administrativa do INTERMAT.'));
+      if (name === 'roads') bindFeatureInfo(layer, firstText(p, ['sv_no', 'sv_den'], 'Trecho viário'), [firstText(p, ['sv_juriscl']), firstText(p, ['sv_tipo'])].filter(Boolean).join(' · '));
+      if (name === 'drainage') bindFeatureInfo(layer, firstText(p, ['td_no'], 'Curso d’água'), [firstText(p, ['td_tipo']), firstText(p, ['td_juris'])].filter(Boolean).join(' · '));
+      if (name === 'water') bindFeatureInfo(layer, firstText(p, ['ma_no'], "Massa d'água"), firstText(p, ['ma_tipo']));
+      if (name === 'settlements') bindFeatureInfo(layer, firstText(p, ['s_no'], 'Projeto de assentamento'), [firstText(p, ['s_mn']), firstText(p, ['s_sipra']), firstText(p, ['s_md'])].filter(Boolean).join(' · '));
+      if (name === 'municipalities') bindFeatureInfo(layer, firstText(p, ['mn_no', 'mn_cod'], 'Limite municipal'), 'Base político-administrativa do INTERMAT.');
     };
     if (name === 'roads') return { style: roadStyle, onEachFeature };
     if (name === 'drainage') return { style: { color: '#2d77a8', weight: 1.6, opacity: .86 }, onEachFeature };
@@ -256,10 +288,20 @@
         fillOpacity: .92,
       }).addTo(map);
       marker.bindPopup(popupHtml(point));
+      marker.bindTooltip(popupHtml(point), {
+        sticky: true,
+        direction: 'top',
+        opacity: .98,
+        className: 'access-map-tooltip',
+      });
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'access-map-reference';
       button.textContent = point.label;
+      button.addEventListener('mouseenter', () => marker.openTooltip());
+      button.addEventListener('mouseleave', () => marker.closeTooltip());
+      button.addEventListener('focus', () => marker.openTooltip());
+      button.addEventListener('blur', () => marker.closeTooltip());
       button.addEventListener('click', () => {
         map.setView([point.lat, point.lng], point.kind === 'city' ? 13 : 14, { animate: true });
         marker.openPopup();
@@ -315,7 +357,8 @@
       overlays[config.label] = group;
     });
 
-    L.control.layers({ 'Mapa padrão': osm, 'Relevo topográfico': topo }, overlays, { collapsed: true, position: 'topright' }).addTo(mapInstance);
+    const layersControl = L.control.layers({ 'Mapa padrão': osm, 'Relevo topográfico': topo }, overlays, { collapsed: true, position: 'topright' }).addTo(mapInstance);
+    labelLayersControl(layersControl);
     L.control.scale({ imperial: false, position: 'bottomleft' }).addTo(mapInstance);
 
     mapInstance.on('overlayadd', (event) => {
@@ -328,7 +371,7 @@
     panel.querySelector('[data-map-locate]')?.addEventListener('click', () => locateUser(mapInstance, panel, L));
     panel.querySelector('[data-map-region]')?.addEventListener('click', () => {
       fitRegion(mapInstance, L);
-      setStatus(panel, 'Visão regional restaurada. Use o controle de camadas no mapa para exibir relevo, vias, água ou limites.');
+      setStatus(panel, 'Visão regional restaurada. Use o botão Camadas no mapa para exibir relevo, vias, água ou limites.');
     });
     requestAnimationFrame(() => mapInstance.invalidateSize());
   }
