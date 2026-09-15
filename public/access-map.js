@@ -20,7 +20,7 @@
     roads: { label: 'Vias oficiais e vicinais' },
     drainage: { label: 'Rios e córregos' },
     water: { label: "Massas d'água" },
-    settlements: { label: 'Assentamentos' },
+    settlements: { label: 'Projetos de assentamento (INCRA)' },
     municipalities: { label: 'Limites municipais' },
   });
 
@@ -146,7 +146,7 @@
       <div class="access-map-canvas" data-map-canvas aria-label="Mapa interativo de Nova Xavantina, PA Safra e acessos regionais"></div>
       <div class="access-map-references" data-map-references aria-label="Pontos de referência rodoviária"></div>
       <div class="access-map-note">
-        <p><strong>Fontes:</strong> OpenStreetMap; relevo OpenTopoMap com SRTM; sistema viário, drenagem, massas d'água, assentamentos e limites municipais do INTERMAT; pontos rodoviários conferidos na SINFRA/MT.</p>
+        <p><strong>Fontes:</strong> OpenStreetMap; relevo OpenTopoMap com SRTM; sistema viário, drenagem, massas d'água e limites municipais do INTERMAT; projetos de assentamento do INCRA publicados no geosserviço do IBAMA; pontos rodoviários conferidos na SINFRA/MT.</p>
         <p>As camadas oficiais são consultadas pela própria aplicação e limitadas à região de interesse. O site não grava suas coordenadas de localização no servidor.</p>
         <p><a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener noreferrer">Informar uma correção no mapa-base ↗</a></p>
       </div>
@@ -210,7 +210,7 @@
       if (name === 'roads') layer.bindPopup(featurePopup(firstText(p, ['sv_no', 'sv_den'], 'Trecho viário'), [firstText(p, ['sv_juriscl']), firstText(p, ['sv_tipo'])].filter(Boolean).join(' · ')));
       if (name === 'drainage') layer.bindPopup(featurePopup(firstText(p, ['td_no'], 'Curso d’água'), [firstText(p, ['td_tipo']), firstText(p, ['td_juris'])].filter(Boolean).join(' · ')));
       if (name === 'water') layer.bindPopup(featurePopup(firstText(p, ['ma_no'], "Massa d'água"), firstText(p, ['ma_tipo'])));
-      if (name === 'settlements') layer.bindPopup(featurePopup(firstText(p, ['s_no'], 'Assentamento'), [firstText(p, ['s_mn']), firstText(p, ['s_sipra'])].filter(Boolean).join(' · ')));
+      if (name === 'settlements') layer.bindPopup(featurePopup(firstText(p, ['s_no'], 'Projeto de assentamento'), [firstText(p, ['s_mn']), firstText(p, ['s_sipra']), firstText(p, ['s_md'])].filter(Boolean).join(' · ')));
       if (name === 'municipalities') layer.bindPopup(featurePopup(firstText(p, ['mn_no', 'mn_cod'], 'Limite municipal'), 'Base político-administrativa do INTERMAT.'));
     };
     if (name === 'roads') return { style: roadStyle, onEachFeature };
