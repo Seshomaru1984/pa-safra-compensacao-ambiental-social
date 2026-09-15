@@ -57,8 +57,9 @@
 .access-map-note p:last-child { margin-bottom: 0; }
 .access-map-note a { color: #1f5949; font-weight: 750; }
 .access-map-fallback { display: grid; place-items: center; min-height: 320px; padding: 28px; text-align: center; background: #f3eee2; color: #173f35; }
-.access-map-popup strong { display: block; margin-bottom: 4px; color: #173f35; }
-.access-map-popup span { color: #596963; font-size: .88rem; }
+.access-map-popup { max-width: min(280px, calc(100vw - 88px)); white-space: normal; overflow-wrap: anywhere; word-break: normal; }
+.access-map-popup strong { display: block; margin-bottom: 4px; color: #173f35; white-space: normal; overflow-wrap: anywhere; }
+.access-map-popup span { display: block; color: #596963; font-size: .88rem; white-space: normal; overflow-wrap: anywhere; }
 .access-map-user-label { font-weight: 800; }
 .leaflet-container { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
 .leaflet-control-attribution { font-size: 10px; }
@@ -69,8 +70,9 @@
 .leaflet-control-layers-expanded { max-width: min(310px, calc(100vw - 72px)); padding: 12px 14px !important; color: #18211e; }
 .leaflet-control-layers label { margin: 0; padding: 5px 0; font-weight: 700; font-size: .84rem; }
 .leaflet-control-layers-selector { width: auto; margin-right: 7px; }
-.leaflet-tooltip.access-map-tooltip { max-width: min(300px, calc(100vw - 48px)); border: 1px solid rgba(16,50,42,.18); border-radius: 10px; padding: 8px 10px; background: rgba(255,255,255,.98); box-shadow: 0 8px 22px rgba(20,44,37,.16); color: #18211e; }
-.leaflet-tooltip.access-map-tooltip .access-map-popup { min-width: 130px; }
+.leaflet-tooltip.access-map-tooltip { width: max-content; max-width: min(300px, calc(100vw - 88px)); white-space: normal !important; overflow-wrap: anywhere; border: 1px solid rgba(16,50,42,.18); border-radius: 10px; padding: 8px 10px; background: rgba(255,255,255,.98); box-shadow: 0 8px 22px rgba(20,44,37,.16); color: #18211e; }
+.leaflet-tooltip.access-map-tooltip .access-map-popup { min-width: 0; max-width: 100%; }
+.access-map-canvas .leaflet-popup-content { max-width: min(280px, calc(100vw - 96px)) !important; white-space: normal; overflow-wrap: anywhere; }
 @media (max-width: 760px) {
   .access-map-head { grid-template-columns: 1fr; padding: 18px 16px 12px; }
   .access-map-badge { justify-self: start; }
@@ -86,6 +88,8 @@
   .access-map-canvas { height: 58vh; min-height: 350px; }
   .leaflet-control-layers-expanded { max-width: calc(100vw - 56px); }
   .leaflet-control-layers:not(.leaflet-control-layers-expanded) .leaflet-control-layers-toggle { min-width: 108px; height: 42px !important; padding: 0 11px !important; }
+  .leaflet-tooltip.access-map-tooltip { max-width: calc(100vw - 72px); }
+  .access-map-popup { max-width: calc(100vw - 88px); }
 }
 `;
     document.head.appendChild(style);
