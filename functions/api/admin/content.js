@@ -277,7 +277,8 @@ function validatePages(items) {
 
 function validateLinks(data) {
   ensurePlainObject(data, 'links');
-  rejectUnknown(data, ['official', 'sources'], 'links');
+  rejectUnknown(data, ['intro', 'official', 'sources'], 'links');
+  ensureString(data.intro, 'Texto de apresentação de Links úteis', 1000);
   if (!Array.isArray(data.official) || !Array.isArray(data.sources)) throw new Error('Links oficiais e fontes devem ser listas.');
   if (data.official.length > 30 || data.sources.length > 60) throw new Error('Quantidade de links acima do limite.');
   data.official.forEach((item, index) => {
