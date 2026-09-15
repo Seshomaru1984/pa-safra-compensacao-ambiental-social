@@ -2,11 +2,31 @@
   'use strict';
 
   let configuredCredit = null;
+  let configuredSummary = null;
 
   function applyConfiguredCredit(sourceCaption) {
     if (!sourceCaption || configuredCredit === null) return;
     if (sourceCaption.textContent.trim() !== configuredCredit) sourceCaption.textContent = configuredCredit;
     sourceCaption.hidden = !configuredCredit;
+  }
+
+  function syncLegacySummary() {
+    const view = document.querySelector('[data-view="legado"]');
+    if (!view || configuredSummary === null) return;
+
+    const title = view.querySelector('#titulo-legado');
+    if (!title) return;
+
+    let summary = view.querySelector('#legacy-summary');
+    if (!summary) {
+      summary = document.createElement('p');
+      summary.id = 'legacy-summary';
+      summary.className = 'legacy-summary';
+      title.insertAdjacentElement('afterend', summary);
+    }
+
+    if (summary.textContent !== configuredSummary) summary.textContent = configuredSummary;
+    summary.hidden = !configuredSummary;
   }
 
   function syncLegacyInlinePhoto() {
@@ -52,15 +72,23 @@
     caption.hidden = !captionHtml;
   }
 
-  async function loadConfiguredCredit() {
+  async function loadConfiguredLegacy() {
     try {
       const response = await fetch('/content/site.json', { cache: 'no-store' });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const site = await response.json();
       configuredCredit = String(site?.legacy?.image_credit || '').trim();
+      configuredSummary = String(site?.legacy?.summary || '').trim();
     } catch {
       configuredCredit = null;
+      configuredSummary = null;
     }
+    syncLegacySummary();
+    syncLegacyInlinePhoto();
+  }
+
+  function syncLegacyView() {
+    syncLegacySummary();
     syncLegacyInlinePhoto();
   }
 
@@ -68,10 +96,10 @@
     const view = document.querySelector('[data-view="legado"]');
     if (!view) return;
 
-    syncLegacyInlinePhoto();
-    loadConfiguredCredit();
+    syncLegacyView();
+    loadConfiguredLegacy();
 
-    const observer = new MutationObserver(() => syncLegacyInlinePhoto());
+    const observer = new MutationObserver(() => syncLegacyView());
     observer.observe(view, {
       subtree: true,
       childList: true,
