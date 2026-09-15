@@ -7,47 +7,30 @@
   const LEAFLET_CSS_INTEGRITY = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
   const LEAFLET_JS_INTEGRITY = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
   const OSM_TILES = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+  const TOPO_TILES = 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png';
 
   const REFERENCES = Object.freeze([
-    {
-      id: 'nova-xavantina',
-      label: 'Nova Xavantina',
-      detail: 'Referência urbana do município.',
-      lat: -14.677063,
-      lng: -52.350234,
-      kind: 'city',
-    },
-    {
-      id: 'br158-mt251',
-      label: 'BR-158 / MT-251',
-      detail: 'Início do trecho estadual 251EMT0005 da MT-251, conforme SINFRA/MT.',
-      lat: -14.6062208333,
-      lng: -52.3589558333,
-      kind: 'road',
-    },
-    {
-      id: 'divisa-campinapolis',
-      label: 'Divisa Nova Xavantina / Campinápolis',
-      detail: 'Ponto de referência do trecho 251EMT0005 da MT-251, conforme SINFRA/MT.',
-      lat: -14.6472133333,
-      lng: -52.7533133333,
-      kind: 'road',
-    },
-    {
-      id: 'mt251-mt110',
-      label: 'MT-251 / MT-110',
-      detail: 'Entroncamento final do trecho 251EMT0006 da MT-251, conforme SINFRA/MT.',
-      lat: -14.6258655556,
-      lng: -52.790185,
-      kind: 'road',
-    },
+    { id: 'nova-xavantina', label: 'Nova Xavantina', detail: 'Referência urbana do município.', lat: -14.677063, lng: -52.350234, kind: 'city' },
+    { id: 'br158-mt251', label: 'BR-158 / MT-251', detail: 'Início do trecho estadual 251EMT0005 da MT-251, conforme SINFRA/MT.', lat: -14.6062208333, lng: -52.3589558333, kind: 'road' },
+    { id: 'divisa-campinapolis', label: 'Divisa Nova Xavantina / Campinápolis', detail: 'Ponto de referência do trecho 251EMT0005 da MT-251, conforme SINFRA/MT.', lat: -14.6472133333, lng: -52.7533133333, kind: 'road' },
+    { id: 'mt251-mt110', label: 'MT-251 / MT-110', detail: 'Entroncamento final do trecho 251EMT0006 da MT-251, conforme SINFRA/MT.', lat: -14.6258655556, lng: -52.790185, kind: 'road' },
   ]);
+
+  const OFFICIAL_LAYERS = Object.freeze({
+    roads: { label: 'Vias oficiais e vicinais' },
+    drainage: { label: 'Rios e córregos' },
+    water: { label: "Massas d'água" },
+    settlements: { label: 'Assentamentos' },
+    municipalities: { label: 'Limites municipais' },
+  });
 
   let leafletPromise = null;
   let mapInstance = null;
   let mapSection = null;
   let userMarker = null;
   let userAccuracy = null;
+  const layerPromises = new Map();
+  const loadedLayers = new Set();
 
   function installStyles() {
     if (document.getElementById('pa-access-map-styles')) return;
@@ -73,12 +56,15 @@
 .access-map-note p:last-child { margin-bottom: 0; }
 .access-map-note a { color: #1f5949; font-weight: 750; }
 .access-map-fallback { display: grid; place-items: center; min-height: 320px; padding: 28px; text-align: center; background: #f3eee2; color: #173f35; }
-.access-map-fallback p { max-width: 620px; }
 .access-map-popup strong { display: block; margin-bottom: 4px; color: #173f35; }
 .access-map-popup span { color: #596963; font-size: .88rem; }
 .access-map-user-label { font-weight: 800; }
 .leaflet-container { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
 .leaflet-control-attribution { font-size: 10px; }
+.leaflet-control-layers { border: 1px solid rgba(16,50,42,.2) !important; border-radius: 12px !important; box-shadow: 0 10px 24px rgba(20,44,37,.14) !important; overflow: hidden; }
+.leaflet-control-layers-expanded { max-width: min(310px, calc(100vw - 72px)); padding: 12px 14px !important; color: #18211e; }
+.leaflet-control-layers label { margin: 0; padding: 5px 0; font-weight: 700; font-size: .84rem; }
+.leaflet-control-layers-selector { width: auto; margin-right: 7px; }
 @media (max-width: 760px) {
   .access-map-head { grid-template-columns: 1fr; padding: 18px 16px 12px; }
   .access-map-badge { justify-self: start; }
@@ -92,6 +78,7 @@
   .access-map-actions { display: grid; grid-template-columns: 1fr; }
   .access-map-reference { min-height: 54px; }
   .access-map-canvas { height: 58vh; min-height: 350px; }
+  .leaflet-control-layers-expanded { max-width: calc(100vw - 56px); }
 }
 `;
     document.head.appendChild(style);
@@ -100,7 +87,6 @@
   function loadLeaflet() {
     if (window.L) return Promise.resolve(window.L);
     if (leafletPromise) return leafletPromise;
-
     leafletPromise = new Promise((resolve, reject) => {
       let css = document.querySelector('link[data-pa-leaflet]');
       if (!css) {
@@ -112,7 +98,6 @@
         css.dataset.paLeaflet = 'css';
         document.head.appendChild(css);
       }
-
       let script = document.querySelector('script[data-pa-leaflet]');
       if (script) {
         if (window.L) resolve(window.L);
@@ -122,7 +107,6 @@
         }
         return;
       }
-
       script = document.createElement('script');
       script.src = LEAFLET_JS;
       script.integrity = LEAFLET_JS_INTEGRITY;
@@ -132,25 +116,17 @@
       script.addEventListener('error', () => reject(new Error('Não foi possível carregar a biblioteca do mapa.')), { once: true });
       document.head.appendChild(script);
     });
-
     return leafletPromise;
   }
 
-  function currentSlug() {
-    return window.location.hash.replace('#', '').trim().toLowerCase();
-  }
-
-  function accessSection() {
-    return document.querySelector(`[data-view="${ACCESS_SLUG}"]`);
-  }
+  const currentSlug = () => window.location.hash.replace('#', '').trim().toLowerCase();
+  const accessSection = () => document.querySelector(`[data-view="${ACCESS_SLUG}"]`);
 
   function makePanel(section) {
     let panel = section.querySelector('.access-map-panel');
     if (panel) return panel;
-
     const content = section.querySelector('.dynamic-page-content');
     if (!content) return null;
-
     panel = document.createElement('section');
     panel.className = 'access-map-panel';
     panel.setAttribute('aria-labelledby', 'access-map-title');
@@ -158,21 +134,21 @@
       <div class="access-map-head">
         <div>
           <h2 id="access-map-title">Mapa interativo da região</h2>
-          <p>Explore as rodovias e acessos da região, aproxime o mapa e use a localização do aparelho para saber onde você está.</p>
+          <p>Explore acessos, relevo, rios e limites. Use o controle de camadas no canto superior direito do mapa para mostrar apenas o que precisar.</p>
         </div>
-        <span class="access-map-badge">Mobile + GPS</span>
+        <span class="access-map-badge">Mobile + GPS + camadas</span>
       </div>
       <div class="access-map-actions" aria-label="Controles rápidos do mapa">
         <button class="access-map-action primary" type="button" data-map-locate>Minha localização</button>
         <button class="access-map-action" type="button" data-map-region>Mostrar região</button>
       </div>
-      <p class="access-map-status" data-map-status role="status" aria-live="polite">A localização só será solicitada quando você tocar em “Minha localização”.</p>
+      <p class="access-map-status" data-map-status role="status" aria-live="polite">A localização só será solicitada quando você tocar em “Minha localização”. As camadas oficiais são carregadas apenas quando selecionadas.</p>
       <div class="access-map-canvas" data-map-canvas aria-label="Mapa interativo de Nova Xavantina, PA Safra e acessos regionais"></div>
       <div class="access-map-references" data-map-references aria-label="Pontos de referência rodoviária"></div>
       <div class="access-map-note">
-        <p><strong>Fontes cartográficas:</strong> mapa-base OpenStreetMap; pontos rodoviários de referência conferidos no Sistema Rodoviário Estadual da SINFRA/MT.</p>
-        <p>O site não grava suas coordenadas no servidor. Ao usar “Minha localização”, o navegador pede sua autorização e o mapa é centralizado no aparelho. Os tiles cartográficos solicitados ao provedor correspondem à área visualizada.</p>
-        <p><a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener noreferrer">Informar uma correção no mapa ↗</a></p>
+        <p><strong>Fontes:</strong> OpenStreetMap; relevo OpenTopoMap com SRTM; sistema viário, drenagem, massas d'água, assentamentos e limites municipais do INTERMAT; pontos rodoviários conferidos na SINFRA/MT.</p>
+        <p>As camadas oficiais são consultadas pela própria aplicação e limitadas à região de interesse. O site não grava suas coordenadas de localização no servidor.</p>
+        <p><a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener noreferrer">Informar uma correção no mapa-base ↗</a></p>
       </div>
     `;
     content.prepend(panel);
@@ -185,8 +161,7 @@
   }
 
   function fitRegion(map, L) {
-    const bounds = L.latLngBounds(REFERENCES.map((point) => [point.lat, point.lng]));
-    map.fitBounds(bounds, { padding: [34, 34], maxZoom: 10 });
+    map.fitBounds(L.latLngBounds(REFERENCES.map((point) => [point.lat, point.lng])), { padding: [34, 34], maxZoom: 10 });
   }
 
   function popupHtml(point) {
@@ -200,20 +175,87 @@
     return wrapper;
   }
 
+  function featurePopup(titleText, detailText) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'access-map-popup';
+    const title = document.createElement('strong');
+    title.textContent = titleText;
+    wrapper.appendChild(title);
+    if (detailText) {
+      const detail = document.createElement('span');
+      detail.textContent = detailText;
+      wrapper.appendChild(detail);
+    }
+    return wrapper;
+  }
+
+  function firstText(properties, keys, fallback = '') {
+    for (const key of keys) {
+      const value = properties?.[key];
+      if (value !== null && value !== undefined && String(value).trim()) return String(value).trim();
+    }
+    return fallback;
+  }
+
+  function roadStyle(feature) {
+    const jurisdiction = firstText(feature?.properties, ['sv_juriscl']).toLowerCase();
+    if (jurisdiction.includes('federal')) return { color: '#a33d2c', weight: 3.2, opacity: .9 };
+    if (jurisdiction.includes('estadual')) return { color: '#b7792b', weight: 3, opacity: .9 };
+    return { color: '#665f57', weight: 2, opacity: .76, dashArray: '5 5' };
+  }
+
+  function geoJsonOptions(name) {
+    const onEachFeature = (feature, layer) => {
+      const p = feature?.properties || {};
+      if (name === 'roads') layer.bindPopup(featurePopup(firstText(p, ['sv_no', 'sv_den'], 'Trecho viário'), [firstText(p, ['sv_juriscl']), firstText(p, ['sv_tipo'])].filter(Boolean).join(' · ')));
+      if (name === 'drainage') layer.bindPopup(featurePopup(firstText(p, ['td_no'], 'Curso d’água'), [firstText(p, ['td_tipo']), firstText(p, ['td_juris'])].filter(Boolean).join(' · ')));
+      if (name === 'water') layer.bindPopup(featurePopup(firstText(p, ['ma_no'], "Massa d'água"), firstText(p, ['ma_tipo'])));
+      if (name === 'settlements') layer.bindPopup(featurePopup(firstText(p, ['s_no'], 'Assentamento'), [firstText(p, ['s_mn']), firstText(p, ['s_sipra'])].filter(Boolean).join(' · ')));
+      if (name === 'municipalities') layer.bindPopup(featurePopup(firstText(p, ['mn_no', 'mn_cod'], 'Limite municipal'), 'Base político-administrativa do INTERMAT.'));
+    };
+    if (name === 'roads') return { style: roadStyle, onEachFeature };
+    if (name === 'drainage') return { style: { color: '#2d77a8', weight: 1.6, opacity: .86 }, onEachFeature };
+    if (name === 'water') return { style: { color: '#2d77a8', weight: 1, fillColor: '#7bbde2', fillOpacity: .38 }, onEachFeature };
+    if (name === 'settlements') return { style: { color: '#6d7f35', weight: 2, fillColor: '#c9d783', fillOpacity: .16 }, onEachFeature };
+    if (name === 'municipalities') return { style: { color: '#4c514f', weight: 2, opacity: .76, fillOpacity: 0, dashArray: '8 6' }, onEachFeature };
+    return { onEachFeature };
+  }
+
+  async function populateOfficialLayer(name, group, panel, L) {
+    if (loadedLayers.has(name)) return;
+    if (layerPromises.has(name)) return layerPromises.get(name);
+    setStatus(panel, `Carregando ${OFFICIAL_LAYERS[name].label}...`);
+    const promise = fetch(`/api/map/layer?layer=${encodeURIComponent(name)}`, {
+      credentials: 'same-origin',
+      headers: { accept: 'application/geo+json, application/json;q=0.9' },
+    }).then(async (response) => {
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data || data.type !== 'FeatureCollection') throw new Error(data?.error || 'Resposta cartográfica inválida.');
+      L.geoJSON(data, geoJsonOptions(name)).addTo(group);
+      loadedLayers.add(name);
+      setStatus(panel, `${OFFICIAL_LAYERS[name].label} carregada com ${data.features.length} feições.`);
+    }).catch((error) => {
+      console.warn('[PA Safra] Falha ao carregar camada oficial:', name, error);
+      setStatus(panel, `${OFFICIAL_LAYERS[name].label} não pôde ser carregada agora. O restante do mapa continua disponível.`);
+      if (mapInstance?.hasLayer(group)) mapInstance.removeLayer(group);
+      throw error;
+    }).finally(() => layerPromises.delete(name));
+    layerPromises.set(name, promise);
+    return promise;
+  }
+
   function addReferencePoints(map, panel, L) {
     const refsRoot = panel.querySelector('[data-map-references]');
     refsRoot?.replaceChildren();
-
     REFERENCES.forEach((point) => {
       const marker = L.circleMarker([point.lat, point.lng], {
         radius: point.kind === 'city' ? 8 : 7,
         weight: 3,
         color: point.kind === 'city' ? '#173f35' : '#8b5c3d',
         fillColor: point.kind === 'city' ? '#1f5949' : '#c78c5d',
-        fillOpacity: 0.92,
+        fillOpacity: .92,
       }).addTo(map);
       marker.bindPopup(popupHtml(point));
-
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'access-map-reference';
@@ -231,41 +273,17 @@
       setStatus(panel, 'Este navegador não oferece geolocalização. O mapa continua disponível normalmente.');
       return;
     }
-
     setStatus(panel, 'Solicitando sua localização ao navegador...');
-    map.locate({
-      setView: true,
-      maxZoom: 16,
-      enableHighAccuracy: true,
-      timeout: 12000,
-      maximumAge: 15000,
-    });
-
+    map.locate({ setView: true, maxZoom: 16, enableHighAccuracy: true, timeout: 12000, maximumAge: 15000 });
     map.once('locationfound', (event) => {
       if (userMarker) map.removeLayer(userMarker);
       if (userAccuracy) map.removeLayer(userAccuracy);
-
-      userAccuracy = L.circle(event.latlng, {
-        radius: event.accuracy,
-        weight: 1,
-        color: '#1f5949',
-        fillColor: '#1f5949',
-        fillOpacity: 0.1,
-      }).addTo(map);
-
-      userMarker = L.circleMarker(event.latlng, {
-        radius: 9,
-        weight: 4,
-        color: '#ffffff',
-        fillColor: '#1f5949',
-        fillOpacity: 1,
-      }).addTo(map);
-
+      userAccuracy = L.circle(event.latlng, { radius: event.accuracy, weight: 1, color: '#1f5949', fillColor: '#1f5949', fillOpacity: .1 }).addTo(map);
+      userMarker = L.circleMarker(event.latlng, { radius: 9, weight: 4, color: '#ffffff', fillColor: '#1f5949', fillOpacity: 1 }).addTo(map);
       const accuracy = Math.max(1, Math.round(event.accuracy));
       userMarker.bindPopup(`<span class="access-map-user-label">Você está aqui</span><br>Precisão aproximada: ${accuracy} m`).openPopup();
       setStatus(panel, `Localização encontrada. Precisão aproximada: ${accuracy} m.`);
     });
-
     map.once('locationerror', (event) => {
       const message = event?.message || '';
       if (/denied|permission/i.test(message)) setStatus(panel, 'Localização não autorizada. Você pode continuar explorando o mapa manualmente.');
@@ -276,32 +294,42 @@
   function initMap(panel, L) {
     const canvas = panel.querySelector('[data-map-canvas]');
     if (!canvas || canvas.dataset.mapReady === 'true') return;
-
     canvas.dataset.mapReady = 'true';
-    mapInstance = L.map(canvas, {
-      zoomControl: true,
-      attributionControl: true,
-      scrollWheelZoom: true,
-      minZoom: 7,
-      maxZoom: 18,
-    });
+    mapInstance = L.map(canvas, { zoomControl: true, attributionControl: true, scrollWheelZoom: true, minZoom: 7, maxZoom: 18 });
     mapSection = panel.closest(`[data-view="${ACCESS_SLUG}"]`);
 
-    L.tileLayer(OSM_TILES, {
+    const osm = L.tileLayer(OSM_TILES, {
       maxZoom: 19,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>',
     }).addTo(mapInstance);
+    const topo = L.tileLayer(TOPO_TILES, {
+      subdomains: 'abc',
+      maxZoom: 17,
+      attribution: 'Map data: &copy; OpenStreetMap contributors, SRTM | map style: &copy; OpenTopoMap (CC-BY-SA)',
+    });
 
+    const overlays = {};
+    Object.entries(OFFICIAL_LAYERS).forEach(([name, config]) => {
+      const group = L.layerGroup();
+      group._paOfficialLayer = name;
+      overlays[config.label] = group;
+    });
+
+    L.control.layers({ 'Mapa padrão': osm, 'Relevo topográfico': topo }, overlays, { collapsed: true, position: 'topright' }).addTo(mapInstance);
     L.control.scale({ imperial: false, position: 'bottomleft' }).addTo(mapInstance);
+
+    mapInstance.on('overlayadd', (event) => {
+      const name = event.layer?._paOfficialLayer;
+      if (name && OFFICIAL_LAYERS[name]) populateOfficialLayer(name, event.layer, panel, L).catch(() => {});
+    });
+
     addReferencePoints(mapInstance, panel, L);
     fitRegion(mapInstance, L);
-
     panel.querySelector('[data-map-locate]')?.addEventListener('click', () => locateUser(mapInstance, panel, L));
     panel.querySelector('[data-map-region]')?.addEventListener('click', () => {
       fitRegion(mapInstance, L);
-      setStatus(panel, 'Visão regional restaurada. Use os pontos abaixo do mapa para aproximar um acesso específico.');
+      setStatus(panel, 'Visão regional restaurada. Use o controle de camadas no mapa para exibir relevo, vias, água ou limites.');
     });
-
     requestAnimationFrame(() => mapInstance.invalidateSize());
   }
 
@@ -317,16 +345,13 @@
     if (currentSlug() !== ACCESS_SLUG) return;
     const section = accessSection();
     if (!section) return;
-
     installStyles();
     const panel = makePanel(section);
     if (!panel) return;
-
     if (mapInstance && mapSection === section) {
       requestAnimationFrame(() => mapInstance.invalidateSize());
       return;
     }
-
     try {
       const L = await loadLeaflet();
       if (!L) throw new Error('Biblioteca indisponível.');
