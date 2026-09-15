@@ -1,12 +1,13 @@
 const BBOX = Object.freeze({ xmin: -53.15, ymin: -15.15, xmax: -51.75, ymax: -14.05 });
-const PAGE_SIZE = 500;
-const MAX_PAGES = 4;
+const PAGE_SIZE = 1000;
+const MAX_PAGES = 8;
 
 const LAYERS = Object.freeze({
   roads: {
     source: 'INTERMAT',
     endpoint: 'https://intergeo.intermat.mt.gov.br/server/rest/services/INTERMAT_CARTOGRAFIA/TRA_SISTEMA_VIARIO_L/FeatureServer/0/query',
     fields: 'sv_no,sv_den,sv_juriscl,sv_tipo',
+    where: "sv_tipo = 'Rodovia'",
   },
   drainage: {
     source: 'INTERMAT',
@@ -44,7 +45,7 @@ const json = (data, status = 200, cache = false) => new Response(JSON.stringify(
 
 function buildQuery(config, offset) {
   const url = new URL(config.endpoint);
-  url.searchParams.set('where', '1=1');
+  url.searchParams.set('where', config.where || '1=1');
   url.searchParams.set('geometry', `${BBOX.xmin},${BBOX.ymin},${BBOX.xmax},${BBOX.ymax}`);
   url.searchParams.set('geometryType', 'esriGeometryEnvelope');
   url.searchParams.set('inSR', '4326');
@@ -95,6 +96,10 @@ async function fetchLayer(config) {
 
     features.push(...data.features.map((feature) => normalizeFeature(feature, config)));
     if (data.features.length < PAGE_SIZE) break;
+  }
+
+  if (features.length >= PAGE_SIZE * MAX_PAGES) {
+    throw new Error(`A consulta de ${config.source} excedeu o limite seguro de paginação.`);
   }
 
   return { type: 'FeatureCollection', features };
