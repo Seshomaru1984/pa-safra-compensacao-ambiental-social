@@ -41,16 +41,20 @@ for (const token of [
   'TRA_SISTEMA_VIARIO_L/FeatureServer/0/query',
   'HID_TRECHO_DRENAGEM_L/FeatureServer/0/query',
   'HID_MASSA_DE_AGUA_A/FeatureServer/0/query',
-  'LIM_ASSENTAMENTO_A/FeatureServer/0/query',
+  'assentamentos_incra/MapServer/1/query',
   'LIM_LIMITE_POLITICO_ADMINISTRATIVO_A/FeatureServer/0/query',
-  "fields: 's_no,s_mn,s_sipra,s_md'",
+  "fields: 'cd_sipra,nome_proje,municipio,area_hecta,capacidade,num_famili,fase,data_de_cr'",
+  "normalize: 'settlement'",
+  's_no: String(p.nome_proje',
+  's_sipra: String(p.cd_sipra',
   "url.searchParams.set('geometry'",
   "url.searchParams.set('f', 'geojson')",
   'MAX_PAGES = 4',
 ]) assert.ok(proxy.includes(token), `Proxy cartográfico sem contrato: ${token}`);
 
-assert.ok(!proxy.includes('s_rsp_tec'), 'proxy não deve expor responsável técnico do assentamento');
-assert.ok(!proxy.includes('s_matr'), 'proxy não deve expor matrícula fundiária desnecessária');
+for (const forbidden of ['cpf', 'cnpj', 'detentor', 'proprietario', 's_rsp_tec', 's_matr']) {
+  assert.ok(!proxy.toLowerCase().includes(forbidden), `proxy contém campo cadastral desnecessário: ${forbidden}`);
+}
 assert.ok(map.includes("window.addEventListener('hashchange'"), 'mapa deve reagir à navegação SPA');
 assert.ok(map.includes('MutationObserver'), 'mapa deve aguardar a página dinâmica de Acesso');
 assert.ok(map.includes('O site não grava suas coordenadas de localização no servidor.'), 'mapa deve explicar o tratamento local da geolocalização');
@@ -82,7 +86,7 @@ if (candidateBranch.includes('feat/pa-v001-interactive-access-map')) {
     roads: 'https://intergeo.intermat.mt.gov.br/server/rest/services/INTERMAT_CARTOGRAFIA/TRA_SISTEMA_VIARIO_L/FeatureServer/0/query',
     drainage: 'https://intergeo.intermat.mt.gov.br/server/rest/services/BDC/HID_TRECHO_DRENAGEM_L/FeatureServer/0/query',
     water: 'https://intergeo.intermat.mt.gov.br/server/rest/services/INTERMAT_CARTOGRAFIA/HID_MASSA_DE_AGUA_A/FeatureServer/0/query',
-    settlements: 'https://intergeo.intermat.mt.gov.br/server/rest/services/INTERMAT_CARTOGRAFIA/LIM_ASSENTAMENTO_A/FeatureServer/0/query',
+    settlements: 'https://pamgia.ibama.gov.br/server/rest/services/01_Publicacoes_Bases/assentamentos_incra/MapServer/1/query',
     municipalities: 'https://intergeo.intermat.mt.gov.br/server/rest/services/INTERMAT_CARTOGRAFIA/LIM_LIMITE_POLITICO_ADMINISTRATIVO_A/FeatureServer/0/query',
   };
 
@@ -96,17 +100,18 @@ if (candidateBranch.includes('feat/pa-v001-interactive-access-map')) {
     url.searchParams.set('returnCountOnly', 'true');
     url.searchParams.set('f', 'json');
     const response = await fetch(url, { signal: AbortSignal.timeout(20000) });
-    assert.equal(response.ok, true, `fonte INTERMAT ${name} respondeu HTTP ${response.status}`);
+    assert.equal(response.ok, true, `fonte cartográfica ${name} respondeu HTTP ${response.status}`);
     const body = await response.json();
-    assert.ok(Number.isInteger(body.count) && body.count > 0, `fonte INTERMAT ${name} sem feições na região`);
+    assert.ok(Number.isInteger(body.count) && body.count > 0, `fonte cartográfica ${name} sem feições na região`);
     return `${name}=${body.count}`;
   }));
-  console.log(`- fontes INTERMAT consultadas ao vivo: ${counts.join(', ')}`);
+  console.log(`- fontes cartográficas consultadas ao vivo: ${counts.join(', ')}`);
 }
 
 console.log('ACCESS MAP TEST: PASS');
 console.log('- mapa mantém geolocalização sob ação explícita do usuário');
 console.log('- relevo topográfico é base opcional, sem poluir o mapa padrão');
 console.log('- vias, hidrografia, assentamentos e limites são camadas opcionais e sob demanda');
+console.log('- assentamentos usam geometria INCRA publicada no geosserviço do IBAMA');
 console.log('- proxy limita a consulta à região e aos campos cartográficos necessários');
 console.log('- CSP permite somente os provedores necessários ao mapa');
