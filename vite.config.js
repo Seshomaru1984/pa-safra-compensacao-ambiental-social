@@ -13,6 +13,7 @@ const ADMIN_WRITE_QUEUE_TAG = '<script src="/admin/write-queue.js"></script>';
 const PUBLIC_INTERNAL_BODY_MEDIA_TAG = '<script src="/internal-header-body-media.js" defer></script>';
 const PUBLIC_ACCESS_MAP_TAG = '<script src="/access-map.js" defer></script>';
 const PUBLIC_NAV_ORDER_TAG = '<script src="/navigation-order.js" defer></script>';
+const PUBLIC_LINKS_INTRO_TAG = '<script src="/links-intro-public.js" defer></script>';
 const ADMIN_INTERNAL_LAYOUT_LOCK_TAG = '<script src="/admin/internal-layout-lock.js" defer></script>';
 const PREVIEW_CONTENT_BRIDGE_TAG = '<script src="/content-preview-bridge.js"></script>';
 const PUBLIC_ROUTE_STYLE_TAG = '<link rel="stylesheet" href="/first-paint-route.css" />';
@@ -131,6 +132,7 @@ export default defineConfig({
           PUBLIC_INTERNAL_BODY_MEDIA_TAG,
           PUBLIC_ACCESS_MAP_TAG,
           PUBLIC_NAV_ORDER_TAG,
+          PUBLIC_LINKS_INTRO_TAG,
         ]);
       },
       closeBundle() {
