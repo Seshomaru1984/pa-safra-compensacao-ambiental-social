@@ -1,18 +1,20 @@
 (() => {
   'use strict';
 
+  const ACCESS_SLUG = 'acesso-localizacao';
+  const CONTACT_SLUG = 'contato';
   const PANEL_SELECTOR = '#panel-paginas';
   const EDITOR_SELECTOR = '#pages-editor';
   const PAGE_MODES = Object.freeze({
     access: {
-      slug: 'acesso-localizacao',
+      slug: ACCESS_SLUG,
       tabLabel: 'Mapas e acessos',
       eyebrow: 'Localização e mobilidade',
       title: 'Mapas e acessos',
       description: 'Edite as referências de estradas, rodovias, vias vicinais, localização e demais informações de acesso exibidas no site.',
     },
     contact: {
-      slug: 'contato',
+      slug: CONTACT_SLUG,
       tabLabel: 'Contato',
       eyebrow: 'Comunicação',
       title: 'Contato',
