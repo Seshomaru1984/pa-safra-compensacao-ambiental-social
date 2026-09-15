@@ -12,6 +12,7 @@ const vite = read('vite.config.js');
 
 for (const token of [
   "const ACCESS_SLUG = 'acesso-localizacao'",
+  'REGION_BOUNDS',
   'Mapa interativo da região',
   'Minha localização',
   'Você está aqui',
@@ -33,6 +34,11 @@ for (const token of [
   'bindTooltip(',
   'access-map-tooltip',
   "button.addEventListener('mouseenter'",
+  'featureCollectionBounds',
+  'fitOfficialLayer',
+  'group._paFitBounds',
+  'enquadrada automaticamente',
+  'escala 1:100.000',
   'SINFRA/MT',
   'INTERMAT',
   'geosserviço do IBAMA',
@@ -50,13 +56,17 @@ for (const token of [
   'HID_MASSA_DE_AGUA_A/FeatureServer/0/query',
   'assentamentos_incra/MapServer/1/query',
   'LIM_LIMITE_POLITICO_ADMINISTRATIVO_A/FeatureServer/0/query',
+  "where: \"sv_tipo = 'Rodovia'\"",
+  "url.searchParams.set('where', config.where || '1=1')",
   "fields: 'cd_sipra,nome_proje,municipio,area_hecta,capacidade,num_famili,fase,data_de_cr'",
   "normalize: 'settlement'",
   's_no: String(p.nome_proje',
   's_sipra: String(p.cd_sipra',
   "url.searchParams.set('geometry'",
   "url.searchParams.set('f', 'geojson')",
-  'MAX_PAGES = 4',
+  'PAGE_SIZE = 1000',
+  'MAX_PAGES = 8',
+  'excedeu o limite seguro de paginação',
 ]) assert.ok(proxy.includes(token), `Proxy cartográfico sem contrato: ${token}`);
 
 for (const forbidden of ['cpf', 'cnpj', 'detentor', 'proprietario', 's_rsp_tec', 's_matr']) {
@@ -92,16 +102,19 @@ const candidateBranch = process.env.GITHUB_HEAD_REF || process.env.GITHUB_REF_NA
 if (candidateBranch.includes('feat/pa-v001-interactive-access-map')) {
   const bbox = '-53.15,-15.15,-51.75,-14.05';
   const sources = {
-    roads: 'https://intergeo.intermat.mt.gov.br/server/rest/services/INTERMAT_CARTOGRAFIA/TRA_SISTEMA_VIARIO_L/FeatureServer/0/query',
-    drainage: 'https://intergeo.intermat.mt.gov.br/server/rest/services/BDC/HID_TRECHO_DRENAGEM_L/FeatureServer/0/query',
-    water: 'https://intergeo.intermat.mt.gov.br/server/rest/services/INTERMAT_CARTOGRAFIA/HID_MASSA_DE_AGUA_A/FeatureServer/0/query',
-    settlements: 'https://pamgia.ibama.gov.br/server/rest/services/01_Publicacoes_Bases/assentamentos_incra/MapServer/1/query',
-    municipalities: 'https://intergeo.intermat.mt.gov.br/server/rest/services/INTERMAT_CARTOGRAFIA/LIM_LIMITE_POLITICO_ADMINISTRATIVO_A/FeatureServer/0/query',
+    roads: {
+      endpoint: 'https://intergeo.intermat.mt.gov.br/server/rest/services/INTERMAT_CARTOGRAFIA/TRA_SISTEMA_VIARIO_L/FeatureServer/0/query',
+      where: "sv_tipo = 'Rodovia'",
+    },
+    drainage: { endpoint: 'https://intergeo.intermat.mt.gov.br/server/rest/services/BDC/HID_TRECHO_DRENAGEM_L/FeatureServer/0/query' },
+    water: { endpoint: 'https://intergeo.intermat.mt.gov.br/server/rest/services/INTERMAT_CARTOGRAFIA/HID_MASSA_DE_AGUA_A/FeatureServer/0/query' },
+    settlements: { endpoint: 'https://pamgia.ibama.gov.br/server/rest/services/01_Publicacoes_Bases/assentamentos_incra/MapServer/1/query', volatile: true },
+    municipalities: { endpoint: 'https://intergeo.intermat.mt.gov.br/server/rest/services/INTERMAT_CARTOGRAFIA/LIM_LIMITE_POLITICO_ADMINISTRATIVO_A/FeatureServer/0/query' },
   };
 
-  const counts = await Promise.all(Object.entries(sources).map(async ([name, endpoint]) => {
-    const url = new URL(endpoint);
-    url.searchParams.set('where', '1=1');
+  const counts = await Promise.all(Object.entries(sources).map(async ([name, config]) => {
+    const url = new URL(config.endpoint);
+    url.searchParams.set('where', config.where || '1=1');
     url.searchParams.set('geometry', bbox);
     url.searchParams.set('geometryType', 'esriGeometryEnvelope');
     url.searchParams.set('inSR', '4326');
@@ -115,6 +128,10 @@ if (candidateBranch.includes('feat/pa-v001-interactive-access-map')) {
         'user-agent': 'PA-Safra-Mapa/1.0',
       },
     });
+    if (config.volatile && response.status === 403) {
+      console.warn(`- fonte cartográfica ${name}: HTTP 403 no runner; disponibilidade externa será validada no Preview Cloudflare`);
+      return `${name}=externa-403`;
+    }
     assert.equal(response.ok, true, `fonte cartográfica ${name} respondeu HTTP ${response.status}`);
     const body = await response.json();
     assert.ok(Number.isInteger(body.count) && body.count > 0, `fonte cartográfica ${name} sem feições na região`);
@@ -127,6 +144,9 @@ console.log('ACCESS MAP TEST: PASS');
 console.log('- mapa mantém geolocalização sob ação explícita do usuário');
 console.log('- controle de camadas permanece recolhido, mas exibe rótulo Camadas de forma explícita');
 console.log('- pontos e feições mostram legenda por hover no desktop, mantendo clique como fallback touch/mobile');
+console.log('- mapa reenquadra automaticamente a geometria regional ao ativar uma camada oficial');
+console.log('- vias são filtradas para feições classificadas como Rodovia na base oficial');
+console.log('- paginação suporta integralmente a drenagem regional acima do antigo teto de 2.000 feições');
 console.log('- relevo topográfico é base opcional, sem poluir o mapa padrão');
 console.log('- vias, hidrografia, assentamentos e limites são camadas opcionais e sob demanda');
 console.log('- assentamentos usam geometria INCRA publicada no geosserviço do IBAMA');
