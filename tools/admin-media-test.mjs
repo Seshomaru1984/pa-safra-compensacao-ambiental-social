@@ -41,19 +41,24 @@ assert.ok(serving.includes("EDITORIAL_BRANCH = 'content/pa-v001-admin-preview'")
 assert.ok(serving.includes('public/assets/uploads/'), 'rota pública não restringe leitura à pasta de uploads');
 assert.ok(serving.includes('x-content-type-options'), 'rota pública de imagens não envia nosniff');
 
-assert.ok(adminIndex.includes('/admin/access-assist.js'), 'assistente de Acesso não está carregado no Admin');
+assert.ok(adminIndex.includes('/admin/access-assist.js'), 'assistente de páginas especiais não está carregado no Admin');
 assert.ok(adminIndex.includes('Envie fotos diretamente do computador'), 'Galeria não explica o upload ao usuário');
 for (const token of [
   "const ACCESS_SLUG = 'acesso-localizacao'",
-  "tab.textContent = 'Acesso e localização'",
+  "const CONTACT_SLUG = 'contato'",
+  "tabLabel: 'Mapas e acessos'",
+  "tabLabel: 'Contato'",
   'referências de estradas, rodovias, vias vicinais',
-]) assert.ok(accessAssist.includes(token), `Área de Acesso incompleta: ${token}`);
+]) assert.ok(accessAssist.includes(token), `Área especial do Admin incompleta: ${token}`);
 
 const accessPage = pages.find((page) => page?.slug === 'acesso-localizacao');
-assert.ok(accessPage, 'conteúdo de Acesso não existe em paginas.json');
+assert.ok(accessPage, 'conteúdo de Mapas e acessos não existe em paginas.json');
 for (const token of ['BR-158', 'MT-251', 'MT-110', 'estradas vicinais', 'Referências públicas']) {
-  assert.ok(`${accessPage.summary || ''} ${accessPage.body || ''}`.includes(token), `conteúdo de Acesso sem ${token}`);
+  assert.ok(`${accessPage.summary || ''} ${accessPage.body || ''}`.includes(token), `conteúdo de Mapas e acessos sem ${token}`);
 }
+const contactPage = pages.find((page) => page?.slug === 'contato');
+assert.ok(contactPage, 'conteúdo de Contato não existe em paginas.json');
+assert.ok(`${contactPage.summary || ''} ${contactPage.body || ''}`.includes('gustavomzfranco@hotmail.com'), 'conteúdo de Contato perdeu o e-mail confirmado');
 
 for (const file of [
   'functions/api/admin/media.js',
@@ -73,5 +78,5 @@ console.log('- upload aceita somente JPG, PNG e WebP até 4 MB com validação d
 console.log('- escrita exige sessão, origem válida, token e branch editorial autorizada');
 console.log('- Home, Memória e legado e Galeria exibem upload explícito do computador');
 console.log('- ações Enviar foto e Remover foto usam dimensões e alinhamento consistentes, com empilhamento no celular');
-console.log('- Acesso e localização aparece como área própria e mantém as referências rodoviárias editáveis');
+console.log('- Mapas e acessos e Contato aparecem como áreas próprias do Admin');
 console.log('- uploads editoriais possuem rota pública restrita à pasta de imagens');
