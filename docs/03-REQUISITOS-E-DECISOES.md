@@ -28,11 +28,11 @@ A entrega administrativa útil é: autenticação nativa, edição controlada de
 
 ### REQ-003 - Login nativo por usuário e senha
 - Esperado: usuário/senha próprios do PA Safra, sem exigir GitHub, Cloudflare ou e-mail do administrador final; senha nunca em texto puro; sessão assinada e cookie seguro.
-- Situação: PASS funcional no Cloudflare Preview desde A19 R4 e regressão técnica verde no candidato integrado.
+- Situação: PASS funcional no Cloudflare Preview desde A19 R4 e regressão técnica verde no estado integrado.
 
 ### REQ-004 - Rate limiter de autenticação em D1
 - Esperado: até 5 falhas em janela de 15 min; bloqueio de 15 min ao atingir limite; 429 com `Retry-After`; identificador derivado antes de persistência; fail-closed se proteção indisponível.
-- Situação: PASS funcional live na A20 e regressão técnica verde no candidato integrado.
+- Situação: PASS funcional live na A20 e regressão técnica verde no estado integrado.
 
 ### REQ-005 - Escrita editorial controlada
 - Esperado: Pages Function escreve somente arquivos/campos em lista branca, usando token GitHub server-side de privilégio mínimo e branch editorial de Preview durante validação.
@@ -62,21 +62,23 @@ A entrega administrativa útil é: autenticação nativa, edição controlada de
 - Regra editorial: informar que os acessos finais rurais podem depender de vias vicinais, pontes e trechos não pavimentados e que a rota local deve ser confirmada antes do deslocamento.
 - Limite factual: sem fonte adicional, não afirmar como fato que a BR-158 é o principal eixo de acesso nem que a MT-251 constitui diretamente uma ligação Nova Xavantina/Campinápolis.
 - Implementação: página extra `acesso-localizacao`, publicada e editável no Admin.
-- Situação: PASS no candidato final e integrada em `develop`.
+- Situação: PASS e integrada em `develop`.
 
 ### REQ-011 - Contato, manifestações e correções
 - Esperado: disponibilizar canal de contato para manifestações, esclarecimentos, imprecisões e possíveis correções, sem repetição visual desnecessária do endereço.
 - Contato confirmado: `gustavomzfranco@hotmail.com`.
 - Implementação: página extra `contato`, publicada e editável no Admin; o endereço aparece uma única vez no texto visível e o restante da redação referencia apenas `este canal de contato`.
-- Situação: PASS no candidato final e integrada em `develop`. `dados_contato_confirmados=true`.
+- Situação: PASS e integrada em `develop`. `dados_contato_confirmados=true`.
 
 ### REQ-012 - Informações opcionais de imagem
 - Esperado: legenda, crédito e licença podem permanecer vazios no Admin. Campo vazio não deve ser preenchido com aviso artificial de pendência para o público.
 - Regra pública: quando não houver nenhuma informação preenchida, o bloco de informações da imagem deve ficar oculto. Quando houver apenas parte dos dados, exibir somente o que foi efetivamente informado.
 - Acessibilidade: `image_alt` permanece independente e continua sendo usado mesmo quando a área visual de informações estiver oculta.
 - Legado: `image_credit` vazio oculta a legenda da imagem original e da cópia inserida no corpo.
-- Galeria: não usar `Registro do projeto` como legenda padrão quando o usuário não informou legenda; não exibir `Crédito/licença a confirmar`, `Crédito editorial a confirmar` ou equivalentes como conteúdo.
-- Situação: CORREÇÃO IMPLEMENTADA em `fix/pa-v001-image-info-optional`; validação funcional run 1078 PASS antes do fechamento documental.
+- Galeria: não usar `Registro do projeto` como legenda padrão quando o usuário não informou legenda; não exibir `Crédito/licença a confirmar`, `Crédito editorial a confirmar`, `Créditos em conferência` ou equivalentes como conteúdo público.
+- Resiliência: se `/content/site.json` falhar, atribuição estática válida existente no fallback não deve ser apagada.
+- Preservação: ao remover um sufixo editorial pendente, eventual texto válido de legenda deve ser mantido.
+- Situação: PASS e integrada em `develop` pelo PR #40, com regressões identificadas no review corrigidas e revalidadas pelo PR #41.
 
 ## 3. Decisões duráveis
 
@@ -125,13 +127,18 @@ Título, disposição de Home e tamanho de títulos de vídeo integram o salvame
 ### DEC-015 - Páginas extras recebem novas demandas textuais complementares
 Conteúdos complementares como Acesso e Contato devem usar o mecanismo existente de páginas extras quando não exigirem estrutura própria. Isso mantém edição pelo Admin e evita duplicação arquitetural.
 
-### DEC-016 - Integração por um único PR e autorização explícita
-A reconstrução foi integrada por um único PR de `rebuild/pa-v001-clean` para `develop`, o PR #39. Em 14/09/2026 o usuário autorizou explicitamente esse merge, exigindo observância das regras anexas. O merge foi executado com precondição no HEAD validado e resultou no commit `5b5c60983875341b3d9f6b5bfe6c684a68d08d5e`. Essa autorização foi consumida nessa integração e não autoriza promoção para `main`, domínio ou publicação em produção.
+### DEC-016 - Integração exige autorização e validação do candidato exato
+A reconstrução foi integrada pelo PR #39 mediante autorização explícita. Correções posteriores foram isoladas em PRs próprios para `develop`, com precondição no HEAD validado. Nenhuma dessas integrações autoriza promoção para `main`, alteração de domínio ou publicação em produção.
 
 ### DEC-017 - Metadados vazios não viram conteúdo público
 A ausência de legenda, crédito ou licença não deve produzir texto de placeholder no site. O bloco de informações da imagem existe somente quando há informação real a exibir. A descrição acessível é independente dessa apresentação.
 
 Essa decisão de interface não equivale a declaração jurídica de autorização/licença de material de terceiros. O gate de direitos de uso permanece independente até existir confirmação correspondente.
+
+### DEC-018 - Feedback técnico de review deve ser tratado antes da liberação manual
+Quando um review de PR apontar regressão concreta que afete comportamento esperado, a correção deve ser isolada, validada e integrada antes de declarar o ambiente pronto para testes manuais.
+
+Aplicação em 14/09/2026: o review do PR #40 apontou três regressões. Elas foram corrigidas em branch limpa, protegidas por teste automático, validadas nos runs 1088 e 1092, integradas pelo PR #41 e novamente validadas pós-merge no run 1093.
 
 ## 4. Mapeamento de controles atuais
 
@@ -146,7 +153,7 @@ Essa decisão de interface não equivale a declaração jurídica de autorizaç�
 | REQ-009 PBKDF2 | diagnóstico runtime + 100000 + R4 | PASS |
 | REQ-010 acesso/localização | `tools/editorial-demand-test.mjs` + runs 1071/1072 | PASS |
 | REQ-011 contato/correções | `tools/editorial-demand-test.mjs` + `publicacao.json` + runs 1071/1072 | PASS |
-| REQ-012 informações de imagem | `tools/editorial-demand-test.mjs` + run 1078 + headless | PASS no HEAD funcional anterior à documentação |
+| REQ-012 informações de imagem | `tools/editorial-demand-test.mjs` + runs 1088/1092/1093 + headless | PASS e integrado |
 | Notícias fora do escopo | `admin-contract`, `check.mjs`, browser tests | PASS |
 
 ## 5. Gates editoriais atuais
@@ -160,13 +167,19 @@ Essa decisão de interface não equivale a declaração jurídica de autorizaç�
 
 A política de ocultar campos vazios não altera sozinha `creditos_imagens_confirmados`. Esse gate representa confirmação de direitos de uso, não a existência visual de um campo de crédito.
 
-O contato confirmado não libera produção. Revisão técnica/headless não equivale a revisão visual humana.
+Os gates editoriais pendentes bloqueiam `main`/produção, mas não impedem a execução dos testes manuais em Preview/develop. Revisão técnica/headless não equivale a revisão visual humana.
 
 ## 6. Estado corrente e continuidade
 
-A reconstrução limpa foi integrada em `develop` pelo PR #39 e validada novamente após o merge. Em seguida, foi aberta a branch `fix/pa-v001-image-info-optional` a partir do checkpoint `d656ef76c2bdb65e5e49d8ec71e8259e11fc3041` para corrigir a apresentação de informações de imagem.
+A reconstrução limpa foi integrada pelo PR #39. A política de informações opcionais de imagem foi integrada pelo PR #40, merge `d9b33595940af2680b3921787d499c1644d5f366`, e o pós-merge passou no run 1084.
 
-A correção remove placeholders públicos de crédito/licença, oculta blocos vazios, preserva `alt` e sincroniza a galeria da branch editorial de Preview. O HEAD funcional `cf934bbfa138bc8ec6badc492e2cc7127b7d0399` passou no workflow `validate`, run 1078, incluindo build, smoke e navegador headless. A documentação posterior altera o HEAD e exige nova validação.
+O review automático do PR #40 identificou três problemas relevantes antes da entrega manual: perda de texto válido da legenda ao remover crédito pendente, permanência do banner de créditos pendentes na Galeria e perda da atribuição estática de fallback do Legado em falha de `site.json`.
+
+As três regressões foram corrigidas no HEAD `53aa20381845028f6adc8f3b4372721c691a3e31`. Esse candidato passou no run 1088 e no CI do PR #41, run 1092. O PR #41 foi mesclado em `develop`, resultando no commit `04cedf23fdc8c8127d5ed8606c9fff0f9a762e72`. O estado pós-merge passou integralmente no run 1093, incluindo build, smoke e navegador headless.
+
+Não houve nova pendência de review no PR #41 antes do fechamento técnico.
+
+O estado de `develop` está tecnicamente pronto para testes manuais no ambiente de Preview/develop. A próxima etapa é revisão humana do Admin e do site, incluindo desktop e celular, salvamentos consecutivos, upload de imagens e os cenários de informações de imagem vazias, parciais e preenchidas.
 
 Evidências relevantes:
 - `docs/evidencias/PA-V001-A21-R3-CONTENT-WRITE-PASS-20260913.md`
@@ -175,4 +188,8 @@ Evidências relevantes:
 - `docs/evidencias/PA-V001-A24-ADMIN-EDITOR-EXPANDIDO-PASS-20260913.md`
 - `docs/evidencias/PA-V001-IMAGE-INFO-OPTIONAL-PASS-20260914.md`
 
-Próxima ação: validar o HEAD documental final da branch `fix/pa-v001-image-info-optional`; se permanecer verde e 0 commits atrás de `develop`, abrir PR específico para `develop`. Não mesclar automaticamente e não promover para `main` sem nova autorização específica.
+## 7. Próxima ação
+
+Realizar os testes manuais em Preview/develop e registrar divergências observadas. A revisão deve abranger Admin, conteúdo público, comportamento de imagens, vídeos, links, pré-visualização e responsividade.
+
+Não promover automaticamente para `main`. Qualquer promoção para produção exige nova autorização específica e atendimento dos gates aplicáveis.
