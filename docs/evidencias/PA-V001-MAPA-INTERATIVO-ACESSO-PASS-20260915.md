@@ -149,33 +149,19 @@ O gate do candidato consulta diretamente os serviços cartográficos para o enve
 
 A checagem de fontes ao vivo permanece ativa na branch do candidato para impedir a entrega de uma camada configurada, porém vazia.
 
-## Validação final do candidato
+## Validação do candidato
 
-HEAD técnico validado antes deste registro final:
+O candidato técnico passou no run 1145, HEAD `003f8f8f8c7e8ab10a751dd803fc985473adc500`, com fontes cartográficas ao vivo, build, smoke, JavaScript, Cloudflare readiness/env e navegador headless em PASS.
 
-`003f8f8f8c7e8ab10a751dd803fc985473adc500`
+O commit documental subsequente `f4138e0618804fb4b13791f3533452498755f1d5` também foi revalidado no run 1147 com resultado SUCCESS e publicado com sucesso no Cloudflare Pages.
 
-Workflow do PR #44:
+Preview exato do commit `f4138e0`:
 
-- run ID `34968781835`;
-- run number `1145`;
-- resultado: SUCCESS;
-- fontes cartográficas ao vivo: PASS;
-- build: PASS;
-- smoke: PASS;
-- JavaScript: PASS;
-- Cloudflare readiness/env: PASS;
-- navegador headless: PASS.
-
-Cloudflare Pages publicou o mesmo HEAD com sucesso. Preview do commit validado:
-
-`https://65c4ee5f.pa-safra-compensacao-ambiental-social.pages.dev`
+`https://e09d7625.pa-safra-compensacao-ambiental-social.pages.dev`
 
 Branch Preview:
 
 `https://feat-pa-v001-interactive-acc.pa-safra-compensacao-ambiental-social.pages.dev`
-
-A atualização deste documento cria um novo commit apenas documental. A implementação técnica acima já foi validada no HEAD registrado; antes de eventual merge, o HEAD documental final deve continuar verde.
 
 ## Limite da validação automatizada
 
