@@ -22,6 +22,7 @@ const LAYERS = Object.freeze({
     source: 'INCRA/IBAMA',
     endpoint: 'https://pamgia.ibama.gov.br/server/rest/services/01_Publicacoes_Bases/assentamentos_incra/MapServer/1/query',
     fields: 'cd_sipra,nome_proje,municipio,area_hecta,capacidade,num_famili,fase,data_de_cr',
+    normalize: 'settlement',
   },
   municipalities: {
     source: 'INTERMAT',
@@ -59,6 +60,25 @@ function buildQuery(config, offset) {
   return url;
 }
 
+function normalizeFeature(feature, config) {
+  if (config.normalize !== 'settlement') return feature;
+  const p = feature?.properties || {};
+  const details = [];
+  if (p.area_hecta) details.push(`${p.area_hecta} ha`);
+  if (Number.isFinite(p.capacidade)) details.push(`capacidade: ${p.capacidade}`);
+  if (Number.isFinite(p.num_famili)) details.push(`famílias: ${p.num_famili}`);
+  return {
+    type: 'Feature',
+    geometry: feature.geometry,
+    properties: {
+      s_no: String(p.nome_proje || '').trim(),
+      s_mn: String(p.municipio || '').trim(),
+      s_sipra: String(p.cd_sipra || '').trim(),
+      s_md: details.join(' · '),
+    },
+  };
+}
+
 async function fetchLayer(config) {
   const features = [];
 
@@ -73,7 +93,7 @@ async function fetchLayer(config) {
       throw new Error(`Resposta cartográfica inválida de ${config.source}`);
     }
 
-    features.push(...data.features);
+    features.push(...data.features.map((feature) => normalizeFeature(feature, config)));
     if (data.features.length < PAGE_SIZE) break;
   }
 
