@@ -14,10 +14,11 @@
     const style = document.createElement('style');
     style.id = 'pa-image-upload-styles';
     style.textContent = `
-.image-upload { grid-column: 1 / -1; display: grid; grid-template-columns: 120px 1fr; gap: 14px; align-items: center; padding: 12px; border: 1px solid var(--line, #d7ddd9); border-radius: 12px; background: #fff; }
+.image-upload { grid-column: 1 / -1; display: grid; grid-template-columns: 120px 1fr; gap: 14px; align-items: center; padding: 14px; border: 1px solid var(--line, #d7ddd9); border-radius: 12px; background: #fff; }
 .image-upload-preview { width: 120px; height: 82px; border-radius: 9px; overflow: hidden; background: #eef2ef; display: grid; place-items: center; color: #65716c; font-size: .78rem; text-align: center; }
 .image-upload-preview img { width: 100%; height: 100%; object-fit: cover; }
 .image-upload-controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.image-upload-title { flex-basis: 100%; font-size: .95rem; color: var(--ink, #18211e); }
 .image-upload-controls input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .image-upload-status { flex-basis: 100%; margin: 2px 0 0; color: var(--ink-600, #59635f); font-size: .84rem; }
 @media (max-width: 620px) { .image-upload { grid-template-columns: 1fr; } .image-upload-preview { width: 100%; height: 150px; } }
@@ -77,9 +78,14 @@
 
     const controls = document.createElement('div');
     controls.className = 'image-upload-controls';
+
+    const heading = document.createElement('strong');
+    heading.className = 'image-upload-title';
+    heading.textContent = `${title} - upload`;
+
     const pickerLabel = document.createElement('label');
     pickerLabel.className = 'button secondary';
-    pickerLabel.textContent = 'Selecionar imagem';
+    pickerLabel.textContent = 'Enviar foto do computador';
     const picker = document.createElement('input');
     picker.type = 'file';
     picker.accept = '.jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp';
@@ -88,15 +94,15 @@
     const clear = document.createElement('button');
     clear.type = 'button';
     clear.className = 'button secondary';
-    clear.textContent = 'Remover';
+    clear.textContent = 'Remover foto';
 
     const status = document.createElement('p');
     status.className = 'image-upload-status';
     status.setAttribute('role', 'status');
     status.setAttribute('aria-live', 'polite');
-    status.textContent = 'JPG, PNG ou WebP, até 4 MB. Depois do envio, clique em Salvar.';
+    status.textContent = 'Escolha uma foto JPG, PNG ou WebP de até 4 MB. O arquivo será enviado e o caminho será preenchido automaticamente. Depois clique em Salvar.';
 
-    controls.append(pickerLabel, clear, status);
+    controls.append(heading, pickerLabel, clear, status);
     wrap.append(preview, controls);
     label.insertAdjacentElement('afterend', wrap);
     refreshPreview(input, image, empty);
@@ -112,7 +118,7 @@
       input.value = '';
       picker.value = '';
       input.dispatchEvent(new Event('change', { bubbles: true }));
-      status.textContent = 'Imagem removida do campo. Clique em Salvar para aplicar.';
+      status.textContent = 'Foto removida do campo. Clique em Salvar para aplicar.';
     });
 
     picker.addEventListener('change', async () => {
@@ -126,14 +132,14 @@
       }
       if (file.size > MAX_BYTES) {
         picker.value = '';
-        status.textContent = 'A imagem excede o limite de 4 MB.';
+        status.textContent = 'A foto excede o limite de 4 MB.';
         toast(status.textContent, true);
         return;
       }
 
       picker.disabled = true;
       clear.disabled = true;
-      status.textContent = 'Enviando imagem...';
+      status.textContent = 'Enviando foto...';
       try {
         const response = await fetch('/api/admin/media', {
           method: 'PUT',
@@ -142,13 +148,13 @@
           body: JSON.stringify({ file_name: file.name, mime_type: file.type, data_base64: toBase64(await file.arrayBuffer()) }),
         });
         const result = await response.json().catch(() => ({}));
-        if (!response.ok || !result.ok || !result.path) throw new Error(result.error || `Falha ao enviar a imagem (${response.status}).`);
+        if (!response.ok || !result.ok || !result.path) throw new Error(result.error || `Falha ao enviar a foto (${response.status}).`);
         input.value = result.path;
         input.dispatchEvent(new Event('change', { bubbles: true }));
-        status.textContent = 'Imagem enviada. Clique em Salvar para aplicar nesta página.';
-        toast('Imagem enviada. Salve a página para aplicar a alteração.');
+        status.textContent = 'Foto enviada. Clique em Salvar para aplicar nesta página.';
+        toast('Foto enviada. Salve a página para aplicar a alteração.');
       } catch (error) {
-        status.textContent = error.message || 'Não foi possível enviar a imagem.';
+        status.textContent = error.message || 'Não foi possível enviar a foto.';
         toast(status.textContent, true);
       } finally {
         picker.disabled = false;

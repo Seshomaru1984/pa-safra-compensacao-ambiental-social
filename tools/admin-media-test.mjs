@@ -8,6 +8,9 @@ const read = (file) => fs.readFileSync(file, 'utf8');
 const api = read('functions/api/admin/media.js');
 const serving = read('functions/assets/uploads/[[path]].js');
 const admin = read('public/admin/image-upload.js');
+const accessAssist = read('public/admin/access-assist.js');
+const adminIndex = read('public/admin/index.html');
+const pages = JSON.parse(read('public/content/paginas.json'));
 const pageActions = read('public/admin/page-actions.js');
 
 for (const token of [
@@ -22,7 +25,7 @@ for (const token of [
   "['#home-hero-image', 'Imagem principal']",
   "['#legacy-image', 'Imagem de Memória e legado']",
   "['#gallery-editor input[data-role=\"image\"]', 'Imagem da galeria']",
-  'Selecionar imagem', 'JPG, PNG ou WebP, até 4 MB', '/api/admin/media',
+  'Enviar foto do computador', 'JPG, PNG ou WebP', '/api/admin/media',
 ]) assert.ok(admin.includes(token), `Admin de mídia incompleto: ${token}`);
 
 assert.ok(pageActions.includes("import './image-upload.js'"), 'upload não está carregado pelo fluxo do Admin');
@@ -30,7 +33,26 @@ assert.ok(serving.includes("EDITORIAL_BRANCH = 'content/pa-v001-admin-preview'")
 assert.ok(serving.includes('public/assets/uploads/'), 'rota pública não restringe leitura à pasta de uploads');
 assert.ok(serving.includes('x-content-type-options'), 'rota pública de imagens não envia nosniff');
 
-for (const file of ['functions/api/admin/media.js', 'functions/assets/uploads/[[path]].js', 'public/admin/image-upload.js']) {
+assert.ok(adminIndex.includes('/admin/access-assist.js'), 'assistente de Acesso não está carregado no Admin');
+assert.ok(adminIndex.includes('Envie fotos diretamente do computador'), 'Galeria não explica o upload ao usuário');
+for (const token of [
+  "const ACCESS_SLUG = 'acesso-localizacao'",
+  "tab.textContent = 'Acesso e localização'",
+  'referências de estradas, rodovias, vias vicinais',
+]) assert.ok(accessAssist.includes(token), `Área de Acesso incompleta: ${token}`);
+
+const accessPage = pages.find((page) => page?.slug === 'acesso-localizacao');
+assert.ok(accessPage, 'conteúdo de Acesso não existe em paginas.json');
+for (const token of ['BR-158', 'MT-251', 'MT-110', 'estradas vicinais', 'Referências públicas']) {
+  assert.ok(`${accessPage.summary || ''} ${accessPage.body || ''}`.includes(token), `conteúdo de Acesso sem ${token}`);
+}
+
+for (const file of [
+  'functions/api/admin/media.js',
+  'functions/assets/uploads/[[path]].js',
+  'public/admin/image-upload.js',
+  'public/admin/access-assist.js',
+]) {
   const temp = path.join(os.tmpdir(), `pa-media-check-${path.basename(file)}-${process.pid}.mjs`);
   fs.writeFileSync(temp, read(file), 'utf8');
   const result = spawnSync(process.execPath, ['--check', temp], { encoding: 'utf8' });
@@ -41,5 +63,6 @@ for (const file of ['functions/api/admin/media.js', 'functions/assets/uploads/[[
 console.log('ADMIN MEDIA TEST: PASS');
 console.log('- upload aceita somente JPG, PNG e WebP até 4 MB com validação de assinatura');
 console.log('- escrita exige sessão, origem válida, token e branch editorial autorizada');
-console.log('- Home, Memória e legado e Galeria usam o mesmo seletor simples de imagem');
+console.log('- Home, Memória e legado e Galeria exibem upload explícito do computador');
+console.log('- Acesso e localização aparece como área própria e mantém as referências rodoviárias editáveis');
 console.log('- uploads editoriais possuem rota pública restrita à pasta de imagens');
