@@ -139,7 +139,7 @@ O TOPODATA foi pesquisado e registrado como fonte oficial brasileira de modelo d
 
 ## Validação ao vivo das fontes
 
-No run 1139, antes dos ajustes finais de rótulo e documentação, o gate consultou diretamente os serviços cartográficos para o envelope regional e obteve:
+O gate do candidato consulta diretamente os serviços cartográficos para o envelope regional. A execução confirmou:
 
 - vias: 46 feições;
 - drenagem: 5.857 feições;
@@ -147,12 +147,36 @@ No run 1139, antes dos ajustes finais de rótulo e documentação, o gate consul
 - projetos de assentamento: 14 feições;
 - polígonos municipais: 7 feições.
 
-O mesmo run passou build, smoke, JavaScript, Cloudflare readiness e navegador headless.
-
 A checagem de fontes ao vivo permanece ativa na branch do candidato para impedir a entrega de uma camada configurada, porém vazia.
+
+## Validação final do candidato
+
+HEAD técnico validado antes deste registro final:
+
+`003f8f8f8c7e8ab10a751dd803fc985473adc500`
+
+Workflow do PR #44:
+
+- run ID `34968781835`;
+- run number `1145`;
+- resultado: SUCCESS;
+- fontes cartográficas ao vivo: PASS;
+- build: PASS;
+- smoke: PASS;
+- JavaScript: PASS;
+- Cloudflare readiness/env: PASS;
+- navegador headless: PASS.
+
+Cloudflare Pages publicou o mesmo HEAD com sucesso. Preview do commit validado:
+
+`https://65c4ee5f.pa-safra-compensacao-ambiental-social.pages.dev`
+
+Branch Preview:
+
+`https://feat-pa-v001-interactive-acc.pa-safra-compensacao-ambiental-social.pages.dev`
+
+A atualização deste documento cria um novo commit apenas documental. A implementação técnica acima já foi validada no HEAD registrado; antes de eventual merge, o HEAD documental final deve continuar verde.
 
 ## Limite da validação automatizada
 
 O CI protege estrutura, sintaxe, build, segurança, contrato das camadas, disponibilidade mínima das fontes no candidato e interface headless. A disponibilidade futura dos servidores externos e dos provedores de tiles continua sendo uma condição de rede; por isso, uma falha isolada de camada não deve derrubar o mapa-base.
-
-Esta atualização documental altera novamente o HEAD da branch. O HEAD final deve permanecer verde antes de qualquer integração em `develop`.
