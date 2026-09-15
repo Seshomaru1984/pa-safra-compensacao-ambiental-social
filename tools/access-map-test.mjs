@@ -75,6 +75,35 @@ for (const file of ['public/access-map.js', 'functions/api/map/layer.js']) {
   assert.equal(result.status, 0, `node --check falhou em ${file}: ${result.stderr || result.stdout}`);
 }
 
+const candidateBranch = process.env.GITHUB_HEAD_REF || process.env.GITHUB_REF_NAME || '';
+if (candidateBranch.includes('feat/pa-v001-interactive-access-map')) {
+  const bbox = '-53.15,-15.15,-51.75,-14.05';
+  const sources = {
+    roads: 'https://intergeo.intermat.mt.gov.br/server/rest/services/INTERMAT_CARTOGRAFIA/TRA_SISTEMA_VIARIO_L/FeatureServer/0/query',
+    drainage: 'https://intergeo.intermat.mt.gov.br/server/rest/services/BDC/HID_TRECHO_DRENAGEM_L/FeatureServer/0/query',
+    water: 'https://intergeo.intermat.mt.gov.br/server/rest/services/INTERMAT_CARTOGRAFIA/HID_MASSA_DE_AGUA_A/FeatureServer/0/query',
+    settlements: 'https://intergeo.intermat.mt.gov.br/server/rest/services/INTERMAT_CARTOGRAFIA/LIM_ASSENTAMENTO_A/FeatureServer/0/query',
+    municipalities: 'https://intergeo.intermat.mt.gov.br/server/rest/services/INTERMAT_CARTOGRAFIA/LIM_LIMITE_POLITICO_ADMINISTRATIVO_A/FeatureServer/0/query',
+  };
+
+  const counts = await Promise.all(Object.entries(sources).map(async ([name, endpoint]) => {
+    const url = new URL(endpoint);
+    url.searchParams.set('where', '1=1');
+    url.searchParams.set('geometry', bbox);
+    url.searchParams.set('geometryType', 'esriGeometryEnvelope');
+    url.searchParams.set('inSR', '4326');
+    url.searchParams.set('spatialRel', 'esriSpatialRelIntersects');
+    url.searchParams.set('returnCountOnly', 'true');
+    url.searchParams.set('f', 'json');
+    const response = await fetch(url, { signal: AbortSignal.timeout(20000) });
+    assert.equal(response.ok, true, `fonte INTERMAT ${name} respondeu HTTP ${response.status}`);
+    const body = await response.json();
+    assert.ok(Number.isInteger(body.count) && body.count > 0, `fonte INTERMAT ${name} sem feições na região`);
+    return `${name}=${body.count}`;
+  }));
+  console.log(`- fontes INTERMAT consultadas ao vivo: ${counts.join(', ')}`);
+}
+
 console.log('ACCESS MAP TEST: PASS');
 console.log('- mapa mantém geolocalização sob ação explícita do usuário');
 console.log('- relevo topográfico é base opcional, sem poluir o mapa padrão');
