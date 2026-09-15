@@ -59,7 +59,7 @@
       const site = await response.json();
       configuredCredit = String(site?.legacy?.image_credit || '').trim();
     } catch {
-      configuredCredit = '';
+      configuredCredit = null;
     }
     syncLegacyInlinePhoto();
   }
