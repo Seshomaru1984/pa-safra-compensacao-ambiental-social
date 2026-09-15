@@ -24,7 +24,11 @@ function normalizedSlug(value) {
 
 function targetHash(definition) {
   if (definition.hash !== 'dynamic') return definition.hash;
-  return normalizedSlug(document.querySelector('#pages-editor [data-role="slug"]')?.value) || 'inicio';
+  const visibleSlug = [...document.querySelectorAll('#pages-editor .editor-card')]
+    .find((card) => !card.hidden)
+    ?.querySelector('[data-role="slug"]')?.value;
+  const firstSlug = document.querySelector('#pages-editor [data-role="slug"]')?.value;
+  return normalizedSlug(visibleSlug || firstSlug) || 'inicio';
 }
 
 function previewUrl(definition) {
