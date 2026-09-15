@@ -1,6 +1,6 @@
 # 02 - Identidade e estado do projeto
 
-Atualizado em 14/09/2026. Este arquivo registra o checkpoint técnico corrente do projeto PA Safra.
+Atualizado em 15/09/2026. Este arquivo registra o checkpoint técnico corrente do projeto PA Safra.
 
 ## 1. Identidade e fronteiras
 
@@ -11,86 +11,88 @@ Atualizado em 14/09/2026. Este arquivo registra o checkpoint técnico corrente d
 | Contexto territorial | PA Safra refere-se ao Projeto de Assentamento Banco Safra, no município de Nova Xavantina/MT; não indica vínculo com instituição bancária comercial |
 | Público prioritário | Comunidades de Alvorada, Córrego do Jatobá, Vila do Banco Safra e demais munícipes de Nova Xavantina |
 | Repositório | `Seshomaru1984/pa-safra-compensacao-ambiental-social` |
-| Branch de integração | `develop` |
-| Branch editorial de Preview | `content/pa-v001-admin-preview` |
-| Branch de reconstrução histórica | `rebuild/pa-v001-clean`, já integrada pelo PR #39 |
-| Branch problemática arquivada | `archive/pa-v001-experimental-20260914` |
+| Branch de integração e testagem | `develop` |
+| Branch editorial do Admin em Preview | `content/pa-v001-admin-preview` |
 | Produção | `main`, protegida pelos gates editoriais vigentes |
-| Administração | `/admin`, com login próprio e nove áreas editoriais |
-| Escopo atual | Estado técnico integrado e pronto para testes manuais em Preview/develop; `main` permanece fora do escopo autorizado |
+| Administração | `/admin`, com login próprio, áreas editoriais principais e atalhos dedicados para `Mapas e acessos` e `Contato` |
+| Escopo atual | Estado técnico integrado e disponível para testagem do solicitante em `develop`; `main` permanece fora do escopo autorizado |
 
-## 2. Integrações concluídas
+## 2. Integrações relevantes concluídas
 
-### Reconstrução limpa
+### Reconstrução limpa e Admin
 
 - PR #39 integrado em `develop`.
-- HEAD validado do candidato: `a7e5c5d11241ac8fa46dd29fea7cab3c438e81c7`.
-- Commit de merge: `5b5c60983875341b3d9f6b5bfe6c684a68d08d5e`.
-- CI final do PR: run 1071, SUCCESS.
-- CI pós-merge: run 1072, SUCCESS.
-- Checkpoint documental posterior: `d656ef76c2bdb65e5e49d8ec71e8259e11fc3041`.
+- Upload simples de imagens integrado ao Admin.
+- Fluxo de um `Salvar` e um `Pré-visualizar` por área preservado.
+- Escritas editoriais serializadas e regressões de salvamentos consecutivos cobertas por testes.
 
 ### Informações opcionais de imagem
 
 - PR #40 integrado em `develop`.
-- HEAD validado: `bdb819233b213b71701bce1043bf7b330b065483`.
-- Commit de merge: `d9b33595940af2680b3921787d499c1644d5f366`.
-- CI do PR: run 1083, SUCCESS.
-- CI pós-merge: run 1084, SUCCESS.
+- PR #41 corrigiu regressões detectadas no review do PR #40.
+- Legenda, crédito e licença vazios não geram placeholders públicos.
+- A descrição acessível (`alt`) permanece independente.
 
-O PR #40 implementou a regra editorial de que legenda, crédito e licença podem permanecer vazios, sem gerar textos artificiais como `a confirmar` ou `em conferência` no site público.
+### Mapas e acessos
 
-### Correções do review do PR #40
+- PR #44 integrado em `develop`.
+- Commit de merge: `9cd80bffb5f66bbd6f44377e2042a39f9cbcad76`.
+- Mapa interativo mobile-first com geolocalização sob ação explícita do usuário.
+- Controle visível `Camadas`.
+- Camadas opcionais de relevo, sistema viário, drenagem, massas d'água, projetos de assentamento e limites municipais.
+- Hover de legenda no desktop e clique como fallback para touch/mobile.
+- Autoenquadramento ao ativar camada oficial.
+- Geometrias oficiais consultadas por proxy restrito à região de interesse.
+- CI e Cloudflare pós-merge aprovados antes da liberação para testagem.
 
-O review automático do PR #40 identificou três regressões reais após o merge. Elas foram tratadas antes da liberação para testes manuais:
+### Contato no Admin e navegação final
 
-1. preservar texto válido da legenda estática ao remover apenas o sufixo editorial pendente;
-2. remover do DOM público o banner `Créditos em conferência` da Galeria;
-3. preservar a atribuição estática de fallback do Legado caso `/content/site.json` falhe ou esteja indisponível.
+- PR #45 integrado em `develop`.
+- HEAD candidato validado: `d30c18df7e7eadcd43ea92b7d78beabaa551e075`.
+- Commit de merge: `958884cf0f4cfc0cfc733c20a8aedad061046cd8`.
+- CI do PR: run 1189, SUCCESS.
+- CI pós-merge: run 1190, SUCCESS.
+- Cloudflare Pages pós-merge: SUCCESS.
+- `Contato` passou a ter aba explícita no Admin, reutilizando o mesmo registro `contato` de `public/content/paginas.json`.
+- `Mapas e acessos` permanece como aba explícita no Admin e reutiliza o registro `acesso-localizacao`.
+- Não foi criada fonte editorial paralela nem nova API de escrita.
+- Slugs existentes foram preservados.
 
-As correções foram validadas no PR #41:
+## 3. Navegação pública vigente
 
-- branch limpa: `fix/pa-v001-image-info-review-clean`;
-- HEAD validado: `53aa20381845028f6adc8f3b4372721c691a3e31`;
-- CI da branch: run 1088, SUCCESS;
-- CI do PR: run 1092, SUCCESS;
-- commit de merge em `develop`: `04cedf23fdc8c8127d5ed8606c9fff0f9a762e72`;
-- CI pós-merge em `develop`: run 1093, SUCCESS;
-- nenhum comentário ou review pendente foi identificado no PR #41 antes do fechamento técnico.
+A ordem institucional do menu principal é:
 
-## 3. Regra vigente para informações de imagem
+1. Início
+2. Sobre o Projeto
+3. Mapas e acessos
+4. Palestras
+5. Galeria
+6. Memória e legado
+7. Links Úteis
+8. Contato
 
-- Legenda, crédito e licença podem ficar vazios no Admin.
-- Campo vazio não deve gerar placeholder público.
-- Se nenhuma informação estiver preenchida, o bloco de informações da imagem deve ficar oculto.
-- Se apenas parte das informações estiver preenchida, exibir somente os dados reais existentes.
-- A descrição acessível (`alt`) permanece independente e deve continuar disponível para acessibilidade.
-- No Legado, `image_credit` vazio oculta a legenda da imagem configurada e da cópia inserida no corpo.
-- Se o conteúdo editorial do Legado não puder ser carregado, uma atribuição estática válida existente no HTML de fallback deve ser preservada.
-- Legenda válida nunca deve ser descartada apenas porque um sufixo de crédito pendente foi removido.
+A decisão organiza primeiro apresentação e contexto territorial, depois conteúdo e memória, deixando `Contato` como ação final do menu. A reorganização é aplicada de forma idempotente após o carregamento das páginas dinâmicas, sem alterar hashes ou URLs existentes.
 
-A regra de apresentação não equivale, por si só, à confirmação jurídica de direitos de uso de imagens de terceiros.
+## 4. Estado do conteúdo e recursos
 
-## 4. Conteúdo e recursos já incorporados
+- Página `Mapas e acessos`, publicada e editável pelo Admin.
+- Página `Contato`, publicada e editável pelo Admin.
+- Contato confirmado: `gustavomzfranco@hotmail.com`.
+- Upload de JPG, PNG e WebP no Admin para os campos integrados.
+- Foto e conteúdo de Memória e legado preservados.
+- Galeria sem placeholders artificiais de crédito ou licença quando os campos estiverem vazios.
+- Mapa interativo disponível no ambiente de testagem.
+- Links, vídeos, conteúdo institucional e páginas complementares permanecem versionados em `public/content/*.json`.
 
-- Página `Acesso`, com referências territoriais e rodoviárias sustentadas pelas fontes incorporadas.
-- Página `Contato`, com `gustavomzfranco@hotmail.com` aparecendo uma única vez no texto visível.
-- Upload simples de imagens no Admin.
-- Foto de Wolnei e conteúdo de Memória e legado.
-- Um único `Salvar` e um único `Pré-visualizar` por área administrativa.
-- Salvamento integrado de conteúdo, títulos, layout da Home e tamanho de títulos de vídeos.
-- Fila de escrita com repetição controlada para HTTP 502 transitório.
-- Primeiro, segundo e terceiro salvamentos consecutivos da Home validados.
-- Testes headless em desktop e mobile.
-
-## 5. Estado técnico para testes manuais
+## 5. Estado técnico para testagem
 
 | Item | Estado |
 |---|---|
-| HEAD técnico integrado antes deste checkpoint documental | `04cedf23fdc8c8127d5ed8606c9fff0f9a762e72` |
-| PR #40 | MESCLADO em `develop` |
-| PR #41 | MESCLADO em `develop` |
-| CI pós-merge do PR #41 | run 1093, SUCCESS |
+| HEAD integrado antes deste checkpoint documental | `958884cf0f4cfc0cfc733c20a8aedad061046cd8` |
+| PR #44 | MESCLADO em `develop` |
+| PR #45 | MESCLADO em `develop` |
+| CI pós-merge final | run 1190, SUCCESS |
+| Cloudflare Pages pós-merge | SUCCESS |
 | Build | PASS |
 | Smoke | PASS |
 | Autenticação | PASS |
@@ -100,28 +102,26 @@ A regra de apresentação não equivale, por si só, à confirmação jurídica 
 | PowerShell | PASS |
 | Admin em navegador headless | PASS |
 | Site público em navegador headless | PASS |
-| Estado para testes manuais | PRONTO |
+| Estado para testagem do solicitante | PRONTO |
 | Promoção para `main` | NÃO AUTORIZADA |
 | Produção | NÃO EXECUTADA |
 
-O próximo gate prático é a revisão humana do ambiente de Preview/develop. Esse teste manual deve validar comportamento e apresentação reais antes de qualquer avaliação de produção.
+Ambiente estável de testagem:
 
-## 6. Roteiro mínimo dos testes manuais
+- Site: `https://develop.pa-safra-compensacao-ambiental-social.pages.dev/`
+- Admin: `https://develop.pa-safra-compensacao-ambiental-social.pages.dev/admin/`
 
-- Login e logout do Admin.
-- Navegação pelas nove áreas administrativas.
-- Edição e salvamento de texto.
-- Primeiro, segundo e terceiro salvamentos consecutivos sem recarregar a página.
-- Upload, substituição e remoção de imagem nos campos disponíveis.
-- Pré-visualização de cada área.
-- Home, Sobre, Palestras, Galeria, Acesso, Contato, Links úteis e Memória e legado.
-- Imagem sem legenda/crédito/licença: área de informações ausente.
-- Imagem com apenas parte dos dados: mostrar somente os dados preenchidos.
-- Imagem com legenda válida e crédito ausente: preservar a legenda.
-- Galeria sem banner `Créditos em conferência`.
-- Legado com crédito vazio e comportamento de fallback.
-- Links e vídeos.
-- Revisão visual em desktop e celular, incluindo ausência de overflow horizontal.
+## 6. Roteiro mínimo da testagem do solicitante
+
+- Conferir a ordem do menu público em desktop e celular.
+- Confirmar `Mapas e acessos` e `Contato` no menu público.
+- Entrar no Admin e confirmar as abas explícitas `Mapas e acessos` e `Contato`.
+- Editar e salvar o conteúdo de Contato sem afetar Mapas e acessos ou outras páginas.
+- Editar e salvar Mapas e acessos sem afetar Contato ou outras páginas.
+- Conferir mapa, camadas, hover/click das legendas, autoenquadramento e `Minha localização`.
+- Testar upload, substituição e remoção de imagens.
+- Conferir Home, Sobre, Palestras, Galeria, Memória e legado e Links Úteis.
+- Repetir revisão visual em desktop e celular, incluindo ausência de overflow horizontal.
 
 ## 7. Gates editoriais atuais
 
@@ -134,21 +134,12 @@ O próximo gate prático é a revisão humana do ambiente de Preview/develop. Es
 | `revisao_visual_confirmada` | `false` |
 | `admin_nativo_validado` | `true` |
 
-Esses gates não impedem os testes manuais em Preview/develop. Eles continuam impedindo a promoção definitiva para `main` e a publicação em produção enquanto aplicáveis.
+Esses gates não impedem a testagem em Preview/develop. Eles continuam impedindo promoção definitiva para `main` e publicação em produção enquanto aplicáveis.
 
-Validação headless não substitui revisão visual humana. O gate `revisao_visual_confirmada` só pode ser alterado após a revisão efetiva do ambiente.
+Validação automatizada e headless não substitui revisão visual humana. O gate `revisao_visual_confirmada` só pode ser alterado após aprovação efetiva do ambiente.
 
-## 8. Evidências técnicas preservadas
+## 8. Continuidade
 
-- `docs/evidencias/PA-V001-A21-R3-CONTENT-WRITE-PASS-20260913.md`.
-- `docs/evidencias/PA-V001-A22-ADMIN-UI-FLOW-PASS-20260913.md`.
-- `docs/evidencias/PA-V001-A23-AUDITORIA-BLOQUEIOS-EDITORIAIS-20260913.md`.
-- `docs/evidencias/PA-V001-A24-ADMIN-EDITOR-EXPANDIDO-PASS-20260913.md`.
-- `docs/evidencias/PA-V001-IMAGE-INFO-OPTIONAL-PASS-20260914.md`.
-- Runs 1071, 1072, 1083, 1084, 1088, 1092 e 1093.
-
-## 9. Próxima ação
-
-Realizar testes manuais no ambiente de Preview/develop com o roteiro acima. Registrar qualquer divergência observada antes de nova integração ou promoção.
+O próximo passo é receber o retorno do solicitante sobre o ambiente de `develop` e registrar correções objetivas, se houver.
 
 Não promover automaticamente para `main`, não alterar domínio e não declarar produção concluída sem autorização específica e sem os gates correspondentes.
