@@ -27,6 +27,12 @@ for (const token of [
   'Limites municipais',
   '/api/map/layer?layer=',
   'L.control.layers',
+  'Camadas',
+  'labelLayersControl',
+  'access-map-layers-label',
+  'bindTooltip(',
+  'access-map-tooltip',
+  "button.addEventListener('mouseenter'",
   'SINFRA/MT',
   'INTERMAT',
   'geosserviço do IBAMA',
@@ -60,6 +66,8 @@ assert.ok(map.includes("window.addEventListener('hashchange'"), 'mapa deve reagi
 assert.ok(map.includes('MutationObserver'), 'mapa deve aguardar a página dinâmica de Acesso');
 assert.ok(map.includes('O site não grava suas coordenadas de localização no servidor.'), 'mapa deve explicar o tratamento local da geolocalização');
 assert.ok(map.includes('data-map-region'), 'mapa deve permitir restaurar a visão regional');
+assert.ok(map.includes("toggle.setAttribute('aria-label', 'Abrir camadas do mapa')"), 'controle de camadas precisa ter nome acessível e visível');
+assert.ok(map.includes("button.addEventListener('click'"), 'clique deve continuar como fallback para touch/mobile');
 
 for (const token of [
   "script-src 'self' https://unpkg.com",
@@ -111,6 +119,8 @@ if (candidateBranch.includes('feat/pa-v001-interactive-access-map')) {
 
 console.log('ACCESS MAP TEST: PASS');
 console.log('- mapa mantém geolocalização sob ação explícita do usuário');
+console.log('- controle de camadas permanece recolhido, mas exibe rótulo Camadas de forma explícita');
+console.log('- pontos e feições mostram legenda por hover no desktop, mantendo clique como fallback touch/mobile');
 console.log('- relevo topográfico é base opcional, sem poluir o mapa padrão');
 console.log('- vias, hidrografia, assentamentos e limites são camadas opcionais e sob demanda');
 console.log('- assentamentos usam geometria INCRA publicada no geosserviço do IBAMA');
