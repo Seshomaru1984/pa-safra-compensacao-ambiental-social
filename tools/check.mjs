@@ -110,7 +110,7 @@ const htmlPath = path.join(root, 'index.html');
 if (fs.existsSync(htmlPath)) {
   const html = fs.readFileSync(htmlPath, 'utf8');
   for (const token of [
-    'Projeto de Compensação Ambiental e Social - PA Safra', 'Sobre este site', 'Memória e legado', 'Galeria', 'Links Úteis',
+    'Projeto de Compensação Ambiental e Social - Fazenda Matrinchã', 'Sobre este site', 'Memória e legado', 'Galeria', 'Links Úteis',
     'Vila do Banco Safra', 'https://www.sema.mt.gov.br/', 'https://mpmt.mp.br/', 'https://www.gov.br/ibama/pt-br',
     'id="cms-pages-root"', 'id="videos-list"', 'id="destaques-list"', 'id="galeria-list"', '<script type="module" src="app.js"></script>',
   ]) if (!html.includes(token)) errors.push(`Conteudo obrigatorio ausente: ${token}`);
