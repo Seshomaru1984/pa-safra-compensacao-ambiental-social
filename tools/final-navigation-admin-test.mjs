@@ -62,9 +62,14 @@ assert(site.brand_tagline === '', 'complemento antigo da marca deve permanecer v
 assert(indexHtml.includes('<strong id="brand-name">Compensação Social e Ambiental</strong>'), 'primeiro paint não deve exibir PA Safra na marca superior.');
 assert(!indexHtml.includes('id="brand-tagline"'), 'cabeçalho não deve renderizar subtítulo redundante.');
 assert(!app.includes("getElementById('brand-tagline')"), 'frontend não deve recriar subtítulo da marca.');
+assert(!app.includes('site.brand_name'), 'conteúdo editorial não deve sobrescrever a marca superior.');
 assert(read('styles.css').includes('#brand-tagline { display: none !important; }'), 'CSS deve impedir reaparecimento visual do subtítulo.');
 assert(read('styles.css').includes('white-space: nowrap;'), 'menu deve impedir quebra indevida dos rótulos.');
 assert(!read('public/admin/admin.js').includes('home-brand-tagline'), 'Admin não deve oferecer campo para subtítulo removido.');
+assert(!read('public/admin/admin.js').includes('appearance-brand-name'), 'Admin não deve permitir reintroduzir PA Safra na marca superior.');
+const adminApi = read('functions/api/admin/content.js');
+assert(adminApi.includes("body.data.brand_name = 'Compensação Social e Ambiental'"), 'API deve normalizar a marca superior em toda gravação de site.');
+assert(adminApi.includes("body.data.brand_tagline = ''"), 'API deve eliminar o subtítulo em toda gravação de site.');
 
 console.log('FINAL NAVIGATION/ADMIN TEST: PASS');
 console.log('- Contato e Mapas e acessos têm abas próprias no Admin');
