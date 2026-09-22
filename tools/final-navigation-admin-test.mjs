@@ -13,6 +13,9 @@ const assist = read('public/admin/access-assist.js');
 const navOrder = read('public/navigation-order.js');
 const vite = read('vite.config.js');
 const pages = JSON.parse(read('public/content/paginas.json'));
+const site = JSON.parse(read('public/content/site.json'));
+const app = read('app.js');
+const indexHtml = read('index.html');
 
 for (const token of [
   "const ACCESS_SLUG = 'acesso-localizacao'",
@@ -55,6 +58,13 @@ assert(contact?.published !== false, 'Contato deve permanecer publicado.');
 assert(access?.nav_label === 'Mapas e acessos', 'rótulo público de Mapas e acessos deve permanecer sincronizado.');
 assert(contact?.nav_label === 'Contato', 'rótulo público de Contato deve permanecer sincronizado.');
 
+assert(site.brand_name === 'Compensação Social e Ambiental', 'marca superior deve usar somente Compensação Social e Ambiental.');
+assert(site.brand_tagline === '', 'complemento antigo da marca deve permanecer vazio.');
+assert(indexHtml.includes('<strong id="brand-name">Compensação Social e Ambiental</strong>'), 'primeiro paint não deve exibir PA Safra na marca superior.');
+assert(indexHtml.includes('<small id="brand-tagline" hidden></small>'), 'primeiro paint deve ocultar complemento vazio da marca.');
+assert(app.includes("brandTagline.hidden = !site.brand_tagline.trim()"), 'frontend deve ocultar complemento vazio da marca.');
+
 console.log('FINAL NAVIGATION/ADMIN TEST: PASS');
 console.log('- Contato e Mapas e acessos têm abas próprias no Admin');
 console.log('- ordem pública: Início > Sobre > Mapas e acessos > Palestras > Galeria > Memória e legado > Links Úteis > Contato');
+console.log('- cabeçalho superior: somente Compensação Social e Ambiental');
