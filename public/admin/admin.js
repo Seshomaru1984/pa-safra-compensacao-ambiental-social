@@ -270,7 +270,6 @@ function renderHome() {
   const card = makeElement('div', 'form-card');
   const grid = makeElement('div', 'field-grid');
   const site = state.site;
-  fieldInput(grid, 'Complemento no cabeçalho', 'home-brand-tagline', site.brand_tagline || '', { maxlength: 160 });
   fieldInput(grid, 'Identificação acima do título', 'home-hero-eyebrow', site.hero?.eyebrow || '', { maxlength: 120 });
   fieldInput(grid, 'Título principal', 'home-hero-title', site.hero?.title || '', { full: true, maxlength: 220, required: true });
   fieldSelect(grid, 'Alinhamento do título', 'home-title-alignment', site.hero?.title_alignment || 'left', [['left', 'Esquerda'], ['center', 'Centralizado'], ['right', 'Direita']]);
@@ -290,7 +289,7 @@ function renderHome() {
 async function saveHome(event) {
   event.preventDefault();
   const next = structuredClone(state.site);
-  next.brand_tagline = $('#home-brand-tagline').value.trim();
+  next.brand_tagline = '';
   next.hero = next.hero || {};
   next.hero.eyebrow = $('#home-hero-eyebrow').value.trim();
   next.hero.title = $('#home-hero-title').value.trim();
