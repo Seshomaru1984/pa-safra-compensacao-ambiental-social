@@ -137,8 +137,16 @@
     const description = document.querySelector('meta[name="description"]');
     if (description && typeof site.description === 'string' && site.description.trim()) description.setAttribute('content', site.description.trim());
 
-    setText('brand-name', site.brand_name);
-    setText('brand-tagline', site.brand_tagline);
+    const brandName = document.getElementById('brand-name');
+    const brandTagline = document.getElementById('brand-tagline');
+    if (brandName && typeof site.brand_name === 'string') {
+      brandName.textContent = site.brand_name.trim();
+      brandName.hidden = !site.brand_name.trim();
+    }
+    if (brandTagline && typeof site.brand_tagline === 'string') {
+      brandTagline.textContent = site.brand_tagline.trim();
+      brandTagline.hidden = !site.brand_tagline.trim();
+    }
 
     const hero = site.hero || {};
     setText('hero-eyebrow', hero.eyebrow);
