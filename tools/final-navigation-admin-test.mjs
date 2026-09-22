@@ -34,12 +34,12 @@ assert(assist.includes("card.hidden = Boolean(config && slug !== config.slug)"),
 const expectedOrder = [
   "'inicio'",
   "'sobre'",
-  "'acesso-localizacao'",
   "'palestras'",
   "'galeria'",
-  "'legado'",
-  "'recursos'",
+  "'acesso-localizacao'",
   "'contato'",
+  "'recursos'",
+  "'legado'",
 ];
 let lastIndex = -1;
 for (const token of expectedOrder) {
@@ -47,7 +47,6 @@ for (const token of expectedOrder) {
   assert(index > lastIndex, `ordem pública incorreta ou ausente em navigation-order.js: ${token}`);
   lastIndex = index;
 }
-assert(navOrder.includes("menu.appendChild(contactNode)"), 'Contato deve permanecer como última ação do menu.');
 assert(vite.includes('PUBLIC_NAV_ORDER_TAG'), 'build deve injetar o controlador de ordem do menu.');
 assert(vite.includes('PUBLIC_NAV_ORDER_TAG,'), 'controlador de ordem deve ser incluído no HTML final.');
 
@@ -63,9 +62,11 @@ assert(site.brand_tagline === '', 'complemento antigo da marca deve permanecer v
 assert(indexHtml.includes('<strong id="brand-name">Compensação Social e Ambiental</strong>'), 'primeiro paint não deve exibir PA Safra na marca superior.');
 assert(!indexHtml.includes('id="brand-tagline"'), 'cabeçalho não deve renderizar subtítulo redundante.');
 assert(!app.includes("getElementById('brand-tagline')"), 'frontend não deve recriar subtítulo da marca.');
+assert(read('styles.css').includes('#brand-tagline { display: none !important; }'), 'CSS deve impedir reaparecimento visual do subtítulo.');
+assert(read('styles.css').includes('white-space: nowrap;'), 'menu deve impedir quebra indevida dos rótulos.');
 assert(!read('public/admin/admin.js').includes('home-brand-tagline'), 'Admin não deve oferecer campo para subtítulo removido.');
 
 console.log('FINAL NAVIGATION/ADMIN TEST: PASS');
 console.log('- Contato e Mapas e acessos têm abas próprias no Admin');
-console.log('- ordem pública: Início > Sobre > Mapas e acessos > Palestras > Galeria > Memória e legado > Links Úteis > Contato');
+console.log('- ordem pública restaurada: Início > Sobre > Palestras > Galeria > Mapas e acessos > Contato > Links Úteis > Memória e legado');
 console.log('- cabeçalho superior: somente Compensação Social e Ambiental, sem linha inferior');
