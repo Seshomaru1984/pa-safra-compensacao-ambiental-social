@@ -61,10 +61,11 @@ assert(contact?.nav_label === 'Contato', 'rótulo público de Contato deve perma
 assert(site.brand_name === 'Compensação Social e Ambiental', 'marca superior deve usar somente Compensação Social e Ambiental.');
 assert(site.brand_tagline === '', 'complemento antigo da marca deve permanecer vazio.');
 assert(indexHtml.includes('<strong id="brand-name">Compensação Social e Ambiental</strong>'), 'primeiro paint não deve exibir PA Safra na marca superior.');
-assert(indexHtml.includes('<small id="brand-tagline" hidden></small>'), 'primeiro paint deve ocultar complemento vazio da marca.');
-assert(app.includes("brandTagline.hidden = !site.brand_tagline.trim()"), 'frontend deve ocultar complemento vazio da marca.');
+assert(!indexHtml.includes('id="brand-tagline"'), 'cabeçalho não deve renderizar subtítulo redundante.');
+assert(!app.includes("getElementById('brand-tagline')"), 'frontend não deve recriar subtítulo da marca.');
+assert(!read('public/admin/admin.js').includes('home-brand-tagline'), 'Admin não deve oferecer campo para subtítulo removido.');
 
 console.log('FINAL NAVIGATION/ADMIN TEST: PASS');
 console.log('- Contato e Mapas e acessos têm abas próprias no Admin');
 console.log('- ordem pública: Início > Sobre > Mapas e acessos > Palestras > Galeria > Memória e legado > Links Úteis > Contato');
-console.log('- cabeçalho superior: somente Compensação Social e Ambiental');
+console.log('- cabeçalho superior: somente Compensação Social e Ambiental, sem linha inferior');
