@@ -3,9 +3,9 @@
   "titles": {
     "home_hero": {
       "size": "medium",
-      "align": "default",
+      "align": "center",
       "color": "default",
-      "weight": "default",
+      "weight": "semibold",
       "italic": false
     },
     "home_intro": {
