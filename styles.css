@@ -83,9 +83,10 @@ button, a { -webkit-tap-highlight-color: transparent; }
   background: rgba(255,255,255,.06);
 }
 .brand-mark svg { width: 34px; height: 34px; }
-.brand strong { display: block; font-size: 1rem; letter-spacing: .02em; }
-.brand small { display: block; margin-top: -2px; color: rgba(255,255,255,.72); font-size: .72rem; }
-.main-nav { display: flex; align-items: center; gap: 8px; }
+.brand strong { display: block; color: rgba(255,255,255,.78); font-size: .92rem; font-weight: 650; line-height: 1.2; letter-spacing: 0; white-space: nowrap; }
+.brand small,
+#brand-tagline { display: none !important; }
+.main-nav { display: flex; align-items: center; justify-content: flex-end; gap: 6px; min-width: 0; }
 .main-nav a {
   padding: 10px 12px;
   border-radius: 999px;
@@ -93,6 +94,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
   color: rgba(255,255,255,.78);
   font-size: .92rem;
   font-weight: 650;
+  white-space: nowrap;
   transition: .2s ease;
 }
 .main-nav a:hover,

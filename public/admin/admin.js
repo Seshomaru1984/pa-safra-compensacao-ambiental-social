@@ -270,7 +270,6 @@ function renderHome() {
   const card = makeElement('div', 'form-card');
   const grid = makeElement('div', 'field-grid');
   const site = state.site;
-  fieldInput(grid, 'Complemento no cabeçalho', 'home-brand-tagline', site.brand_tagline || '', { maxlength: 160 });
   fieldInput(grid, 'Identificação acima do título', 'home-hero-eyebrow', site.hero?.eyebrow || '', { maxlength: 120 });
   fieldInput(grid, 'Título principal', 'home-hero-title', site.hero?.title || '', { full: true, maxlength: 220, required: true });
   fieldSelect(grid, 'Alinhamento do título', 'home-title-alignment', site.hero?.title_alignment || 'left', [['left', 'Esquerda'], ['center', 'Centralizado'], ['right', 'Direita']]);
@@ -290,7 +289,7 @@ function renderHome() {
 async function saveHome(event) {
   event.preventDefault();
   const next = structuredClone(state.site);
-  next.brand_tagline = $('#home-brand-tagline').value.trim();
+  next.brand_tagline = '';
   next.hero = next.hero || {};
   next.hero.eyebrow = $('#home-hero-eyebrow').value.trim();
   next.hero.title = $('#home-hero-title').value.trim();
@@ -503,7 +502,6 @@ function renderAppearance() {
   const form = $('#appearance-form'); form.replaceChildren();
   const card = makeElement('div', 'form-card');
   const grid = makeElement('div', 'field-grid');
-  fieldInput(grid, 'Nome do portal', 'appearance-brand-name', state.site.brand_name || '', { maxlength: 80 });
   fieldInput(grid, 'Título da aba do navegador', 'appearance-page-title', state.site.page_title || '', { maxlength: 180 });
   fieldInput(grid, 'Descrição do portal', 'appearance-description', state.site.description || '', { full: true, multiline: true, rows: 3, maxlength: 500 });
   fieldInput(grid, 'Cor principal', 'appearance-primary', state.site.theme?.primary || '#1f5949', { type: 'color' });
@@ -517,7 +515,8 @@ function renderAppearance() {
 async function saveAppearance(event) {
   event.preventDefault();
   const next = structuredClone(state.site);
-  next.brand_name = $('#appearance-brand-name').value.trim();
+  next.brand_name = 'Compensação Social e Ambiental';
+  next.brand_tagline = '';
   next.page_title = $('#appearance-page-title').value.trim();
   next.description = $('#appearance-description').value.trim();
   next.theme = { primary: $('#appearance-primary').value, accent: $('#appearance-accent').value };

@@ -6,7 +6,7 @@
     "images:prepare": "node tools/prepare-requester-images.mjs",
     "dev": "npm run images:prepare && vite --host 127.0.0.1 --port 4286 --strictPort",
     "build": "npm run images:prepare && node tools/prepublish.mjs && vite build && node tools/layout-build-check.mjs && node tools/title-style-build-check.mjs",
-    "check": "npm run images:prepare && node tools/check.mjs && node tools/editorial-demand-test.mjs && node tools/access-map-test.mjs && node tools/final-navigation-admin-test.mjs",
+    "check": "npm run images:prepare && node tools/check.mjs && node tools/editorial-demand-test.mjs && node tools/access-map-test.mjs && node tools/final-navigation-admin-test.mjs && node tools/links-intro-admin-test.mjs && node tools/legacy-summary-admin-test.mjs",
     "editorial:audit": "node tools/editorial-blockers-audit.mjs",
     "admin:test": "node tools/admin-contract.mjs && node tools/admin-media-test.mjs && node tools/layout-assist-test.mjs && node tools/title-style-assist-test.mjs && node tools/title-first-paint-test.mjs && node tools/content-preview-bridge-test.mjs && node tools/video-title-style-test.mjs && node tools/admin-write-queue-test.mjs",
     "admin:auth-test": "node tools/admin-auth-test.mjs",

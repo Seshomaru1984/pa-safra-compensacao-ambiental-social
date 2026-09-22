@@ -94,7 +94,7 @@ const indexPath = path.join(dist, 'index.html');
 if (fs.existsSync(indexPath)) {
   const html = fs.readFileSync(indexPath, 'utf8');
   if (html.includes('\uFFFD')) errors.push('index.html contem caractere de substituicao UTF-8.');
-  if (!html.includes('Projeto de Compensação Ambiental e Social - PA Safra')) errors.push('Identidade do PA Safra ausente no index.html gerado.');
+  if (!html.includes('Projeto de Compensação Ambiental e Social - Fazenda Matrinchã')) errors.push('Identidade Fazenda Matrinchã ausente no index.html gerado.');
   if (!/(?:src|href)="[^"]*\/assets\//.test(html)) errors.push('index.html gerado nao referencia assets compilados pelo Vite.');
 }
 
