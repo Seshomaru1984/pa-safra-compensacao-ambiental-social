@@ -65,6 +65,8 @@ assert(!app.includes("getElementById('brand-tagline')"), 'frontend não deve rec
 assert(!app.includes('site.brand_name'), 'conteúdo editorial não deve sobrescrever a marca superior.');
 assert(read('styles.css').includes('#brand-tagline { display: none !important; }'), 'CSS deve impedir reaparecimento visual do subtítulo.');
 assert(read('styles.css').includes('white-space: nowrap;'), 'menu deve impedir quebra indevida dos rótulos.');
+const headerCss = read('styles.css');
+assert(headerCss.includes('.brand strong { display: block; color: rgba(255,255,255,.78); font-size: .92rem; font-weight: 650; line-height: 1.2; letter-spacing: 0; white-space: nowrap; }'), 'identificação superior deve usar o mesmo tratamento tipográfico do menu.');
 assert(!read('public/admin/admin.js').includes('home-brand-tagline'), 'Admin não deve oferecer campo para subtítulo removido.');
 assert(!read('public/admin/admin.js').includes('appearance-brand-name'), 'Admin não deve permitir reintroduzir PA Safra na marca superior.');
 const adminApi = read('functions/api/admin/content.js');
