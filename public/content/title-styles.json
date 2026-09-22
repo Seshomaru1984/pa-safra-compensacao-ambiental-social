@@ -3,7 +3,7 @@
   "titles": {
     "home_hero": {
       "size": "medium",
-      "align": "center",
+      "align": "default",
       "color": "default",
       "weight": "semibold",
       "italic": false
