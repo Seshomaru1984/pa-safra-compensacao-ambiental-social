@@ -137,11 +137,6 @@
     const description = document.querySelector('meta[name="description"]');
     if (description && typeof site.description === 'string' && site.description.trim()) description.setAttribute('content', site.description.trim());
 
-    const brandName = document.getElementById('brand-name');
-    if (brandName && typeof site.brand_name === 'string') {
-      brandName.textContent = site.brand_name.trim();
-      brandName.hidden = !site.brand_name.trim();
-    }
 
     const hero = site.hero || {};
     setText('hero-eyebrow', hero.eyebrow);
