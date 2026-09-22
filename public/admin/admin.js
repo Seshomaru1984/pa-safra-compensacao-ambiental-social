@@ -502,7 +502,6 @@ function renderAppearance() {
   const form = $('#appearance-form'); form.replaceChildren();
   const card = makeElement('div', 'form-card');
   const grid = makeElement('div', 'field-grid');
-  fieldInput(grid, 'Nome do portal', 'appearance-brand-name', state.site.brand_name || '', { maxlength: 80 });
   fieldInput(grid, 'Título da aba do navegador', 'appearance-page-title', state.site.page_title || '', { maxlength: 180 });
   fieldInput(grid, 'Descrição do portal', 'appearance-description', state.site.description || '', { full: true, multiline: true, rows: 3, maxlength: 500 });
   fieldInput(grid, 'Cor principal', 'appearance-primary', state.site.theme?.primary || '#1f5949', { type: 'color' });
@@ -516,7 +515,8 @@ function renderAppearance() {
 async function saveAppearance(event) {
   event.preventDefault();
   const next = structuredClone(state.site);
-  next.brand_name = $('#appearance-brand-name').value.trim();
+  next.brand_name = 'Compensação Social e Ambiental';
+  next.brand_tagline = '';
   next.page_title = $('#appearance-page-title').value.trim();
   next.description = $('#appearance-description').value.trim();
   next.theme = { primary: $('#appearance-primary').value, accent: $('#appearance-accent').value };
