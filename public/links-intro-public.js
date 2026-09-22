@@ -15,7 +15,7 @@
       node.textContent = intro;
       node.hidden = !intro;
     } catch (error) {
-      console.warn('[PA Safra] Não foi possível sincronizar a apresentação de Links úteis:', error);
+      console.warn('[Fazenda Matrinchã] Não foi possível sincronizar a apresentação de Links úteis:', error);
     }
   }
 
