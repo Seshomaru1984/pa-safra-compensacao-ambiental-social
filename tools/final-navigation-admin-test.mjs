@@ -73,7 +73,24 @@ const adminApi = read('functions/api/admin/content.js');
 assert(adminApi.includes("body.data.brand_name = 'Compensação Social e Ambiental'"), 'API deve normalizar a marca superior em toda gravação de site.');
 assert(adminApi.includes("body.data.brand_tagline = ''"), 'API deve eliminar o subtítulo em toda gravação de site.');
 
+const legacyPublicName = /P\.?\s*A\.?\s+Safra/i;
+for (const publicFile of [
+  'index.html',
+  'app.js',
+  'public/access-map.js',
+  'public/admin/index.html',
+  'public/links-intro-public.js',
+  'public/content/site.json',
+  'public/content/destaques.json',
+  'public/content/paginas.json',
+]) {
+  assert(!legacyPublicName.test(read(publicFile)), `referência pública antiga ainda presente em ${publicFile}`);
+}
+assert(indexHtml.includes('Projeto de Compensação Ambiental e Social - Fazenda Matrinchã'), 'rodapé e identidade institucional devem usar Fazenda Matrinchã.');
+assert(indexHtml.includes('© 2026 Fazenda Matrinchã'), 'copyright do rodapé deve usar © 2026 Fazenda Matrinchã.');
+
 console.log('FINAL NAVIGATION/ADMIN TEST: PASS');
 console.log('- Contato e Mapas e acessos têm abas próprias no Admin');
 console.log('- ordem pública restaurada: Início > Sobre > Palestras > Galeria > Mapas e acessos > Contato > Links Úteis > Memória e legado');
 console.log('- cabeçalho superior: somente Compensação Social e Ambiental, sem linha inferior');
+console.log('- referências públicas PA Safra/P.A. Safra removidas; rodapé usa Fazenda Matrinchã');
