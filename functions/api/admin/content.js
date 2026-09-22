@@ -351,6 +351,11 @@ export async function onRequestPut({ request, env }) {
   const filePath = RESOURCES[resource];
   if (!filePath) return json({ ok: false, error: 'Recurso editorial não permitido.' }, 400);
 
+  if (resource === 'site' && body?.data && typeof body.data === 'object' && !Array.isArray(body.data)) {
+    body.data.brand_name = 'Compensação Social e Ambiental';
+    body.data.brand_tagline = '';
+  }
+
   try {
     validateResource(resource, body.data);
   } catch (error) {
