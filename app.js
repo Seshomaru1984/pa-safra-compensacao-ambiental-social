@@ -407,7 +407,7 @@
       shell.className = 'shell';
       const eyebrow = document.createElement('p');
       eyebrow.className = 'eyebrow';
-      eyebrow.textContent = item.eyebrow || 'PA Safra';
+      eyebrow.textContent = item.eyebrow || 'Compensação Social e Ambiental';
       const title = document.createElement('h1');
       title.id = `titulo-${slug}`;
       title.textContent = item.title || item.nav_label || slug;
@@ -434,7 +434,7 @@
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       return await response.json();
     } catch (error) {
-      console.warn(`[PA Safra] Não foi possível carregar ${path}:`, error);
+      console.warn(`[Fazenda Matrinchã] Não foi possível carregar ${path}:`, error);
       return fallback;
     }
   }
@@ -475,7 +475,7 @@
   if (year) year.textContent = String(new Date().getFullYear());
 
   bootContent().catch((error) => {
-    console.error('[PA Safra] Falha ao inicializar conteúdo editável:', error);
+    console.error('[Fazenda Matrinchã] Falha ao inicializar conteúdo editável:', error);
     disableNewsModule();
     renderView();
   });
