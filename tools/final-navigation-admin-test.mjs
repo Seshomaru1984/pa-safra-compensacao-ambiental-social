@@ -59,7 +59,7 @@ assert(contact?.nav_label === 'Contato', 'rótulo público de Contato deve perma
 
 assert(site.brand_name === 'Compensação Social e Ambiental', 'marca superior deve usar somente Compensação Social e Ambiental.');
 assert(site.brand_tagline === '', 'complemento antigo da marca deve permanecer vazio.');
-assert(indexHtml.includes('<strong id="brand-name">Compensação Social e Ambiental</strong>'), 'primeiro paint não deve exibir PA Safra na marca superior.');
+assert(indexHtml.includes('<strong id="brand-name">Compensação Social e Ambiental</strong>'), 'primeiro paint não deve exibir a identificação antiga na marca superior.');
 assert(!indexHtml.includes('id="brand-tagline"'), 'cabeçalho não deve renderizar subtítulo redundante.');
 assert(!app.includes("getElementById('brand-tagline')"), 'frontend não deve recriar subtítulo da marca.');
 assert(!app.includes('site.brand_name'), 'conteúdo editorial não deve sobrescrever a marca superior.');
@@ -68,24 +68,27 @@ assert(read('styles.css').includes('white-space: nowrap;'), 'menu deve impedir q
 const headerCss = read('styles.css');
 assert(headerCss.includes('.brand strong { display: block; color: rgba(255,255,255,.78); font-size: .92rem; font-weight: 650; line-height: 1.2; letter-spacing: 0; white-space: nowrap; }'), 'identificação superior deve usar o mesmo tratamento tipográfico do menu.');
 assert(!read('public/admin/admin.js').includes('home-brand-tagline'), 'Admin não deve oferecer campo para subtítulo removido.');
-assert(!read('public/admin/admin.js').includes('appearance-brand-name'), 'Admin não deve permitir reintroduzir PA Safra na marca superior.');
+assert(!read('public/admin/admin.js').includes('appearance-brand-name'), 'Admin não deve permitir reintroduzir a identificação antiga na marca superior.');
 const adminApi = read('functions/api/admin/content.js');
 assert(adminApi.includes("body.data.brand_name = 'Compensação Social e Ambiental'"), 'API deve normalizar a marca superior em toda gravação de site.');
 assert(adminApi.includes("body.data.brand_tagline = ''"), 'API deve eliminar o subtítulo em toda gravação de site.');
 
 const legacyPublicName = /P\.?\s*A\.?\s+Safra/i;
-for (const publicFile of [
-  'index.html',
-  'app.js',
-  'public/access-map.js',
-  'public/admin/index.html',
-  'public/links-intro-public.js',
-  'public/content/site.json',
-  'public/content/destaques.json',
-  'public/content/paginas.json',
-]) {
-  assert(!legacyPublicName.test(read(publicFile)), `referência pública antiga ainda presente em ${publicFile}`);
+const textExtensions = new Set(['.html', '.js', '.mjs', '.json', '.css', '.txt', '.xml']);
+function collectPublicTextFiles(dir, prefix = '') {
+  const files = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const absolute = path.join(dir, entry.name);
+    const relative = path.join(prefix, entry.name).replaceAll('\\', '/');
+    if (entry.isDirectory()) files.push(...collectPublicTextFiles(absolute, relative));
+    else if (entry.isFile() && textExtensions.has(path.extname(entry.name).toLowerCase())) files.push(`public/${relative}`);
+  }
+  return files;
 }
+const auditedPublicFiles = ['index.html', 'app.js', ...collectPublicTextFiles(path.join(root, 'public'))];
+const legacyMatches = auditedPublicFiles.filter((publicFile) => legacyPublicName.test(read(publicFile)));
+assert(!legacyMatches.length, `referência pública antiga ainda presente em: ${legacyMatches.join(', ')}`);
+
 assert(indexHtml.includes('Projeto de Compensação Ambiental e Social - Fazenda Matrinchã'), 'rodapé e identidade institucional devem usar Fazenda Matrinchã.');
 assert(indexHtml.includes('© 2026 Fazenda Matrinchã'), 'copyright do rodapé deve usar © 2026 Fazenda Matrinchã.');
 
@@ -93,4 +96,5 @@ console.log('FINAL NAVIGATION/ADMIN TEST: PASS');
 console.log('- Contato e Mapas e acessos têm abas próprias no Admin');
 console.log('- ordem pública restaurada: Início > Sobre > Palestras > Galeria > Mapas e acessos > Contato > Links Úteis > Memória e legado');
 console.log('- cabeçalho superior: somente Compensação Social e Ambiental, sem linha inferior');
-console.log('- referências públicas PA Safra/P.A. Safra removidas; rodapé usa Fazenda Matrinchã');
+console.log(`- auditoria pública varreu ${auditedPublicFiles.length} arquivos sem PA Safra/P.A. Safra visível`);
+console.log('- rodapé usa Fazenda Matrinchã');
