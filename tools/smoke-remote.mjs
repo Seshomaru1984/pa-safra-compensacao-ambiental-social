@@ -46,7 +46,7 @@ async function fetchChecked(pathname) {
   const target = new URL(pathname, base);
   const response = await fetch(target, {
     redirect: 'follow',
-    headers: { 'user-agent': 'pa-safra-remote-smoke/1.0' },
+    headers: { 'user-agent': 'fazenda-matrincha-remote-smoke/1.0' },
   });
   const finalUrl = new URL(response.url);
   ok(hostAllowed(finalUrl.hostname), `Redirecionamento para host nao autorizado: ${finalUrl.hostname}`);
@@ -57,7 +57,8 @@ async function fetchChecked(pathname) {
 try {
   const home = await fetchChecked('/');
   const html = await home.text();
-  ok(html.includes('Projeto de Compensação Ambiental e Social - PA Safra'), 'Identidade PA Safra ausente no HTML remoto.');
+  ok(html.includes('Projeto de Compensação Ambiental e Social - Fazenda Matrinchã'), 'Identidade Fazenda Matrinchã ausente no HTML remoto.');
+  ok(!/P\.?\s*A\.?\s+Safra/i.test(html), 'Referencia publica antiga PA Safra/P.A. Safra encontrada no HTML remoto.');
   ok(!html.includes('\uFFFD'), 'HTML remoto contem caractere de substituicao UTF-8.');
   ok(!html.includes('contato@exemplo.com'), 'Placeholder proibido encontrado no HTML remoto.');
 
@@ -113,7 +114,8 @@ if (errors.length) {
 
 console.log('SMOKE REMOTO: OK');
 console.log(`URL validada: ${base.origin}`);
-console.log('- identidade e UTF-8: OK');
+console.log('- identidade Fazenda Matrincha e UTF-8: OK');
+console.log('- referencia publica PA Safra/P.A. Safra: AUSENTE');
 console.log('- cabecalhos de seguranca: OK');
 console.log('- publicacao pendente: OK');
 console.log('- robots bloqueando indexacao: OK');
