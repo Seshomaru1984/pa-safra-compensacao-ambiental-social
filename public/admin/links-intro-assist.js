@@ -68,7 +68,7 @@
         textarea.value = typeof data?.intro === 'string' ? data.intro : '';
       })
       .catch((error) => {
-        console.warn('[PA Safra] Não foi possível carregar a apresentação de Links úteis no Admin:', error);
+        console.warn('[Fazenda Matrinchã] Não foi possível carregar a apresentação de Links úteis no Admin:', error);
       });
   }
 
