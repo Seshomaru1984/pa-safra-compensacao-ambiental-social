@@ -68,7 +68,7 @@
       const field = document.getElementById(FIELD_ID);
       if (field && field.dataset.userEdited !== 'true') field.value = summaryValue;
     } catch (error) {
-      console.warn('[PA Safra] Não foi possível carregar o resumo de Memória e legado:', error);
+      console.warn('[Fazenda Matrinchã] Não foi possível carregar o resumo de Memória e legado:', error);
     }
   }
 
