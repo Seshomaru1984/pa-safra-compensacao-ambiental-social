@@ -11,6 +11,11 @@ on:
         description: Host exato opcional para dominio customizado futuro
         required: false
         type: string
+      expect_title_first_paint:
+        description: Exigir CSS critico de titulo no HTML inicial
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -34,6 +39,7 @@ jobs:
         env:
           PA_SAFRA_PREVIEW_URL: ${{ inputs.preview_url }}
           PA_SAFRA_ALLOWED_HOST: ${{ inputs.allowed_host }}
+          PA_SAFRA_EXPECT_TITLE_FIRST_PAINT: ${{ inputs.expect_title_first_paint }}
         run: npm run smoke:remote
 
       - name: Registrar resultado
@@ -47,3 +53,4 @@ jobs:
           echo "- estado editorial pendente: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- robots bloqueando indexacao: OK" >> "$GITHUB_STEP_SUMMARY"
           echo "- WebPs do solicitante: OK" >> "$GITHUB_STEP_SUMMARY"
+          echo "- exigir first-paint de titulo: \`${{ inputs.expect_title_first_paint }}\`" >> "$GITHUB_STEP_SUMMARY"

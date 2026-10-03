@@ -20,6 +20,7 @@ if (base.protocol !== 'https:') {
 }
 
 const explicitHost = process.env.PA_SAFRA_ALLOWED_HOST?.trim().toLowerCase();
+const expectTitleFirstPaint = /^(?:1|true|yes)$/i.test(process.env.PA_SAFRA_EXPECT_TITLE_FIRST_PAINT?.trim() || '');
 const initialHost = base.hostname.toLowerCase();
 const hostAllowed = (host) => {
   const normalized = host.toLowerCase();
@@ -59,6 +60,13 @@ try {
   ok(html.includes('Projeto de Compensação Ambiental e Social - PA Safra'), 'Identidade PA Safra ausente no HTML remoto.');
   ok(!html.includes('\uFFFD'), 'HTML remoto contem caractere de substituicao UTF-8.');
   ok(!html.includes('contato@exemplo.com'), 'Placeholder proibido encontrado no HTML remoto.');
+
+  if (expectTitleFirstPaint) {
+    const markerIndex = html.indexOf('id="pa-safra-title-first-paint"');
+    const headEndIndex = html.indexOf('</head>');
+    ok(markerIndex >= 0, 'CSS critico de titulo ausente no HTML inicial remoto.');
+    ok(headEndIndex >= 0 && markerIndex >= 0 && markerIndex < headEndIndex, 'CSS critico de titulo nao foi entregue dentro do head.');
+  }
 
   const expectedHeaders = {
     'x-content-type-options': 'nosniff',
@@ -110,3 +118,4 @@ console.log('- cabecalhos de seguranca: OK');
 console.log('- publicacao pendente: OK');
 console.log('- robots bloqueando indexacao: OK');
 console.log('- WebPs do solicitante: OK');
+if (expectTitleFirstPaint) console.log('- CSS critico de titulo no HTML inicial: OK');
