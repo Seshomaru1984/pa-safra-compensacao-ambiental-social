@@ -27,7 +27,7 @@ assert(Array.isArray(pages), 'paginas.json deve ser uma lista');
 const access = pages.find((page) => page?.slug === 'acesso-localizacao');
 assert(access && access.published !== false, 'página Acesso deve existir e estar publicada');
 const accessText = visibleText(`${access.summary || ''} ${access.body || ''}`);
-for (const expected of ['Nova Xavantina', 'PA Safra', 'BR-158', 'MT-251', 'MT-110']) {
+for (const expected of ['Nova Xavantina', 'BR-158', 'MT-251', 'MT-110']) {
   assert(accessText.includes(expected), `página Acesso deve mencionar ${expected}`);
 }
 assert(/estradas vicinais/i.test(accessText), 'página Acesso deve contextualizar o acesso rural por vias vicinais');

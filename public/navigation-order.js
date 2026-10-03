@@ -4,12 +4,12 @@
   const ORDER = [
     'inicio',
     'sobre',
-    'acesso-localizacao',
     'palestras',
     'galeria',
-    'legado',
-    'recursos',
+    'acesso-localizacao',
     'contato',
+    'recursos',
+    'legado',
   ];
 
   let syncing = false;
@@ -33,19 +33,23 @@
       const node = menu.querySelector(`[data-nav="${slug}"]`);
       if (node) nodes.set(slug, node);
     }
+
     const desired = ORDER.filter((slug) => nodes.has(slug));
     const current = currentRelevantOrder(menu);
-    const alreadyOrdered = current.length === desired.length && current.every((slug, index) => slug === desired[index]);
-    if (alreadyOrdered && contact.parentElement === menu) return;
+    const alreadyOrdered = current.length === desired.length
+      && current.every((slug, index) => slug === desired[index]);
+
+    if (alreadyOrdered) return;
 
     syncing = true;
     try {
       const cmsRoot = document.getElementById('cms-pages-nav');
       const genericPages = cmsRoot
-        ? [...cmsRoot.querySelectorAll('a[data-nav]')].filter((node) => !['acesso-localizacao', 'contato'].includes(node.dataset.nav || ''))
+        ? [...cmsRoot.querySelectorAll('a[data-nav]')]
+          .filter((node) => !['acesso-localizacao', 'contato'].includes(node.dataset.nav || ''))
         : [];
 
-      for (const slug of ORDER.slice(0, 7)) {
+      for (const slug of ORDER.slice(0, 6)) {
         const node = nodes.get(slug);
         if (node) menu.appendChild(node);
       }
@@ -55,8 +59,10 @@
         menu.appendChild(cmsRoot);
       }
 
-      const contactNode = nodes.get('contato');
-      if (contactNode) menu.appendChild(contactNode);
+      for (const slug of ORDER.slice(6)) {
+        const node = nodes.get(slug);
+        if (node) menu.appendChild(node);
+      }
     } finally {
       syncing = false;
     }

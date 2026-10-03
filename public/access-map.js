@@ -154,7 +154,7 @@
         <button class="access-map-action" type="button" data-map-region>Mostrar região</button>
       </div>
       <p class="access-map-status" data-map-status role="status" aria-live="polite">A localização só será solicitada quando você tocar em “Minha localização”. As camadas oficiais são carregadas apenas quando selecionadas. No computador, passe o mouse sobre pontos e feições para ver a legenda.</p>
-      <div class="access-map-canvas" data-map-canvas aria-label="Mapa interativo de Nova Xavantina, PA Safra e acessos regionais"></div>
+      <div class="access-map-canvas" data-map-canvas aria-label="Mapa interativo de Nova Xavantina, comunidades atendidas e acessos regionais"></div>
       <div class="access-map-references" data-map-references aria-label="Pontos de referência rodoviária"></div>
       <div class="access-map-note">
         <p><strong>Fontes:</strong> OpenStreetMap; relevo OpenTopoMap com SRTM; sistema viário, drenagem, massas d'água e limites municipais do INTERMAT; projetos de assentamento do INCRA publicados no geosserviço do IBAMA; pontos rodoviários conferidos na SINFRA/MT.</p>
@@ -320,7 +320,7 @@
       fitOfficialLayer(name, group, mapInstance);
       setStatus(panel, `${OFFICIAL_LAYERS[name].label} carregada com ${data.features.length} feições e enquadrada automaticamente.`);
     }).catch((error) => {
-      console.warn('[PA Safra] Falha ao carregar camada oficial:', name, error);
+      console.warn('[Mapa de acessos] Falha ao carregar camada oficial:', name, error);
       setStatus(panel, `${OFFICIAL_LAYERS[name].label} não pôde ser carregada agora. O restante do mapa continua disponível.`);
       if (mapInstance?.hasLayer(group)) mapInstance.removeLayer(group);
       throw error;
@@ -408,7 +408,7 @@
         try {
           mapInstance?.remove();
         } catch (error) {
-          console.warn('[PA Safra] Falha ao desmontar mapa-base indisponível:', error);
+          console.warn('[Mapa de acessos] Falha ao desmontar mapa-base indisponível:', error);
         }
         mapInstance = null;
         mapSection = null;
@@ -487,7 +487,7 @@
       if (!L) throw new Error('Biblioteca indisponível.');
       initMap(panel, L);
     } catch (error) {
-      console.warn('[PA Safra] Falha ao iniciar mapa interativo:', error);
+      console.warn('[Mapa de acessos] Falha ao iniciar mapa interativo:', error);
       showFallback(panel, 'Não foi possível carregar o mapa interativo agora. Tente novamente mais tarde.');
     }
   }

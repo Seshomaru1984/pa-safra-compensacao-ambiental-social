@@ -264,7 +264,7 @@ const noHorizontalOverflow = () => document.documentElement.scrollWidth <= windo
 const result = document.createElement('pre'); result.id = 'rebuild-public-result'; result.hidden = true; document.body.append(result);
 
 try {
-  await wait(() => document.querySelector('#titulo-inicio')?.textContent.includes('PA Safra'), 'conteúdo editorial da Home');
+  await wait(() => document.querySelector('#titulo-inicio')?.textContent.includes('Fazenda Matrinchã'), 'conteúdo editorial da Home');
   assert(noHorizontalOverflow(), 'rolagem horizontal involuntária na Home em ' + window.innerWidth + 'px');
 
   const views = ['inicio','sobre','palestras','galeria','recursos','legado'];
